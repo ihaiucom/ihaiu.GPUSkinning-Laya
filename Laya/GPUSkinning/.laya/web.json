@@ -1,0 +1,66 @@
+{
+    "copyFilesFilter": [
+        "../bin/**/*.*"
+    ],
+    "openDataZone": false,
+    "compressJson": false,
+    "compressJsonFilter": [
+        "$basePath/**/*.{json,atlas}"
+    ],
+    "compressJsonNoteList": [
+        ""
+    ],
+    "compressImage": false,
+    "compressImageFilter": [
+        "$basePath/**/*.{png,jpg}"
+    ],
+    "compressImageNoteList": [
+        ""
+    ],
+    "compressJs": true,
+    "compressJsFilter": [
+        "$basePath/js/**/*.js",
+        "$basePath/libs/**/*.js"
+    ],
+    "compressJsNoteList": [
+        "",
+        ""
+    ],
+    "version": true,
+    "versionFilter": [
+        "$basePath/**/*.*",
+        "!$basePath/*.html",
+        "!$basePath/{version.json,game.js,game.json,project.config.json,weapp-adapter.js,project.swan.json,swan-game-adapter.js,main.js,gameConfig.json}",
+        "!$basePath/layaforqq/**/*.*"
+    ],
+    "versionNoteList": [
+        "",
+        "",
+        "",
+        ""
+    ],
+    "exclude": false,
+    "excludeFilter": [
+        "!$basePath/res/**/*.*"
+    ],
+    "vexcludeNoteList": [
+        ""
+    ],
+    "packfile": false,
+    "packfileFilter": [
+        ""
+    ],
+    "packfileFullValue": [
+        "$basePath/**/*.*"
+    ],
+    "packfileTargetValue": "",
+    "packfileNoteList": [
+        ""
+    ],
+    "clearReleaseDir": true,
+    "compile": false,
+    "forceCompile": false,
+    "onlyIndexJS": true,
+    "projectType": "ts",
+    "pubTime": 1576845961564
+}
