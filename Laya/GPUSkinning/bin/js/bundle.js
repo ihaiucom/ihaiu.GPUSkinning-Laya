@@ -697,7 +697,7 @@
         InitAsync() {
             return __awaiter(this, void 0, void 0, function* () {
                 yield MaterialInstall.install();
-                this.TestPrefab();
+                yield this.TestLoadCube();
             });
         }
         TestPrefab() {
@@ -708,6 +708,17 @@
             material.enableLighting = true;
             meshRenderer.material = material;
             this.scene.addChild(box);
+        }
+        TestLoadCube() {
+            return __awaiter(this, void 0, void 0, function* () {
+                let prefabName = "Cube";
+                let path = this.GetPathByResId(prefabName);
+                let res = yield this.Load3DAsync(path);
+                res.transform.localRotationEulerX = -90;
+                this.scene.addChild(res);
+                res.transform.position = new Laya.Vector3(0, 0, 0);
+                window['res'] = res;
+            });
         }
         GetPathByResId(resId) {
             return TestShader.Res3DRoot + resId + ".lh";
@@ -918,9 +929,17 @@
         MaterialState[MaterialState["Count"] = 6] = "Count";
     })(MaterialState || (MaterialState = {}));
 
+    var GPUSkinningQuality;
+    (function (GPUSkinningQuality) {
+        GPUSkinningQuality[GPUSkinningQuality["Bone1"] = 1] = "Bone1";
+        GPUSkinningQuality[GPUSkinningQuality["Bone2"] = 2] = "Bone2";
+        GPUSkinningQuality[GPUSkinningQuality["Bone4"] = 4] = "Bone4";
+    })(GPUSkinningQuality || (GPUSkinningQuality = {}));
+
     var BoundSphere = Laya.BoundSphere;
     var Vector4$1 = Laya.Vector4;
     var Vector3$1 = Laya.Vector3;
+    var Shader3D$2 = Laya.Shader3D;
     class GPUSkinningPlayerResources {
         constructor() {
             this.anim = null;
@@ -943,12 +962,18 @@
             if (this._isInited)
                 return;
             this._isInited = true;
-            this.shaderPropID_GPUSkinning_TextureMatrix = Laya.Shader3D.propertyNameToID("_GPUSkinning_TextureMatrix");
-            this.shaderPropID_GPUSkinning_TextureSize_NumPixelsPerFrame = Laya.Shader3D.propertyNameToID("_GPUSkinning_TextureSize_NumPixelsPerFrame");
-            this.shaderPorpID_GPUSkinning_FrameIndex_PixelSegmentation = Laya.Shader3D.propertyNameToID("_GPUSkinning_FrameIndex_PixelSegmentation");
-            this.shaderPropID_GPUSkinning_RootMotion = Laya.Shader3D.propertyNameToID("_GPUSkinning_RootMotion");
-            this.shaderPorpID_GPUSkinning_FrameIndex_PixelSegmentation_Blend_CrossFade = Laya.Shader3D.propertyNameToID("_GPUSkinning_FrameIndex_PixelSegmentation_Blend_CrossFade");
-            this.shaderPropID_GPUSkinning_RootMotion_CrossFade = Laya.Shader3D.propertyNameToID("_GPUSkinning_RootMotion_CrossFade");
+            for (let key of this.keywords) {
+                this.keywordDefines.push(Shader3D$2.getDefineByName(key));
+            }
+            this.ShaderDefine_SKIN_1 = Shader3D$2.getDefineByName("SKIN_1");
+            this.ShaderDefine_SKIN_2 = Shader3D$2.getDefineByName("SKIN_2");
+            this.ShaderDefine_SKIN_4 = Shader3D$2.getDefineByName("SKIN_4");
+            this.shaderPropID_GPUSkinning_TextureMatrix = Shader3D$2.propertyNameToID("_GPUSkinning_TextureMatrix");
+            this.shaderPropID_GPUSkinning_TextureSize_NumPixelsPerFrame = Shader3D$2.propertyNameToID("_GPUSkinning_TextureSize_NumPixelsPerFrame");
+            this.shaderPorpID_GPUSkinning_FrameIndex_PixelSegmentation = Shader3D$2.propertyNameToID("_GPUSkinning_FrameIndex_PixelSegmentation");
+            this.shaderPropID_GPUSkinning_RootMotion = Shader3D$2.propertyNameToID("_GPUSkinning_RootMotion");
+            this.shaderPorpID_GPUSkinning_FrameIndex_PixelSegmentation_Blend_CrossFade = Shader3D$2.propertyNameToID("_GPUSkinning_FrameIndex_PixelSegmentation_Blend_CrossFade");
+            this.shaderPropID_GPUSkinning_RootMotion_CrossFade = Shader3D$2.propertyNameToID("_GPUSkinning_RootMotion_CrossFade");
         }
         Destroy() {
             this.anim = null;
@@ -1049,9 +1074,21 @@
         GetMaterial(state) {
             return this.mtrls[state];
         }
-        InitMaterial(originalMaterial) {
+        InitMaterial(originalMaterial, skinningQuality) {
             if (this.mtrls != null) {
                 return;
+            }
+            let SKILL_N;
+            switch (skinningQuality) {
+                case GPUSkinningQuality.Bone1:
+                    SKILL_N = GPUSkinningPlayerResources.ShaderDefine_SKIN_1;
+                    break;
+                case GPUSkinningQuality.Bone2:
+                    SKILL_N = GPUSkinningPlayerResources.ShaderDefine_SKIN_2;
+                    break;
+                case GPUSkinningQuality.Bone4:
+                    SKILL_N = GPUSkinningPlayerResources.ShaderDefine_SKIN_4;
+                    break;
             }
             let mtrls = this.mtrls = [];
             for (let i = 0; i < MaterialState.Count; ++i) {
@@ -1059,16 +1096,17 @@
                 let material = materialItem.material = originalMaterial.clone();
                 mtrls[i] = materialItem;
                 material.name = GPUSkinningPlayerResources.keywords[i];
-                this.EnableKeywords(i, mtrls[i]);
+                material._shaderValues.addDefine(SKILL_N);
+                this.EnableKeywords(i, materialItem);
             }
         }
         EnableKeywords(ki, mtrl) {
             for (let i = 0; i < this.mtrls.length; ++i) {
                 if (i == ki) {
-                    mtrl.material._shaderValues.addDefine(GPUSkinningPlayerResources.keywords[i]);
+                    mtrl.material._shaderValues.addDefine(GPUSkinningPlayerResources.keywordDefines[i]);
                 }
                 else {
-                    mtrl.material._shaderValues.removeDefine(GPUSkinningPlayerResources.keywords[i]);
+                    mtrl.material._shaderValues.removeDefine(GPUSkinningPlayerResources.keywordDefines[i]);
                 }
             }
         }
@@ -1077,6 +1115,7 @@
         "ROOTON_BLENDOFF", "ROOTON_BLENDON_CROSSFADEROOTON", "ROOTON_BLENDON_CROSSFADEROOTOFF",
         "ROOTOFF_BLENDOFF", "ROOTOFF_BLENDON_CROSSFADEROOTON", "ROOTOFF_BLENDON_CROSSFADEROOTOFF"
     ];
+    GPUSkinningPlayerResources.keywordDefines = [];
     GPUSkinningPlayerResources.shaderPropID_GPUSkinning_TextureMatrix = -1;
     GPUSkinningPlayerResources.shaderPropID_GPUSkinning_TextureSize_NumPixelsPerFrame = 0;
     GPUSkinningPlayerResources.shaderPorpID_GPUSkinning_FrameIndex_PixelSegmentation = 0;
@@ -1112,7 +1151,7 @@
             if (item.mesh == null) {
                 item.mesh = mesh;
             }
-            item.InitMaterial(originalMtrl);
+            item.InitMaterial(originalMtrl, anim.skinQuality);
             if (item.texture == null) {
                 item.texture = textureRawData;
             }

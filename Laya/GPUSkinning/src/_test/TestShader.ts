@@ -18,7 +18,9 @@ export default class TestShader
     {
 		// 初始化shader
         await MaterialInstall.install();
-        this.TestPrefab();
+        // this.TestPrefab();
+
+        await this.TestLoadCube();
     }
 
     TestPrefab()
@@ -34,6 +36,19 @@ export default class TestShader
         meshRenderer.material = material;
 
         this.scene.addChild(box);
+    }
+
+    async TestLoadCube()
+    {
+        
+        let prefabName = "Cube";
+        let path = this.GetPathByResId(prefabName);
+
+        let res:Laya.Sprite3D = await this.Load3DAsync(path);
+        res.transform.localRotationEulerX = -90;
+        this.scene.addChild(res);
+        res.transform.position = new Laya.Vector3(0, 0, 0);
+        window['res'] = res;
     }
 
     /** 3D资源根目录 */
