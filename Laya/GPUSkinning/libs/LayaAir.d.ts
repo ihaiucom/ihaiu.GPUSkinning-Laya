@@ -14887,6 +14887,7 @@ declare module laya.d3.resource.models {
 	 */
 	class Mesh extends laya.resource.Resource implements laya.d3.core.IClone  {
 
+		_bindPoseIndices: Uint16Array;
 		/**
 		 * Mesh资源。
 		 */
@@ -14927,7 +14928,7 @@ declare module laya.d3.resource.models {
 		/**
 		 * 索引格式。
 		 */
-		readonly indexFormat:laya.d3.graphics.IndexFormat;
+		indexFormat:laya.d3.graphics.IndexFormat;
 
 		/**
 		 * 创建一个 <code>Mesh</code> 实例,禁止使用。
@@ -45494,6 +45495,11 @@ declare module laya.webgl {
 	declare class Laya3D  {
 
 		/**
+		 * Mesh资源。
+		 */
+		static SKING_MESH:string;
+
+		/**
 		 * Hierarchy资源。
 		 */
 		static HIERARCHY:string;
@@ -45562,6 +45568,7 @@ declare module laya.webgl {
 		 */
 		static init(width:number,height:number,config?:Config3D,compolete?:laya.utils.Handler):void;
 
+		static _endLoad(loader: Laya.Loader, content?: any, subResous?: any[]): void 
 		/**
 		 * 创建一个 <code>Laya3D</code> 实例。
 		 */
@@ -46422,6 +46429,20 @@ declare module Laya {
 	 */
 
 	class IndexBuffer3D extends laya.d3.graphics.IndexBuffer3D {}
+	enum IndexFormat
+	{
+		/** 8 位无符号整型索引格式。*/
+		UInt8,
+		/** 16 位无符号整型索引格式。*/
+		UInt16,
+		/** 32 位无符号整型索引格式。*/
+		UInt32
+	}
+	class LayaGL{
+		static instance: WebGLRenderingContext;
+	}
+
+
 
 	/**
 	 * <code>StaticBatchManager</code> 类用于静态批处理管理的父类。
@@ -46798,7 +46819,36 @@ declare module Laya {
 	 * <code>Mesh</code> 类用于创建文件网格数据模板。
 	 */
 
-	class Mesh extends laya.d3.resource.models.Mesh {}
+	class Mesh extends laya.d3.resource.models.Mesh {
+		
+		_indexFormat: IndexFormat;
+		
+		_vertexBuffer: VertexBuffer3D;
+		_vertexCount: number;
+		_indexBuffer: IndexBuffer3D 
+		_setBuffer(vertexBuffer: VertexBuffer3D, indexBuffer: IndexBuffer3D): void
+		_setCPUMemory(value: number): void 
+		_setGPUMemory(value: number): void
+
+		_boneNames: string[];
+		_inverseBindPosesBuffer: ArrayBuffer;
+		_inverseBindPoses: Matrix4x4[];
+		_skinDataPathMarks: any[][];
+
+		_subMeshes: SubMesh[];
+		_setSubMeshes(subMeshes: SubMesh[]): void
+
+	}
+	
+	class LoadModelV04
+	{
+		static parse(readData: Byte, version: string, mesh: Mesh, subMeshes: SubMesh[]): void
+	}
+
+	class LoadModelV05
+	{
+		static parse(readData: Byte, version: string, mesh: Mesh, subMeshes: SubMesh[]): void
+	}
 
 	/**
 	 * <code>PrimitiveMesh</code> 类用于创建简单网格。
@@ -46834,7 +46884,15 @@ declare module Laya {
 	 * <code>SubMesh</code> 类用于创建子网格数据模板。
 	 */
 
-	class SubMesh extends laya.d3.resource.models.SubMesh {}
+	class SubMesh extends laya.d3.resource.models.SubMesh {
+		_indexBuffer: IndexBuffer3D
+		_vertexBuffer: VertexBuffer3D
+		_setIndexRange(indexStart: number, indexCount: number): void
+		_subIndexBufferStart: number[]
+		_subIndexBufferCount: number[];
+		_boneIndicesList: Uint16Array[];
+		
+	}
 
 	/**
 	 * <code>RenderTexture</code> 类用于创建渲染目标。
@@ -48170,7 +48228,14 @@ function onInit()
 	 * <code>Loader</code> 类可用来加载文本、JSON、XML、二进制、图像等资源。
 	 */
 
-	class Loader extends laya.net.Loader {}
+	class Loader extends laya.net.Loader 
+	{
+		_createCache: boolean;
+		_cache: boolean;
+		
+		_propertyParams: any;
+		_constructParams: any[] | null;
+	}
 
 	/**
 	 * 所有资源加载完成时调度。
@@ -48206,7 +48271,9 @@ function onInit()
 	 * <p>调用 <code>enable</code> 启用资源版本管理。</p>
 	 */
 
-	class ResourceVersion extends laya.net.ResourceVersion {}
+	class ResourceVersion extends laya.net.ResourceVersion {
+		_setCPUMemory(value: number): void 
+	}
 
 	/**
 	 * @private 场景资源加载器
@@ -50590,7 +50657,9 @@ class VSlider_Example {
 	 * <p> <code>Byte</code> 类适用于需要在字节层访问数据的高级开发人员。</p>
 	 */
 
-	class Byte extends laya.utils.Byte {}
+	class Byte extends laya.utils.Byte {
+		__getBuffer(): ArrayBuffer 
+	}
 
 	/**
 	 * @private 对象缓存统一管理类

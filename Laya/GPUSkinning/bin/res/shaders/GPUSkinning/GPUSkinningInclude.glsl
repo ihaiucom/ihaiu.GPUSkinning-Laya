@@ -2,19 +2,19 @@
 #define GPUSKINNING_INCLUDE
 
 
-uniform sampler2D _GPUSkinning_TextureMatrix;
+uniform sampler2D u_GPUSkinning_TextureMatrix;
 // x=textureWidth, y=textureHeight, z=bones.Length * 3
-uniform vec3 _GPUSkinning_TextureSize_NumPixelsPerFrame;
+uniform vec3 u_GPUSkinning_TextureSize_NumPixelsPerFrame;
 // x=frameIndex, y=playingClip.pixelSegmentation
-uniform vec2 _GPUSkinning_FrameIndex_PixelSegmentation;
+uniform vec2 u_GPUSkinning_FrameIndex_PixelSegmentation;
 // x=frameIndex_crossFade, y=lastPlayedClip.pixelSegmentation, z=crossFadeRate
-uniform vec3 _GPUSkinning_FrameIndex_PixelSegmentation_Blend_CrossFade;
+uniform vec3 u_GPUSkinning_FrameIndex_PixelSegmentation_Blend_CrossFade;
 
 // 当前帧 根骨骼 逆矩阵
-uniform mat4 _GPUSkinning_RootMotion;
+uniform mat4 u_GPUSkinning_RootMotion;
 
 // 混合帧 根骨骼 逆矩阵
-uniform mat4 _GPUSkinning_RootMotion_CrossFade;
+uniform mat4 u_GPUSkinning_RootMotion_CrossFade;
 
 
 struct GPUSkingingTextureMatrixs
@@ -28,18 +28,18 @@ struct GPUSkingingTextureMatrixs
 
 vec4 indexToUV(float index)
 {
-	int row = (int)(index / _GPUSkinning_TextureSize_NumPixelsPerFrame.x);
-	float col = index - row * _GPUSkinning_TextureSize_NumPixelsPerFrame.x;
-	return vec4(col / _GPUSkinning_TextureSize_NumPixelsPerFrame.x, row / _GPUSkinning_TextureSize_NumPixelsPerFrame.y, 0.0, 0.0);
+	int row = (int)(index / u_GPUSkinning_TextureSize_NumPixelsPerFrame.x);
+	float col = index - row * u_GPUSkinning_TextureSize_NumPixelsPerFrame.x;
+	return vec4(col / u_GPUSkinning_TextureSize_NumPixelsPerFrame.x, row / u_GPUSkinning_TextureSize_NumPixelsPerFrame.y, 0.0, 0.0);
 }
 
 
 mat4 getMatrix(int frameStartIndex, float boneIndex)
 {
 	float matStartIndex = frameStartIndex + boneIndex * 3;
-	vec4 row0 = texture2DLod(_GPUSkinning_TextureMatrix, indexToUV(matStartIndex));
-	vec4 row1 = texture2DLod(_GPUSkinning_TextureMatrix, indexToUV(matStartIndex + 1));
-	vec4 row2 = texture2DLod(_GPUSkinning_TextureMatrix, indexToUV(matStartIndex + 2));
+	vec4 row0 = texture2DLod(u_GPUSkinning_TextureMatrix, indexToUV(matStartIndex));
+	vec4 row1 = texture2DLod(u_GPUSkinning_TextureMatrix, indexToUV(matStartIndex + 1));
+	vec4 row2 = texture2DLod(u_GPUSkinning_TextureMatrix, indexToUV(matStartIndex + 2));
 	vec4 row3 = vec4(0.0, 0.0, 0.0, 1.0);
 	mat4 mat = mat4(row0, row1, row2, row3);
 	return mat;
@@ -48,20 +48,20 @@ mat4 getMatrix(int frameStartIndex, float boneIndex)
 
 float getFrameStartIndex()
 {
-	vec2 frameIndex_segment = _GPUSkinning_FrameIndex_PixelSegmentation;
+	vec2 frameIndex_segment = u_GPUSkinning_FrameIndex_PixelSegmentation;
 	float segment = frameIndex_segment.y;
 	float frameIndex = frameIndex_segment.x;
-	float frameStartIndex = segment + frameIndex * _GPUSkinning_TextureSize_NumPixelsPerFrame.z;
+	float frameStartIndex = segment + frameIndex * u_GPUSkinning_TextureSize_NumPixelsPerFrame.z;
 	return frameStartIndex;
 }
 
 #ifdef !defined(ROOTON_BLENDOFF) && !defined(ROOTOFF_BLENDOFF)
 float getFrameStartIndex_crossFade()
 {
-	vec3 frameIndex_segment = _GPUSkinning_FrameIndex_PixelSegmentation_Blend_CrossFade;
+	vec3 frameIndex_segment = u_GPUSkinning_FrameIndex_PixelSegmentation_Blend_CrossFade;
 	float segment = frameIndex_segment.y;
 	float frameIndex = frameIndex_segment.x;
-	float frameStartIndex = segment + frameIndex * _GPUSkinning_TextureSize_NumPixelsPerFrame.z;
+	float frameStartIndex = segment + frameIndex * u_GPUSkinning_TextureSize_NumPixelsPerFrame.z;
 	return frameStartIndex;
 }
 #endif
@@ -104,7 +104,7 @@ GPUSkingingTextureMatrixs textureMatrix_crossFade(vec4 uv2, vec4 uv3)
 
 vec3 skin_blend(pos0, pos1)
 {
-    return pos1.xyz + (pos0.xyz - pos1.xyz) * _GPUSkinning_FrameIndex_PixelSegmentation_Blend_CrossFade.z;
+    return pos1.xyz + (pos0.xyz - pos1.xyz) * u_GPUSkinning_FrameIndex_PixelSegmentation_Blend_CrossFade.z;
 } 
 
 
@@ -141,7 +141,7 @@ vec4 rootOff_BlendOff_1(vec4 uv2, vec4 uv3)
 vec4 rootOn_BlendOff_1(vec4 uv2, vec4 uv3)
 {
     GPUSkingingTextureMatrixs s = textureMatrix(uv2, uv3);
-    return skin1_noroot(s, uv2, uv3, _GPUSkinning_RootMotion);
+    return skin1_noroot(s, uv2, uv3, u_GPUSkinning_RootMotion);
 }
 #endif
 
@@ -151,8 +151,8 @@ vec4 rootOn_BlendOn_CrossFadeRootOn_1(vec4 uv2, vec4 uv3)
 {
     GPUSkingingTextureMatrixs s0 = textureMatrix(uv2, uv3);
     GPUSkingingTextureMatrixs s1 = textureMatrix_crossFade(uv2, uv3);
-    vec4 pos0 = skin1_root(s0, uv2, uv3, _GPUSkinning_RootMotion);
-    vec4 pos1 = skin1_root(s1, uv2, uv3, _GPUSkinning_RootMotion_CrossFade);
+    vec4 pos0 = skin1_root(s0, uv2, uv3, u_GPUSkinning_RootMotion);
+    vec4 pos1 = skin1_root(s1, uv2, uv3, u_GPUSkinning_RootMotion_CrossFade);
     return vec4(skin_blend(pos0, pos1), 1);
 }
 #endif
@@ -163,7 +163,7 @@ vec4 rootOn_BlendOn_CrossFadeRootOff_1(vec4 uv2, vec4 uv3)
 {
     GPUSkingingTextureMatrixs s0 = textureMatrix(uv2, uv3);
     GPUSkingingTextureMatrixs s1 = textureMatrix_crossFade(uv2, uv3);
-    vec4 pos0 = skin1_root(s0, uv2, uv3, _GPUSkinning_RootMotion);
+    vec4 pos0 = skin1_root(s0, uv2, uv3, u_GPUSkinning_RootMotion);
     vec4 pos1 = skin1_noroot(s1, uv2, uv3);
     return vec4(skin_blend(pos0, pos1), 1);
 }
@@ -176,7 +176,7 @@ vec4 rootOff_BlendOn_CrossFadeRootOn_1(vec4 uv2, vec4 uv3)
     GPUSkingingTextureMatrixs s0 = textureMatrix(uv2, uv3);
     GPUSkingingTextureMatrixs s1 = textureMatrix_crossFade(uv2, uv3);
     vec4 pos0 = skin1_noroot(s0, uv2, uv3);
-    vec4 pos1 = skin1_root(s1, uv2, uv3, _GPUSkinning_RootMotion_CrossFade);
+    vec4 pos1 = skin1_root(s1, uv2, uv3, u_GPUSkinning_RootMotion_CrossFade);
     return vec4(skin_blend(pos0, pos1), 1);
 }
 #endif
@@ -274,7 +274,7 @@ vec4 rootOff_BlendOff_2(vec4 uv2, vec4 uv3)
 vec4 rootOn_BlendOff_2(vec4 uv2, vec4 uv3)
 {
     GPUSkingingTextureMatrixs s = textureMatrix(uv2, uv3);
-    return skin2_noroot(s, uv2, uv3, _GPUSkinning_RootMotion);
+    return skin2_noroot(s, uv2, uv3, u_GPUSkinning_RootMotion);
 }
 #endif
 
@@ -284,8 +284,8 @@ vec4 rootOn_BlendOn_CrossFadeRootOn_2(vec4 uv2, vec4 uv3)
 {
     GPUSkingingTextureMatrixs s0 = textureMatrix(uv2, uv3);
     GPUSkingingTextureMatrixs s1 = textureMatrix_crossFade(uv2, uv3);
-    vec4 pos0 = skin2_root(s0, uv2, uv3, _GPUSkinning_RootMotion);
-    vec4 pos1 = skin2_root(s1, uv2, uv3, _GPUSkinning_RootMotion_CrossFade);
+    vec4 pos0 = skin2_root(s0, uv2, uv3, u_GPUSkinning_RootMotion);
+    vec4 pos1 = skin2_root(s1, uv2, uv3, u_GPUSkinning_RootMotion_CrossFade);
     return vec4(skin_blend(pos0, pos1), 1);
 }
 #endif
@@ -296,7 +296,7 @@ vec4 rootOn_BlendOn_CrossFadeRootOff_2(vec4 uv2, vec4 uv3)
 {
     GPUSkingingTextureMatrixs s0 = textureMatrix(uv2, uv3);
     GPUSkingingTextureMatrixs s1 = textureMatrix_crossFade(uv2, uv3);
-    vec4 pos0 = skin2_root(s0, uv2, uv3, _GPUSkinning_RootMotion);
+    vec4 pos0 = skin2_root(s0, uv2, uv3, u_GPUSkinning_RootMotion);
     vec4 pos1 = skin2_noroot(s1, uv2, uv3);
     return vec4(skin_blend(pos0, pos1), 1);
 }
@@ -309,7 +309,7 @@ vec4 rootOff_BlendOn_CrossFadeRootOn_2(vec4 uv2, vec4 uv3)
     GPUSkingingTextureMatrixs s0 = textureMatrix(uv2, uv3);
     GPUSkingingTextureMatrixs s1 = textureMatrix_crossFade(uv2, uv3);
     vec4 pos0 = skin2_noroot(s0, uv2, uv3);
-    vec4 pos1 = skin2_root(s1, uv2, uv3, _GPUSkinning_RootMotion_CrossFade);
+    vec4 pos1 = skin2_root(s1, uv2, uv3, u_GPUSkinning_RootMotion_CrossFade);
     return vec4(skin_blend(pos0, pos1), 1);
 }
 #endif
@@ -408,7 +408,7 @@ vec4 rootOff_BlendOff_4(vec4 uv2, vec4 uv3)
 vec4 rootOn_BlendOff_4(vec4 uv2, vec4 uv3)
 {
     GPUSkingingTextureMatrixs s = textureMatrix(uv2, uv3);
-    return skin4_noroot(s, uv2, uv3, _GPUSkinning_RootMotion);
+    return skin4_noroot(s, uv2, uv3, u_GPUSkinning_RootMotion);
 }
 #endif
 
@@ -418,8 +418,8 @@ vec4 rootOn_BlendOn_CrossFadeRootOn_4(vec4 uv2, vec4 uv3)
 {
     GPUSkingingTextureMatrixs s0 = textureMatrix(uv2, uv3);
     GPUSkingingTextureMatrixs s1 = textureMatrix_crossFade(uv2, uv3);
-    vec4 pos0 = skin4_root(s0, uv2, uv3, _GPUSkinning_RootMotion);
-    vec4 pos1 = skin4_root(s1, uv2, uv3, _GPUSkinning_RootMotion_CrossFade);
+    vec4 pos0 = skin4_root(s0, uv2, uv3, u_GPUSkinning_RootMotion);
+    vec4 pos1 = skin4_root(s1, uv2, uv3, u_GPUSkinning_RootMotion_CrossFade);
     return vec4(skin_blend(pos0, pos1), 1);
 }
 #endif
@@ -430,7 +430,7 @@ vec4 rootOn_BlendOn_CrossFadeRootOff_4(vec4 uv2, vec4 uv3)
 {
     GPUSkingingTextureMatrixs s0 = textureMatrix(uv2, uv3);
     GPUSkingingTextureMatrixs s1 = textureMatrix_crossFade(uv2, uv3);
-    vec4 pos0 = skin4_root(s0, uv2, uv3, _GPUSkinning_RootMotion);
+    vec4 pos0 = skin4_root(s0, uv2, uv3, u_GPUSkinning_RootMotion);
     vec4 pos1 = skin4_noroot(s1, uv2, uv3);
     return vec4(skin_blend(pos0, pos1), 1);
 }
@@ -443,7 +443,7 @@ vec4 rootOff_BlendOn_CrossFadeRootOn_4(vec4 uv2, vec4 uv3)
     GPUSkingingTextureMatrixs s0 = textureMatrix(uv2, uv3);
     GPUSkingingTextureMatrixs s1 = textureMatrix_crossFade(uv2, uv3);
     vec4 pos0 = skin4_noroot(s0, uv2, uv3);
-    vec4 pos1 = skin4_root(s1, uv2, uv3, _GPUSkinning_RootMotion_CrossFade);
+    vec4 pos1 = skin4_root(s1, uv2, uv3, u_GPUSkinning_RootMotion_CrossFade);
     return vec4(skin_blend(pos0, pos1), 1);
 }
 #endif

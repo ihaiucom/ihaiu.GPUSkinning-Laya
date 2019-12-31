@@ -105,13 +105,13 @@ export default class GPUSkinningPlayerResources
         this.ShaderDefine_SKIN_2 = Shader3D.getDefineByName("SKIN_2");
         this.ShaderDefine_SKIN_4 = Shader3D.getDefineByName("SKIN_4");
 
-        this.shaderPropID_GPUSkinning_TextureMatrix = Shader3D.propertyNameToID("_GPUSkinning_TextureMatrix");
+        this.shaderPropID_GPUSkinning_TextureMatrix = Shader3D.propertyNameToID("u_GPUSkinning_TextureMatrix");
 
-        this.shaderPropID_GPUSkinning_TextureSize_NumPixelsPerFrame = Shader3D.propertyNameToID("_GPUSkinning_TextureSize_NumPixelsPerFrame");
-        this.shaderPorpID_GPUSkinning_FrameIndex_PixelSegmentation = Shader3D.propertyNameToID("_GPUSkinning_FrameIndex_PixelSegmentation");
-        this.shaderPropID_GPUSkinning_RootMotion = Shader3D.propertyNameToID("_GPUSkinning_RootMotion");
-        this.shaderPorpID_GPUSkinning_FrameIndex_PixelSegmentation_Blend_CrossFade = Shader3D.propertyNameToID("_GPUSkinning_FrameIndex_PixelSegmentation_Blend_CrossFade");
-        this.shaderPropID_GPUSkinning_RootMotion_CrossFade = Shader3D.propertyNameToID("_GPUSkinning_RootMotion_CrossFade");
+        this.shaderPropID_GPUSkinning_TextureSize_NumPixelsPerFrame = Shader3D.propertyNameToID("u_GPUSkinning_TextureSize_NumPixelsPerFrame");
+        this.shaderPorpID_GPUSkinning_FrameIndex_PixelSegmentation = Shader3D.propertyNameToID("u_GPUSkinning_FrameIndex_PixelSegmentation");
+        this.shaderPropID_GPUSkinning_RootMotion = Shader3D.propertyNameToID("u_GPUSkinning_RootMotion");
+        this.shaderPorpID_GPUSkinning_FrameIndex_PixelSegmentation_Blend_CrossFade = Shader3D.propertyNameToID("u_GPUSkinning_FrameIndex_PixelSegmentation_Blend_CrossFade");
+        this.shaderPropID_GPUSkinning_RootMotion_CrossFade = Shader3D.propertyNameToID("u_GPUSkinning_RootMotion_CrossFade");
 
 
     }

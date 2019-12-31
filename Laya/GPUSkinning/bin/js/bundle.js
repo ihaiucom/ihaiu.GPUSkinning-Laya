@@ -1767,9 +1767,403 @@
     GameConfig.exportSceneToJson = true;
     GameConfig.init();
 
+    var VertexMesh$1 = Laya.VertexMesh;
+    var VertexDeclaration = Laya.VertexDeclaration;
+    var VertexElement = Laya.VertexElement;
+    var VertexElementFormat = Laya.VertexElementFormat;
+    class GPUSkiningVertexMesh extends VertexMesh$1 {
+        static getVertexDeclaration(vertexFlag, compatible = true) {
+            var verDec = this._declarationMap[vertexFlag + (compatible ? "_0" : "_1")];
+            if (!verDec) {
+                var subFlags = vertexFlag.split(",");
+                var offset = 0;
+                var elements = [];
+                for (var i = 0, n = subFlags.length; i < n; i++) {
+                    var element;
+                    switch (subFlags[i]) {
+                        case "POSITION":
+                            element = new VertexElement(offset, VertexElementFormat.Vector3, this.MESH_POSITION0);
+                            offset += 12;
+                            break;
+                        case "NORMAL":
+                            element = new VertexElement(offset, VertexElementFormat.Vector3, this.MESH_NORMAL0);
+                            offset += 12;
+                            break;
+                        case "COLOR":
+                            element = new VertexElement(offset, VertexElementFormat.Vector4, this.MESH_COLOR0);
+                            offset += 16;
+                            break;
+                        case "UV":
+                            element = new VertexElement(offset, VertexElementFormat.Vector2, this.MESH_TEXTURECOORDINATE0);
+                            offset += 8;
+                            break;
+                        case "UV1":
+                            element = new VertexElement(offset, VertexElementFormat.Vector4, this.MESH_TEXTURECOORDINATE1);
+                            offset += 16;
+                            break;
+                        case "UV2":
+                            element = new VertexElement(offset, VertexElementFormat.Vector4, this.MESH_TEXTURECOORDINATE2);
+                            offset += 16;
+                            break;
+                        case "BLENDWEIGHT":
+                            element = new VertexElement(offset, VertexElementFormat.Vector4, this.MESH_BLENDWEIGHT0);
+                            offset += 16;
+                            break;
+                        case "BLENDINDICES":
+                            if (compatible) {
+                                element = new VertexElement(offset, VertexElementFormat.Vector4, this.MESH_BLENDINDICES0);
+                                offset += 16;
+                            }
+                            else {
+                                element = new VertexElement(offset, VertexElementFormat.Byte4, this.MESH_BLENDINDICES0);
+                                offset += 4;
+                            }
+                            break;
+                        case "TANGENT":
+                            element = new VertexElement(offset, VertexElementFormat.Vector4, this.MESH_TANGENT0);
+                            offset += 16;
+                            break;
+                        default:
+                            throw "VertexMesh: unknown vertex flag.";
+                    }
+                    elements.push(element);
+                }
+                verDec = new VertexDeclaration(offset, elements);
+                this._declarationMap[vertexFlag + (compatible ? "_0" : "_1")] = verDec;
+            }
+            return verDec;
+        }
+    }
+    GPUSkiningVertexMesh.MESH_TEXTURECOORDINATE2 = 16;
+    GPUSkiningVertexMesh._declarationMap = {};
+
+    var IndexBuffer3D = Laya.IndexBuffer3D;
+    var VertexBuffer3D = Laya.VertexBuffer3D;
+    var HalfFloatUtils = Laya.HalfFloatUtils;
+    var Matrix4x4$1 = Laya.Matrix4x4;
+    var SubMesh = Laya.SubMesh;
+    var IndexFormat = Laya.IndexFormat;
+    var LayaGL = Laya.LayaGL;
+    class GPUSkiningLoadModelV05 {
+        static parse(readData, version, mesh, subMeshes) {
+            GPUSkiningLoadModelV05._mesh = mesh;
+            GPUSkiningLoadModelV05._subMeshes = subMeshes;
+            GPUSkiningLoadModelV05._version = version;
+            GPUSkiningLoadModelV05._readData = readData;
+            GPUSkiningLoadModelV05.READ_DATA();
+            GPUSkiningLoadModelV05.READ_BLOCK();
+            GPUSkiningLoadModelV05.READ_STRINGS();
+            for (var i = 0, n = GPUSkiningLoadModelV05._BLOCK.count; i < n; i++) {
+                GPUSkiningLoadModelV05._readData.pos = GPUSkiningLoadModelV05._BLOCK.blockStarts[i];
+                var index = GPUSkiningLoadModelV05._readData.getUint16();
+                var blockName = GPUSkiningLoadModelV05._strings[index];
+                var fn = GPUSkiningLoadModelV05["READ_" + blockName];
+                if (fn == null)
+                    throw new Error("model file err,no this function:" + index + " " + blockName);
+                else
+                    fn.call(null);
+            }
+            GPUSkiningLoadModelV05._mesh._bindPoseIndices = new Uint16Array(GPUSkiningLoadModelV05._bindPoseIndices);
+            GPUSkiningLoadModelV05._bindPoseIndices.length = 0;
+            GPUSkiningLoadModelV05._strings.length = 0;
+            GPUSkiningLoadModelV05._readData = null;
+            GPUSkiningLoadModelV05._version = null;
+            GPUSkiningLoadModelV05._mesh = null;
+            GPUSkiningLoadModelV05._subMeshes = null;
+        }
+        static _readString() {
+            return GPUSkiningLoadModelV05._strings[GPUSkiningLoadModelV05._readData.getUint16()];
+        }
+        static READ_DATA() {
+            GPUSkiningLoadModelV05._DATA.offset = GPUSkiningLoadModelV05._readData.getUint32();
+            GPUSkiningLoadModelV05._DATA.size = GPUSkiningLoadModelV05._readData.getUint32();
+        }
+        static READ_BLOCK() {
+            var count = GPUSkiningLoadModelV05._BLOCK.count = GPUSkiningLoadModelV05._readData.getUint16();
+            var blockStarts = GPUSkiningLoadModelV05._BLOCK.blockStarts = [];
+            var blockLengths = GPUSkiningLoadModelV05._BLOCK.blockLengths = [];
+            for (var i = 0; i < count; i++) {
+                blockStarts.push(GPUSkiningLoadModelV05._readData.getUint32());
+                blockLengths.push(GPUSkiningLoadModelV05._readData.getUint32());
+            }
+        }
+        static READ_STRINGS() {
+            var offset = GPUSkiningLoadModelV05._readData.getUint32();
+            var count = GPUSkiningLoadModelV05._readData.getUint16();
+            var prePos = GPUSkiningLoadModelV05._readData.pos;
+            GPUSkiningLoadModelV05._readData.pos = offset + GPUSkiningLoadModelV05._DATA.offset;
+            for (var i = 0; i < count; i++)
+                GPUSkiningLoadModelV05._strings[i] = GPUSkiningLoadModelV05._readData.readUTFString();
+            GPUSkiningLoadModelV05._readData.pos = prePos;
+        }
+        static READ_MESH() {
+            var gl = LayaGL.instance;
+            var i;
+            var memorySize = 0;
+            var name = GPUSkiningLoadModelV05._readString();
+            var reader = GPUSkiningLoadModelV05._readData;
+            var arrayBuffer = reader.__getBuffer();
+            var vertexBufferCount = reader.getInt16();
+            var offset = GPUSkiningLoadModelV05._DATA.offset;
+            for (i = 0; i < vertexBufferCount; i++) {
+                var vbStart = offset + reader.getUint32();
+                var vertexCount = reader.getUint32();
+                var vertexFlag = GPUSkiningLoadModelV05._readString();
+                var vertexDeclaration = GPUSkiningVertexMesh.getVertexDeclaration(vertexFlag, false);
+                var vertexStride = vertexDeclaration.vertexStride;
+                var vertexData;
+                var floatData;
+                var uint8Data;
+                var subVertexFlags = vertexFlag.split(",");
+                var subVertexCount = subVertexFlags.length;
+                var mesh = GPUSkiningLoadModelV05._mesh;
+                switch (GPUSkiningLoadModelV05._version) {
+                    case "LAYAMODEL:05":
+                    case "LAYAMODEL:GPUSkining_05":
+                        vertexData = arrayBuffer.slice(vbStart, vbStart + vertexCount * vertexStride);
+                        floatData = new Float32Array(vertexData);
+                        uint8Data = new Uint8Array(vertexData);
+                        break;
+                    case "LAYAMODEL:COMPRESSION_05":
+                        vertexData = new ArrayBuffer(vertexStride * vertexCount);
+                        floatData = new Float32Array(vertexData);
+                        uint8Data = new Uint8Array(vertexData);
+                        var lastPosition = reader.pos;
+                        reader.pos = vbStart;
+                        for (var j = 0; j < vertexCount; j++) {
+                            var subOffset;
+                            var verOffset = j * vertexStride;
+                            for (var k = 0; k < subVertexCount; k++) {
+                                switch (subVertexFlags[k]) {
+                                    case "POSITION":
+                                        subOffset = verOffset / 4;
+                                        floatData[subOffset] = HalfFloatUtils.convertToNumber(reader.getUint16());
+                                        floatData[subOffset + 1] = HalfFloatUtils.convertToNumber(reader.getUint16());
+                                        floatData[subOffset + 2] = HalfFloatUtils.convertToNumber(reader.getUint16());
+                                        verOffset += 12;
+                                        break;
+                                    case "NORMAL":
+                                        subOffset = verOffset / 4;
+                                        floatData[subOffset] = reader.getUint8() / 127.5 - 1;
+                                        floatData[subOffset + 1] = reader.getUint8() / 127.5 - 1;
+                                        floatData[subOffset + 2] = reader.getUint8() / 127.5 - 1;
+                                        verOffset += 12;
+                                        break;
+                                    case "COLOR":
+                                        subOffset = verOffset / 4;
+                                        floatData[subOffset] = reader.getUint8() / 255;
+                                        floatData[subOffset + 1] = reader.getUint8() / 255;
+                                        floatData[subOffset + 2] = reader.getUint8() / 255;
+                                        floatData[subOffset + 3] = reader.getUint8() / 255;
+                                        verOffset += 16;
+                                        break;
+                                    case "UV":
+                                        subOffset = verOffset / 4;
+                                        floatData[subOffset] = HalfFloatUtils.convertToNumber(reader.getUint16());
+                                        floatData[subOffset + 1] = HalfFloatUtils.convertToNumber(reader.getUint16());
+                                        verOffset += 8;
+                                        break;
+                                    case "UV1":
+                                        subOffset = verOffset / 4;
+                                        floatData[subOffset] = HalfFloatUtils.convertToNumber(reader.getUint16());
+                                        floatData[subOffset + 1] = HalfFloatUtils.convertToNumber(reader.getUint16());
+                                        verOffset += 8;
+                                        break;
+                                    case "BLENDWEIGHT":
+                                        subOffset = verOffset / 4;
+                                        floatData[subOffset] = reader.getUint8() / 255;
+                                        floatData[subOffset + 1] = reader.getUint8() / 255;
+                                        floatData[subOffset + 2] = reader.getUint8() / 255;
+                                        floatData[subOffset + 3] = reader.getUint8() / 255;
+                                        verOffset += 16;
+                                        break;
+                                    case "BLENDINDICES":
+                                        uint8Data[verOffset] = reader.getUint8();
+                                        uint8Data[verOffset + 1] = reader.getUint8();
+                                        uint8Data[verOffset + 2] = reader.getUint8();
+                                        uint8Data[verOffset + 3] = reader.getUint8();
+                                        verOffset += 4;
+                                        break;
+                                    case "TANGENT":
+                                        subOffset = verOffset / 4;
+                                        floatData[subOffset] = reader.getUint8() / 127.5 - 1;
+                                        floatData[subOffset + 1] = reader.getUint8() / 127.5 - 1;
+                                        floatData[subOffset + 2] = reader.getUint8() / 127.5 - 1;
+                                        floatData[subOffset + 3] = reader.getUint8() / 127.5 - 1;
+                                        verOffset += 16;
+                                        break;
+                                }
+                            }
+                        }
+                        reader.pos = lastPosition;
+                        break;
+                }
+                var vertexBuffer = new VertexBuffer3D(vertexData.byteLength, gl.STATIC_DRAW, true);
+                vertexBuffer.vertexDeclaration = vertexDeclaration;
+                vertexBuffer.setData(vertexData);
+                var vertexCount = vertexBuffer._byteLength / vertexDeclaration.vertexStride;
+                if (vertexCount > 65535)
+                    mesh._indexFormat = IndexFormat.UInt32;
+                else
+                    mesh._indexFormat = IndexFormat.UInt16;
+                mesh._vertexBuffer = vertexBuffer;
+                mesh._vertexCount += vertexCount;
+                memorySize += floatData.length * 4;
+            }
+            var ibStart = offset + reader.getUint32();
+            var ibLength = reader.getUint32();
+            var ibDatas;
+            if (mesh.indexFormat == IndexFormat.UInt32)
+                ibDatas = new Uint32Array(arrayBuffer.slice(ibStart, ibStart + ibLength));
+            else
+                ibDatas = new Uint16Array(arrayBuffer.slice(ibStart, ibStart + ibLength));
+            var indexBuffer = new IndexBuffer3D(mesh.indexFormat, ibDatas.length, gl.STATIC_DRAW, true);
+            indexBuffer.setData(ibDatas);
+            mesh._indexBuffer = indexBuffer;
+            mesh._setBuffer(mesh._vertexBuffer, indexBuffer);
+            memorySize += indexBuffer.indexCount * 2;
+            mesh._setCPUMemory(memorySize);
+            mesh._setGPUMemory(memorySize);
+            var boneNames = mesh._boneNames = [];
+            var boneCount = reader.getUint16();
+            boneNames.length = boneCount;
+            for (i = 0; i < boneCount; i++)
+                boneNames[i] = GPUSkiningLoadModelV05._strings[reader.getUint16()];
+            var bindPoseDataStart = reader.getUint32();
+            var bindPoseDataLength = reader.getUint32();
+            var bindPoseDatas = new Float32Array(arrayBuffer.slice(offset + bindPoseDataStart, offset + bindPoseDataStart + bindPoseDataLength));
+            var bindPoseFloatCount = bindPoseDatas.length;
+            var bindPoseBuffer = mesh._inverseBindPosesBuffer = new ArrayBuffer(bindPoseFloatCount * 4);
+            mesh._inverseBindPoses = [];
+            for (i = 0; i < bindPoseFloatCount; i += 16) {
+                var inverseGlobalBindPose = new Matrix4x4$1(bindPoseDatas[i + 0], bindPoseDatas[i + 1], bindPoseDatas[i + 2], bindPoseDatas[i + 3], bindPoseDatas[i + 4], bindPoseDatas[i + 5], bindPoseDatas[i + 6], bindPoseDatas[i + 7], bindPoseDatas[i + 8], bindPoseDatas[i + 9], bindPoseDatas[i + 10], bindPoseDatas[i + 11], bindPoseDatas[i + 12], bindPoseDatas[i + 13], bindPoseDatas[i + 14], bindPoseDatas[i + 15], new Float32Array(bindPoseBuffer, i * 4, 16));
+                mesh._inverseBindPoses[i / 16] = inverseGlobalBindPose;
+            }
+            return true;
+        }
+        static READ_SUBMESH() {
+            var reader = GPUSkiningLoadModelV05._readData;
+            var arrayBuffer = reader.__getBuffer();
+            var subMesh = new SubMesh(GPUSkiningLoadModelV05._mesh);
+            reader.getInt16();
+            var ibStart = reader.getUint32();
+            var ibCount = reader.getUint32();
+            var indexBuffer = GPUSkiningLoadModelV05._mesh._indexBuffer;
+            subMesh._indexBuffer = indexBuffer;
+            subMesh._setIndexRange(ibStart, ibCount);
+            var vertexBuffer = GPUSkiningLoadModelV05._mesh._vertexBuffer;
+            subMesh._vertexBuffer = vertexBuffer;
+            var offset = GPUSkiningLoadModelV05._DATA.offset;
+            var subIndexBufferStart = subMesh._subIndexBufferStart;
+            var subIndexBufferCount = subMesh._subIndexBufferCount;
+            var boneIndicesList = subMesh._boneIndicesList;
+            var drawCount = reader.getUint16();
+            subIndexBufferStart.length = drawCount;
+            subIndexBufferCount.length = drawCount;
+            boneIndicesList.length = drawCount;
+            var pathMarks = GPUSkiningLoadModelV05._mesh._skinDataPathMarks;
+            var bindPoseIndices = GPUSkiningLoadModelV05._bindPoseIndices;
+            var subMeshIndex = GPUSkiningLoadModelV05._subMeshes.length;
+            for (var i = 0; i < drawCount; i++) {
+                subIndexBufferStart[i] = reader.getUint32();
+                subIndexBufferCount[i] = reader.getUint32();
+                var boneDicofs = reader.getUint32();
+                var boneDicCount = reader.getUint32();
+                var boneIndices = boneIndicesList[i] = new Uint16Array(arrayBuffer.slice(offset + boneDicofs, offset + boneDicofs + boneDicCount));
+                for (var j = 0, m = boneIndices.length; j < m; j++) {
+                    var index = boneIndices[j];
+                    var combineIndex = bindPoseIndices.indexOf(index);
+                    if (combineIndex === -1) {
+                        boneIndices[j] = bindPoseIndices.length;
+                        bindPoseIndices.push(index);
+                        pathMarks.push([subMeshIndex, i, j]);
+                    }
+                    else {
+                        boneIndices[j] = combineIndex;
+                    }
+                }
+            }
+            GPUSkiningLoadModelV05._subMeshes.push(subMesh);
+            return true;
+        }
+    }
+    GPUSkiningLoadModelV05._BLOCK = { count: 0 };
+    GPUSkiningLoadModelV05._DATA = { offset: 0, size: 0 };
+    GPUSkiningLoadModelV05._strings = [];
+    GPUSkiningLoadModelV05._bindPoseIndices = [];
+
+    var Byte = Laya.Byte;
+    class GPUSkiningMeshReader {
+        static read(data, mesh, subMeshes) {
+            var readData = new Byte(data);
+            readData.pos = 0;
+            var version = readData.readUTFString();
+            switch (version) {
+                case "LAYAMODEL:GPUSkining_05":
+                    GPUSkiningLoadModelV05.parse(readData, version, mesh, subMeshes);
+                    break;
+                default:
+                    throw new Error("MeshReader: unknown mesh version.");
+            }
+            mesh._setSubMeshes(subMeshes);
+        }
+    }
+
+    class GPUSkiningMesh extends Laya.Mesh {
+        static _parse(data, propertyParams = null, constructParams = null) {
+            var mesh = new GPUSkiningMesh();
+            GPUSkiningMeshReader.read(data, mesh, mesh._subMeshes);
+            return mesh;
+        }
+    }
+
+    class Laya3D_Extend {
+        static Init() {
+            var _Laya3D = Laya3D;
+            _Laya3D._onMeshLmLoaded__src = _Laya3D._onMeshLmLoaded;
+            _Laya3D._onMeshLmLoaded = this._onMeshLmLoaded;
+        }
+        static _onMeshLmLoaded__src(loader, lmData) {
+        }
+        static _onMeshLmLoaded(loader, lmData) {
+            var extension = Laya.Utils.getFileExtension(loader.url);
+            if (extension == GPUSkining.EXT_SKING_MESH) {
+                GPUSkining._onMeshLmLoaded(loader, lmData);
+            }
+            else {
+                this._onMeshLmLoaded__src(loader, lmData);
+            }
+        }
+    }
+
+    var LoaderManager = Laya.LoaderManager;
+    var Loader = Laya.Loader;
+    var Event = Laya.Event;
+    class GPUSkining {
+        static Init() {
+            Laya3D_Extend.Init();
+            Laya3D.SKING_MESH = "SKING_MESH";
+            var createMap = LoaderManager.createMap;
+            createMap["skinlm"] = [Laya3D.SKING_MESH, GPUSkiningMesh._parse];
+            var parserMap = Loader.parserMap;
+            parserMap[Laya3D.SKING_MESH] = this._loadMesh;
+        }
+        static _loadMesh(loader) {
+            loader.on(Event.LOADED, null, this._onMeshLmLoaded, [loader]);
+            loader.load(loader.url, Loader.BUFFER, false, null, true);
+        }
+        static _onMeshLmLoaded(loader, lmData) {
+            loader._cache = loader._createCache;
+            var mesh = GPUSkiningMesh._parse(lmData, loader._propertyParams, loader._constructParams);
+            Laya3D._endLoad(loader, mesh);
+        }
+    }
+    GPUSkining.EXT_SKING_MESH = "skinlm";
+
     class TestMain {
         constructor() {
             this.InitLaya();
+            GPUSkining.Init();
             new TestShader();
         }
         InitLaya() {

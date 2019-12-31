@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.IO;
 
 [System.Serializable]
 public class GPUSkinningBone
@@ -37,5 +38,31 @@ public class GPUSkinningBone
             }
             return bindposeInv;
         }
+    }
+
+
+    public static GPUSkinningBone CreateFromBytes(byte[] bytes)
+    {
+        GPUSkinningBone obj = new GPUSkinningBone();
+        obj.FromBytes(bytes);
+        return obj;
+    }
+
+    public void FromBytes(byte[] bytes)
+    {
+    }
+
+
+    public MemoryStream ToSteam()
+    {
+        MemoryStream stream = new MemoryStream();
+        BinaryWriter b = new BinaryWriter(stream);
+        b.WriteString(name);
+        b.WriteString(guid);
+        b.Write((bool) isExposed);
+        b.Write((int) parentBoneIndex);
+        b.WriteMatrix4x4(bindpose);
+
+        return stream;
     }
 }

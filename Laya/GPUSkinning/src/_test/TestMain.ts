@@ -1,11 +1,14 @@
 import TestShader from "./TestShader";
 import GameConfig from "../GameConfig";
+import GPUSkining from "../GPUSkinning/GPUSkining";
 
  class TestMain 
 {
     constructor() 
     {
 		this.InitLaya();
+
+		GPUSkining.Init();
 
 		// 启动游戏
 		new TestShader();

@@ -3,26 +3,44 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
-public class GPUSkinningExportMenu
+
+
+namespace GPUSkingings
 {
-    [MenuItem("Assets/GPUSkinning ExportMesh", false, 1)]
-    public static void ExportMesh()
+    public class GPUSkinningExportMenu
     {
-        Object[] objs = Selection.objects;
-        for (int i = 0; i < objs.Length; i++)
+        [MenuItem("Assets/GPUSkinning ExportMesh", false, 1)]
+        [MenuItem("Assets/GPUSkinning ExportAnim", false, 1)]
+        public static void ExportAnim()
         {
-            Mesh mesh = (Mesh) objs[i];
-            if(mesh is Mesh)
+            Object[] objs = Selection.objects;
+            for (int i = 0; i < objs.Length; i++)
             {
-                ExportMesh(mesh);
+                if (objs[i] is GPUSkinningAnimation)
+                {
+                    ExportAnim((GPUSkinningAnimation) objs[i]);
+                }
+                else if (objs[i] is Mesh)
+                {
+                    ExportMesh((Mesh)objs[i]);
+                }
             }
         }
-    }
 
-    public static void ExportMesh(Mesh mesh)
-    {
-        GPUSkinningMeshExport export = new GPUSkinningMeshExport();
-        export.SetMesh(mesh);
-        export.Export();
+        public static void ExportAnim(GPUSkinningAnimation anim)
+        {
+            GPUSkinningAnimExport export = new GPUSkinningAnimExport();
+            export.SetAnim(anim);
+            export.Export();
+        }
+
+
+
+        public static void ExportMesh(Mesh mesh)
+        {
+            GPUSkinningMeshExport export = new GPUSkinningMeshExport();
+            export.SetMesh(mesh);
+            export.Export();
+        }
     }
 }

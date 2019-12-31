@@ -1,6 +1,13 @@
 import { TestScene } from "./TestSene";
 import MaterialInstall from "../Materials/MaterialInstall";
 import { Cartoon2Material } from "../Materials/Cartoon2Material";
+import GPUSkinningPlayerMono from "../GPUSkinning/GPUSkinningPlayerMono";
+import GPUSkinningAnimation from "../GPUSkinning/Datas/GPUSkinningAnimation";
+
+import Mesh = Laya.Mesh;
+import Material = Laya.Material;
+import Texture2D = Laya.Texture2D;
+import GPUSkining from "../GPUSkinning/GPUSkining";
 
 
 export default class TestShader
@@ -20,7 +27,22 @@ export default class TestShader
         await MaterialInstall.install();
         // this.TestPrefab();
 
+        var mono = await GPUSkining.CreateByNameAsync("Hero_1001_Dianguanglongqi_Skin1", "res/gpuskining/Hero_1001_Dianguanglongqi.jpg");
+        if(mono)
+        {
+            this.scene.addChild(mono.owner);
+        }
+
         await this.TestLoadCube();
+    }
+
+    TestGPUSkining()
+    {
+        var anim: GPUSkinningAnimation, mesh: Mesh, mtrl: Material, textureRawData: Texture2D;
+
+        var sprite = new Laya.MeshSprite3D();
+        var mono: GPUSkinningPlayerMono = sprite.addComponent(GPUSkinningPlayerMono);
+        mono.SetData(anim, mesh, mtrl, textureRawData);
     }
 
     TestPrefab()

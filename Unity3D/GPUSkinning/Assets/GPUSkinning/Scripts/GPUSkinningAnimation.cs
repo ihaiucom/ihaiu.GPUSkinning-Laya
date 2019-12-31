@@ -1,9 +1,11 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.IO;
+using System.Collections.Generic;
 
 public class GPUSkinningAnimation : ScriptableObject
 {
-    public string guid = null;
+    public string guid = "";
 
     public string name = null;
 
@@ -24,4 +26,187 @@ public class GPUSkinningAnimation : ScriptableObject
     public Mesh[] lodMeshes = null;
 
     public float sphereRadius = 1.0f;
+
+
+    public static GPUSkinningAnimation CreateFromBytes(byte[] bytes)
+    {
+        GPUSkinningAnimation obj = new GPUSkinningAnimation();
+        obj.FromBytes(bytes);
+        return obj;
+    }
+
+    public void FromBytes(byte[] bytes)
+    {
+        MemoryStream stream = new MemoryStream(bytes);
+        BinaryReader b = new BinaryReader(stream);
+        guid = b.ReadString();
+        name = b.ReadString();
+        rootBoneIndex = b.ReadInt16();
+        textureWidth = (int) b.ReadUInt32();
+        textureHeight = (int) b.ReadUInt32();
+        sphereRadius = b.ReadSingle();
+        bounds = b.ReadBounds();
+
+        // 剪辑列表 数量
+        uint clipCount = b.ReadUInt32();
+        // 骨骼列表 数量
+        uint boneCount = b.ReadUInt32();
+
+        // 剪辑列表 头信息
+        List<ulong[]> clipPosLengthList = new List<ulong[]>();
+        for(int i = 0; i < clipCount; i ++)
+        {
+            ulong[] info = new ulong[2];
+            info[0] = b.ReadUInt64(); // posBegin
+            info[1] = b.ReadUInt64(); // length
+            clipPosLengthList.Add(info);
+        }
+
+
+        // 骨骼列表 头信息
+        List<ulong[]> bonePosLengthList = new List<ulong[]>();
+        for (int i = 0; i < clipCount; i++)
+        {
+            ulong[] info = new ulong[2];
+            info[0] = b.ReadUInt64(); // posBegin
+            info[1] = b.ReadUInt64(); // length
+            bonePosLengthList.Add(info);
+        }
+
+        // 剪辑列表 数据块
+        List< GPUSkinningClip > clipList = new List<GPUSkinningClip>();
+        for (int i = 0; i < clipCount; i++)
+        {
+            ulong[] info = clipPosLengthList[i];
+            ulong pos = info[0];
+            ulong len = info[1];
+
+            stream.Position = (long)pos;
+            byte[] itemBytes = b.ReadBytes((int)len);
+            GPUSkinningClip item = GPUSkinningClip.CreateFromBytes(itemBytes);
+            clipList.Add(item);
+        }
+        clips = clipList.ToArray();
+
+
+        // 骨骼列表 数据块
+        List<GPUSkinningBone> boneList = new List<GPUSkinningBone>();
+        for (int i = 0; i < boneCount; i++)
+        {
+            ulong[] info = bonePosLengthList[i];
+            ulong pos = info[0];
+            ulong len = info[1];
+
+            stream.Position = (long)pos;
+            byte[] itemBytes = b.ReadBytes((int)len);
+            GPUSkinningBone item = GPUSkinningBone.CreateFromBytes(itemBytes);
+            boneList.Add(item);
+        }
+        bones = boneList.ToArray();
+
+    }
+
+
+    public byte[] ToBytes()
+    {
+        byte[] bytes;
+        MemoryStream stream = ToSteam();
+        stream.Position = 0;
+        bytes = stream.ToArray();
+        return bytes;
+
+    }
+
+    public MemoryStream ToSteam()
+    {
+        MemoryStream stream = new MemoryStream();
+        BinaryWriter b = new BinaryWriter(stream);
+        b.WriteString(guid);
+        b.WriteString(name);
+        b.Write((short)rootBoneIndex);
+        b.Write((uint)textureWidth);
+        b.Write((uint)textureHeight);
+        b.Write((float)sphereRadius);
+        b.WriteBounds(bounds);
+
+
+
+        int longSize = sizeof(long);
+
+        List<GPUSkinningBone> exportBoneList = new List<GPUSkinningBone>();
+        for (int i = 0; i < bones.Length; i++)
+        {
+            GPUSkinningBone item = bones[i];
+            if(item.isExposed)
+            {
+                exportBoneList.Add(item);
+            }
+        }
+
+
+        // 写入剪辑列表 数量
+        b.Write((uint)clips.Length);
+        // 写入骨骼列表 数量
+        b.Write((uint)exportBoneList.Count);
+
+
+        long posBegin = stream.Position ;
+        posBegin += clips.Length * (longSize + longSize);
+        posBegin += exportBoneList.Count * (longSize + longSize);
+
+        // 写入剪辑列表 头信息
+        List<MemoryStream> clipSteamList = new List<MemoryStream>();
+        for (int i = 0; i < clips.Length; i ++)
+        {
+            GPUSkinningClip item = clips[i];
+            MemoryStream itemStream = item.ToSteam();
+            clipSteamList.Add(itemStream);
+            b.Write((ulong)posBegin);
+            b.Write((ulong)itemStream.Length);
+            posBegin += itemStream.Length;
+        }
+
+
+        // 写入骨骼列表 头信息
+        List<MemoryStream> boneSteamList = new List<MemoryStream>();
+        for (int i = 0; i < exportBoneList.Count; i++)
+        {
+            GPUSkinningBone item = exportBoneList[i];
+            MemoryStream itemSteam = item.ToSteam();
+            boneSteamList.Add(itemSteam);
+            b.Write((ulong)posBegin);
+            b.Write((ulong)itemSteam.Length);
+            posBegin += itemSteam.Length;
+        }
+
+
+
+
+
+
+        // 写入剪辑列表 数据块
+        for (int i = 0; i < clipSteamList.Count; i++)
+        {
+            MemoryStream itemStream = clipSteamList[i];
+            b.WriteMemoryStream(itemStream);
+
+            itemStream.Close();
+            itemStream.Dispose();
+        }
+
+
+        // 写入骨骼列表 数据块
+        for (int i = 0; i < boneSteamList.Count; i++)
+        {
+            MemoryStream itemStream = boneSteamList[i];
+            b.WriteMemoryStream(itemStream);
+
+
+            itemStream.Close();
+            itemStream.Dispose();
+        }
+
+
+        return stream;
+    }
 }

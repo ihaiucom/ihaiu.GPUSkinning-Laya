@@ -24,7 +24,7 @@
 				1,
 				1
 			],
-			"meshPath":"Assets/GameResources/PrefabUnit/Hero_1001_Dianguanglongqi_Skin1/GPUSKinning_Mesh_Hero_1001_Dianguanglongqi_Skin1-GPUSKinning_Mesh_Hero_1001_Dianguanglongqi_Skin1.lm",
+			"meshPath":"Assets/GameResources/PrefabUnit/Hero_1001_Dianguanglongqi_Skin1/GPUSKinning_Mesh_Hero_1001_Dianguanglongqi_Skin1.skinlm",
 			"enableRender":true,
 			"materials":[
 				{
