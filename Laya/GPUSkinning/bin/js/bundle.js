@@ -688,114 +688,6 @@
     }
     window['MaterialInstall'] = MaterialInstall;
 
-    class TestShader {
-        constructor() {
-            this.scene = TestScene.create();
-            Laya.stage.addChild(this.scene);
-            this.InitAsync();
-        }
-        InitAsync() {
-            return __awaiter(this, void 0, void 0, function* () {
-                yield MaterialInstall.install();
-                yield this.TestLoadCube();
-            });
-        }
-        TestPrefab() {
-            let box = new Laya.MeshSprite3D(Laya.PrimitiveMesh.createBox(1, 1, 1));
-            box.transform.rotate(new Laya.Vector3(0, 45, 0), false, false);
-            var meshRenderer = box.meshRenderer;
-            let material = new Cartoon2Material();
-            material.enableLighting = true;
-            meshRenderer.material = material;
-            this.scene.addChild(box);
-        }
-        TestLoadCube() {
-            return __awaiter(this, void 0, void 0, function* () {
-                let prefabName = "Cube";
-                let path = this.GetPathByResId(prefabName);
-                let res = yield this.Load3DAsync(path);
-                res.transform.localRotationEulerX = -90;
-                this.scene.addChild(res);
-                res.transform.position = new Laya.Vector3(0, 0, 0);
-                window['res'] = res;
-            });
-        }
-        GetPathByResId(resId) {
-            return TestShader.Res3DRoot + resId + ".lh";
-        }
-        loadPrefab() {
-            return __awaiter(this, void 0, void 0, function* () {
-                yield MaterialInstall.install();
-                let prefabName = "Hero_1001_Dianguanglongqi_Skin1";
-                let path = this.GetPathByResId(prefabName);
-                let res = yield this.Load3DAsync(path);
-                let node1 = this.createRole(res);
-                let node2 = this.createRole(res);
-                node2.transform.localPositionX = 2;
-                node2.transform.localScaleX = -1;
-                var modelNode1 = node1.getChildByName("model");
-                var modelNode2 = node2.getChildByName("model");
-                let animator1 = modelNode1.getComponent(Laya.Animator);
-                let animator2 = modelNode2.getComponent(Laya.Animator);
-                Laya.timer.loop(3000, this, () => {
-                    animator1.play(Math.random() > 0.5 ? "RUN" : "IDLE");
-                    modelNode1.transform.localScaleX *= -1;
-                });
-                Laya.timer.loop(4000, this, () => {
-                    modelNode2.transform.localScaleX *= -1;
-                    animator2.play(Math.random() > 0.5 ? "RUN" : "IDLE");
-                });
-            });
-        }
-        createRole(res) {
-            let node = res.clone();
-            node.transform.position = new Laya.Vector3(0, 0, 0);
-            window['node'] = node;
-            var modelNode = node.getChildByName("model");
-            let animator = modelNode.getComponent(Laya.Animator);
-            let skinnedMeshSprite3D = (modelNode.getChildAt(1));
-            if (!(skinnedMeshSprite3D instanceof Laya.SkinnedMeshSprite3D)) {
-                skinnedMeshSprite3D = (modelNode.getChildAt(0));
-            }
-            let meshRenderer = skinnedMeshSprite3D.skinnedMeshRenderer;
-            let unlitMaterial = meshRenderer.material;
-            let material = new Cartoon2Material();
-            material.enableLighting = true;
-            material.albedoTexture = unlitMaterial.albedoTexture;
-            meshRenderer.material = material;
-            this.scene.addChild(node);
-            animator.play("IDLE");
-            return node;
-        }
-        Load3DAsync(path) {
-            return __awaiter(this, void 0, void 0, function* () {
-                return new Promise((resolve) => {
-                    Laya.loader.create(path, Laya.Handler.create(null, (res) => {
-                        resolve(res);
-                    }));
-                });
-            });
-        }
-    }
-    TestShader.Res3DRoot = "res3d/Conventional/";
-
-    var REG = Laya.ClassUtils.regClass;
-    var ui;
-    (function (ui) {
-        var test;
-        (function (test) {
-            class TestSceneUI extends Laya.Scene {
-                constructor() { super(); }
-                createChildren() {
-                    super.createChildren();
-                    this.loadScene("test/TestScene");
-                }
-            }
-            test.TestSceneUI = TestSceneUI;
-            REG("ui.test.TestSceneUI", TestSceneUI);
-        })(test = ui.test || (ui.test = {}));
-    })(ui || (ui = {}));
-
     var GPUSKinningCullingMode;
     (function (GPUSKinningCullingMode) {
         GPUSKinningCullingMode[GPUSKinningCullingMode["AlwaysAnimate"] = 0] = "AlwaysAnimate";
@@ -968,12 +860,12 @@
             this.ShaderDefine_SKIN_1 = Shader3D$2.getDefineByName("SKIN_1");
             this.ShaderDefine_SKIN_2 = Shader3D$2.getDefineByName("SKIN_2");
             this.ShaderDefine_SKIN_4 = Shader3D$2.getDefineByName("SKIN_4");
-            this.shaderPropID_GPUSkinning_TextureMatrix = Shader3D$2.propertyNameToID("_GPUSkinning_TextureMatrix");
-            this.shaderPropID_GPUSkinning_TextureSize_NumPixelsPerFrame = Shader3D$2.propertyNameToID("_GPUSkinning_TextureSize_NumPixelsPerFrame");
-            this.shaderPorpID_GPUSkinning_FrameIndex_PixelSegmentation = Shader3D$2.propertyNameToID("_GPUSkinning_FrameIndex_PixelSegmentation");
-            this.shaderPropID_GPUSkinning_RootMotion = Shader3D$2.propertyNameToID("_GPUSkinning_RootMotion");
-            this.shaderPorpID_GPUSkinning_FrameIndex_PixelSegmentation_Blend_CrossFade = Shader3D$2.propertyNameToID("_GPUSkinning_FrameIndex_PixelSegmentation_Blend_CrossFade");
-            this.shaderPropID_GPUSkinning_RootMotion_CrossFade = Shader3D$2.propertyNameToID("_GPUSkinning_RootMotion_CrossFade");
+            this.shaderPropID_GPUSkinning_TextureMatrix = Shader3D$2.propertyNameToID("u_GPUSkinning_TextureMatrix");
+            this.shaderPropID_GPUSkinning_TextureSize_NumPixelsPerFrame = Shader3D$2.propertyNameToID("u_GPUSkinning_TextureSize_NumPixelsPerFrame");
+            this.shaderPorpID_GPUSkinning_FrameIndex_PixelSegmentation = Shader3D$2.propertyNameToID("u_GPUSkinning_FrameIndex_PixelSegmentation");
+            this.shaderPropID_GPUSkinning_RootMotion = Shader3D$2.propertyNameToID("u_GPUSkinning_RootMotion");
+            this.shaderPorpID_GPUSkinning_FrameIndex_PixelSegmentation_Blend_CrossFade = Shader3D$2.propertyNameToID("u_GPUSkinning_FrameIndex_PixelSegmentation_Blend_CrossFade");
+            this.shaderPropID_GPUSkinning_RootMotion_CrossFade = Shader3D$2.propertyNameToID("u_GPUSkinning_RootMotion_CrossFade");
         }
         Destroy() {
             this.anim = null;
@@ -1725,48 +1617,6 @@
     }
     GPUSkinningPlayerMono.playerManager = new GPUSkinningPlayerMonoManager();
 
-    class GameUI extends ui.test.TestSceneUI {
-        constructor() {
-            super();
-            var scene = Laya.stage.addChild(new Laya.Scene3D());
-            var camera = (scene.addChild(new Laya.Camera(0, 0.1, 100)));
-            camera.transform.translate(new Laya.Vector3(0, 3, 3));
-            camera.transform.rotate(new Laya.Vector3(-30, 0, 0), true, false);
-            camera.addComponent(GPUSkinningPlayerMono);
-            var directionLight = scene.addChild(new Laya.DirectionLight());
-            directionLight.color = new Laya.Vector3(0.6, 0.6, 0.6);
-            directionLight.transform.worldMatrix.setForward(new Laya.Vector3(1, -1, 0));
-            var box = scene.addChild(new Laya.MeshSprite3D(Laya.PrimitiveMesh.createBox(1, 1, 1)));
-            box.transform.rotate(new Laya.Vector3(0, 45, 0), false, false);
-            var material = new Laya.BlinnPhongMaterial();
-            Laya.Texture2D.load("res/layabox.png", Laya.Handler.create(null, function (tex) {
-                material.albedoTexture = tex;
-            }));
-            box.meshRenderer.material = material;
-        }
-    }
-
-    class GameConfig {
-        constructor() { }
-        static init() {
-            var reg = Laya.ClassUtils.regClass;
-            reg("script/GameUI.ts", GameUI);
-        }
-    }
-    GameConfig.width = 640;
-    GameConfig.height = 1136;
-    GameConfig.scaleMode = "fixedwidth";
-    GameConfig.screenMode = "none";
-    GameConfig.alignV = "top";
-    GameConfig.alignH = "left";
-    GameConfig.startScene = "test/TestScene.scene";
-    GameConfig.sceneRoot = "";
-    GameConfig.debug = false;
-    GameConfig.stat = false;
-    GameConfig.physicsDebug = false;
-    GameConfig.exportSceneToJson = true;
-    GameConfig.init();
-
     var VertexMesh$1 = Laya.VertexMesh;
     var VertexDeclaration = Laya.VertexDeclaration;
     var VertexElement = Laya.VertexElement;
@@ -2115,6 +1965,19 @@
             GPUSkiningMeshReader.read(data, mesh, mesh._subMeshes);
             return mesh;
         }
+        static LoadAsync(path) {
+            return new Promise((resolve) => {
+                Laya.loader.load(path, Laya.Handler.create(this, (data) => {
+                    if (data instanceof ArrayBuffer) {
+                        var mesh = GPUSkiningMesh._parse(data);
+                        resolve(mesh);
+                    }
+                    else {
+                        resolve(data);
+                    }
+                }), null, Laya.Loader.BUFFER);
+            });
+        }
     }
 
     class Laya3D_Extend {
@@ -2135,6 +1998,672 @@
             }
         }
     }
+
+    var Bounds = Laya.Bounds;
+    var Vector3$3 = Laya.Vector3;
+    var Quaternion$1 = Laya.Quaternion;
+    var Matrix4x4$2 = Laya.Matrix4x4;
+    class ByteReadUtil {
+        static ReadQuaternion(b) {
+            var v = new Quaternion$1();
+            v.x = b.readFloat32();
+            v.y = b.readFloat32();
+            v.z = b.readFloat32();
+            v.w = b.readFloat32();
+            return v;
+        }
+        static ReadVector3(b) {
+            var v = new Vector3$3();
+            v.x = b.readFloat32();
+            v.y = b.readFloat32();
+            v.z = b.readFloat32();
+            return v;
+        }
+        static ReadBounds(b) {
+            var min = this.ReadVector3(b);
+            var max = this.ReadVector3(b);
+            var v = new Bounds(min, max);
+            return v;
+        }
+        static ReadMatrix4x4(b) {
+            var m00 = b.readFloat32();
+            var m01 = b.readFloat32();
+            var m02 = b.readFloat32();
+            var m03 = b.readFloat32();
+            var m10 = b.readFloat32();
+            var m11 = b.readFloat32();
+            var m12 = b.readFloat32();
+            var m13 = b.readFloat32();
+            var m20 = b.readFloat32();
+            var m21 = b.readFloat32();
+            var m22 = b.readFloat32();
+            var m23 = b.readFloat32();
+            var m30 = b.readFloat32();
+            var m31 = b.readFloat32();
+            var m32 = b.readFloat32();
+            var m33 = b.readFloat32();
+            var v = new Matrix4x4$2(m00, m01, m02, m03, m10, m11, m12, m13, m20, m21, m22, m23, m30, m31, m32, m33);
+            return v;
+        }
+    }
+
+    var Matrix4x4$3 = Laya.Matrix4x4;
+    class GPUSkinningBone {
+        constructor() {
+            this.parentBoneIndex = -1;
+            this._bindposeInvInit = false;
+        }
+        get BindposeInv() {
+            if (!this._bindposeInv) {
+                this._bindposeInv = new Matrix4x4$3();
+                this.bindpose.invert(this._bindposeInv);
+                this._bindposeInvInit = true;
+            }
+            return this._bindposeInv;
+        }
+        FromBytes(data) {
+            var b = new Laya.Byte(data);
+            this.name = b.readUTFString();
+            this.guid = b.readUTFString();
+            this.isExposed = b.readByte() != 0;
+            this.parentBoneIndex = b.readInt32();
+            this.bindpose = ByteReadUtil.ReadMatrix4x4(b);
+        }
+        static CreateFromBytes(data) {
+            var obj = new GPUSkinningBone();
+            obj.FromBytes(data);
+            return obj;
+        }
+    }
+
+    class GPUSkinningAnimEvent {
+        constructor() {
+            this.frameIndex = 0;
+            this.eventId = 0;
+        }
+        CompareTo(other) {
+            return this.frameIndex > other.frameIndex ? -1 : 1;
+        }
+        FromBytes(data) {
+            var b = new Laya.Byte(data);
+            this.frameIndex = b.readInt32();
+            this.eventId = b.readInt32();
+        }
+        static CreateFromBytes(data) {
+            var obj = new GPUSkinningAnimEvent();
+            obj.FromBytes(data);
+            return obj;
+        }
+    }
+
+    var Matrix4x4$4 = Laya.Matrix4x4;
+    class GPUSkinningFrame {
+        constructor() {
+            this.rootMotionInvInit = false;
+        }
+        RootMotionInv(rootBoneIndex) {
+            if (!this.rootMotionInvInit) {
+                let m = this.matrices[rootBoneIndex];
+                this.rootMotionInv = new Matrix4x4$4();
+                m.invert(this.rootMotionInv);
+                this.rootMotionInvInit = true;
+            }
+            return this.rootMotionInv;
+        }
+        FromBytes(data) {
+            var b = new Laya.Byte(data);
+            this.rootMotionDeltaPositionL = b.readFloat32();
+            this.rootMotionDeltaPositionQ = ByteReadUtil.ReadQuaternion(b);
+            this.rootMotionDeltaRotation = ByteReadUtil.ReadQuaternion(b);
+            var matricesCount = b.readUint32();
+            this.matrices = [];
+            for (var i = 0; i < matricesCount; i++) {
+                var m = ByteReadUtil.ReadMatrix4x4(b);
+                this.matrices.push(m);
+            }
+        }
+        static CreateFromBytes(data) {
+            var obj = new GPUSkinningFrame();
+            obj.FromBytes(data);
+            return obj;
+        }
+    }
+
+    var Byte$1 = Laya.Byte;
+    class GPUSkinningClip {
+        constructor() {
+            this.length = 0.0;
+            this.fps = 0;
+            this.wrapMode = GPUSkinningWrapMode.Once;
+            this.pixelSegmentation = 0;
+            this.rootMotionEnabled = false;
+            this.individualDifferenceEnabled = false;
+        }
+        FromBytes(data) {
+            var b = new Byte$1(data);
+            b.pos = 0;
+            this.name = b.readUTFString();
+            this.length = b.readFloat32();
+            this.fps = b.readUint32();
+            this.wrapMode = b.readInt32();
+            this.pixelSegmentation = b.readUint32();
+            this.rootMotionEnabled = b.readByte() != 0;
+            this.individualDifferenceEnabled = b.readByte() != 0;
+            var frameCount = b.readUint32();
+            var eventCount = b.readUint32();
+            var framePosLengthList = [];
+            for (var i = 0; i < frameCount; i++) {
+                var info = [];
+                info[0] = b.readUint32();
+                info[1] = b.readUint32();
+                framePosLengthList.push(info);
+            }
+            var eventPosLengthList = [];
+            for (var i = 0; i < eventCount; i++) {
+                var info = [];
+                info[0] = b.readUint32();
+                info[1] = b.readUint32();
+                eventPosLengthList.push(info);
+            }
+            var frameList = [];
+            this.frames = frameList;
+            for (var i = 0; i < frameCount; i++) {
+                var itemInfo = framePosLengthList[i];
+                var pos = itemInfo[0];
+                var len = itemInfo[1];
+                b.pos = pos;
+                var itemBuffer = b.readArrayBuffer(len);
+                var item = GPUSkinningFrame.CreateFromBytes(itemBuffer);
+                frameList.push(item);
+            }
+            var eventList = [];
+            this.events = eventList;
+            for (var i = 0; i < eventCount; i++) {
+                var itemInfo = eventPosLengthList[i];
+                var pos = itemInfo[0];
+                var len = itemInfo[1];
+                b.pos = pos;
+                var itemBuffer = b.readArrayBuffer(len);
+                var item = GPUSkinningAnimEvent.CreateFromBytes(itemBuffer);
+                eventList.push(item);
+            }
+        }
+        static CreateFromBytes(data) {
+            var obj = new GPUSkinningClip();
+            obj.FromBytes(data);
+            return obj;
+        }
+    }
+
+    var Byte$2 = Laya.Byte;
+    class GPUSkinningAnimation {
+        constructor() {
+            this.rootBoneIndex = 0;
+            this.textureWidth = 0;
+            this.textureHeight = 0;
+            this.sphereRadius = 1.0;
+            this.skinQuality = GPUSkinningQuality.Bone4;
+        }
+        FromBytes(arrayBuffer) {
+            var b = new Byte$2(arrayBuffer);
+            b.pos = 0;
+            var vision = b.readUTFString();
+            this.guid = b.readUTFString();
+            this.name = b.readUTFString();
+            this.rootBoneIndex = b.readInt16();
+            this.textureWidth = b.readUint32();
+            this.textureHeight = b.readUint32();
+            this.sphereRadius = b.readFloat32();
+            this.bounds = ByteReadUtil.ReadBounds(b);
+            var clipCount = b.readUint32();
+            var boneCount = b.readUint32();
+            var clipPosLengthList = [];
+            for (var i = 0; i < clipCount; i++) {
+                var info = [];
+                info[0] = b.readUint32();
+                info[1] = b.readUint32();
+                clipPosLengthList.push(info);
+            }
+            console.log("clipPosLengthList", clipPosLengthList);
+            var bonePosLengthList = [];
+            for (var i = 0; i < boneCount; i++) {
+                var info = [];
+                info[0] = b.readUint32();
+                info[1] = b.readUint32();
+                bonePosLengthList.push(info);
+            }
+            var clipList = [];
+            this.clips = clipList;
+            for (var i = 0; i < clipCount; i++) {
+                var itemInfo = clipPosLengthList[i];
+                var pos = itemInfo[0];
+                var len = itemInfo[1];
+                console.log(i, pos, len);
+                b.pos = pos;
+                console.log(b.readUTFString());
+                b.pos = pos;
+                var itemBuffer = b.readArrayBuffer(len);
+                var item = GPUSkinningClip.CreateFromBytes(itemBuffer);
+                clipList.push(item);
+            }
+            var boneList = [];
+            this.bones = boneList;
+            for (var i = 0; i < boneCount; i++) {
+                var itemInfo = bonePosLengthList[i];
+                var pos = itemInfo[0];
+                var len = itemInfo[1];
+                b.pos = pos;
+                console.log(b.readUTFString());
+                b.pos = pos;
+                var itemBuffer = b.readArrayBuffer(len);
+                var item = GPUSkinningBone.CreateFromBytes(itemBuffer);
+                boneList.push(item);
+            }
+        }
+        static CreateFromBytes(data) {
+            var obj = new GPUSkinningAnimation();
+            obj.FromBytes(data);
+            return obj;
+        }
+        static LoadAsync(path) {
+            return __awaiter(this, void 0, void 0, function* () {
+                return new Promise((resolve) => {
+                    this.Load(path, (anim) => {
+                        resolve(anim);
+                    });
+                });
+            });
+        }
+        static Load(path, callback) {
+            Laya.loader.load(path, Laya.Handler.create(this, (data) => {
+                var obj = GPUSkinningAnimation.CreateFromBytes(data);
+                if (callback) {
+                    callback(obj);
+                }
+            }), null, Laya.Loader.BUFFER);
+        }
+    }
+
+    var Shader3D$3 = Laya.Shader3D;
+    class GPUSkinningBaseMaterial extends Laya.Material {
+        static getShaderVS(filename) {
+            return this.SHADER_PATH_ROOT + filename + ".vs";
+        }
+        static getShaderPS(filename) {
+            return this.SHADER_PATH_ROOT + filename + ".fs";
+        }
+        static loadShaderVSAsync(filename) {
+            return __awaiter(this, void 0, void 0, function* () {
+                let code = yield this.loadAsync(this.getShaderVS(filename), Laya.Loader.TEXT);
+                return code.replace(/\r/g, "");
+            });
+        }
+        static loadShaderPSAsync(filename) {
+            return __awaiter(this, void 0, void 0, function* () {
+                let code = yield this.loadAsync(this.getShaderPS(filename), Laya.Loader.TEXT);
+                return code.replace(/\r/g, "");
+            });
+        }
+        static loadAsync(path, type) {
+            return __awaiter(this, void 0, void 0, function* () {
+                return new Promise((resolve) => {
+                    Laya.loader.load(path, Laya.Handler.create(null, (res) => {
+                        resolve(res);
+                    }), null, type);
+                });
+            });
+        }
+        static __initDefine__() {
+            this.SHADERDEFINE_GPUSKINING_MATRIX_TEXTURE = Shader3D$3.getDefineByName("GPUSKINING_MATRIX_TEXTURE");
+        }
+        get GPUSkinning_TextureMatrix() {
+            return this._shaderValues.getTexture(GPUSkinningBaseMaterial.GPUSKINING_MATRIX_TEXTURE);
+        }
+        set GPUSkinning_TextureMatrix(value) {
+            if (value)
+                this._shaderValues.addDefine(GPUSkinningBaseMaterial.SHADERDEFINE_GPUSKINING_MATRIX_TEXTURE);
+            else
+                this._shaderValues.removeDefine(GPUSkinningBaseMaterial.SHADERDEFINE_GPUSKINING_MATRIX_TEXTURE);
+            this._shaderValues.setTexture(GPUSkinningBaseMaterial.GPUSKINING_MATRIX_TEXTURE, value);
+        }
+    }
+    GPUSkinningBaseMaterial.SHADER_PATH_ROOT = "res/shaders/GPUSkinning/";
+    GPUSkinningBaseMaterial.GPUSKINING_MATRIX_TEXTURE = Shader3D$3.propertyNameToID("u_GPUSkinning_TextureMatrix");
+
+    var Shader3D$4 = Laya.Shader3D;
+    var SubShader$1 = Laya.SubShader;
+    var VertexMesh$2 = Laya.VertexMesh;
+    var Vector4$2 = Laya.Vector4;
+    var RenderState$1 = Laya.RenderState;
+    var Material = Laya.Material;
+    class GPUSkinningUnlitMaterial extends GPUSkinningBaseMaterial {
+        constructor() {
+            super();
+            this._albedoColor = new Vector4$2(1.0, 1.0, 1.0, 1.0);
+            this._albedoIntensity = 1.0;
+            this._enableVertexColor = false;
+            this.setShaderName(GPUSkinningUnlitMaterial.shaderName);
+            this._shaderValues.setVector(GPUSkinningUnlitMaterial.ALBEDOCOLOR, new Vector4$2(1.0, 1.0, 1.0, 1.0));
+            this.renderMode = GPUSkinningUnlitMaterial.RENDERMODE_OPAQUE;
+        }
+        static install() {
+            return __awaiter(this, void 0, void 0, function* () {
+                GPUSkinningUnlitMaterial.__initDefine__();
+                yield GPUSkinningUnlitMaterial.initShader();
+                GPUSkinningUnlitMaterial.defaultMaterial = new GPUSkinningUnlitMaterial();
+                GPUSkinningUnlitMaterial.defaultMaterial.lock = true;
+            });
+        }
+        static initShader() {
+            return __awaiter(this, void 0, void 0, function* () {
+                var vs = yield GPUSkinningUnlitMaterial.loadShaderVSAsync(GPUSkinningUnlitMaterial.shaderName);
+                var ps = yield GPUSkinningUnlitMaterial.loadShaderPSAsync(GPUSkinningUnlitMaterial.shaderName);
+                var attributeMap;
+                var uniformMap;
+                var stateMap;
+                var shader;
+                var subShader;
+                attributeMap =
+                    {
+                        'a_Position': VertexMesh$2.MESH_POSITION0,
+                        'a_Color': VertexMesh$2.MESH_COLOR0,
+                        'a_Texcoord0': VertexMesh$2.MESH_TEXTURECOORDINATE0,
+                        'a_MvpMatrix': VertexMesh$2.MESH_MVPMATRIX_ROW0
+                    };
+                uniformMap =
+                    {
+                        'u_AlbedoTexture': Shader3D$4.PERIOD_MATERIAL,
+                        'u_AlbedoColor': Shader3D$4.PERIOD_MATERIAL,
+                        'u_TilingOffset': Shader3D$4.PERIOD_MATERIAL,
+                        'u_AlphaTestValue': Shader3D$4.PERIOD_MATERIAL,
+                        'u_MvpMatrix': Shader3D$4.PERIOD_SPRITE,
+                        'u_FogStart': Shader3D$4.PERIOD_SCENE,
+                        'u_FogRange': Shader3D$4.PERIOD_SCENE,
+                        'u_FogColor': Shader3D$4.PERIOD_SCENE
+                    };
+                stateMap =
+                    {
+                        's_Cull': Shader3D$4.RENDER_STATE_CULL,
+                        's_Blend': Shader3D$4.RENDER_STATE_BLEND,
+                        's_BlendSrc': Shader3D$4.RENDER_STATE_BLEND_SRC,
+                        's_BlendDst': Shader3D$4.RENDER_STATE_BLEND_DST,
+                        's_DepthTest': Shader3D$4.RENDER_STATE_DEPTH_TEST,
+                        's_DepthWrite': Shader3D$4.RENDER_STATE_DEPTH_WRITE
+                    };
+                shader = Shader3D$4.add(GPUSkinningUnlitMaterial.shaderName, null, null, true);
+                subShader = new SubShader$1(attributeMap, uniformMap);
+                shader.addSubShader(subShader);
+                var mainPass = subShader.addShaderPass(vs, ps, stateMap);
+            });
+        }
+        static __initDefine__() {
+            GPUSkinningUnlitMaterial.SHADERDEFINE_ALBEDOTEXTURE = Shader3D$4.getDefineByName("ALBEDOTEXTURE");
+            GPUSkinningUnlitMaterial.SHADERDEFINE_TILINGOFFSET = Shader3D$4.getDefineByName("TILINGOFFSET");
+            GPUSkinningUnlitMaterial.SHADERDEFINE_ENABLEVERTEXCOLOR = Shader3D$4.getDefineByName("ENABLEVERTEXCOLOR");
+        }
+        get _ColorR() {
+            return this._albedoColor.x;
+        }
+        set _ColorR(value) {
+            this._albedoColor.x = value;
+            this.albedoColor = this._albedoColor;
+        }
+        get _ColorG() {
+            return this._albedoColor.y;
+        }
+        set _ColorG(value) {
+            this._albedoColor.y = value;
+            this.albedoColor = this._albedoColor;
+        }
+        get _ColorB() {
+            return this._albedoColor.z;
+        }
+        set _ColorB(value) {
+            this._albedoColor.z = value;
+            this.albedoColor = this._albedoColor;
+        }
+        get _ColorA() {
+            return this._albedoColor.w;
+        }
+        set _ColorA(value) {
+            this._albedoColor.w = value;
+            this.albedoColor = this._albedoColor;
+        }
+        get _AlbedoIntensity() {
+            return this._albedoIntensity;
+        }
+        set _AlbedoIntensity(value) {
+            if (this._albedoIntensity !== value) {
+                var finalAlbedo = this._shaderValues.getVector(GPUSkinningUnlitMaterial.ALBEDOCOLOR);
+                Vector4$2.scale(this._albedoColor, value, finalAlbedo);
+                this._albedoIntensity = value;
+                this._shaderValues.setVector(GPUSkinningUnlitMaterial.ALBEDOCOLOR, finalAlbedo);
+            }
+        }
+        get _MainTex_STX() {
+            return this._shaderValues.getVector(GPUSkinningUnlitMaterial.TILINGOFFSET).x;
+        }
+        set _MainTex_STX(x) {
+            var tilOff = this._shaderValues.getVector(GPUSkinningUnlitMaterial.TILINGOFFSET);
+            tilOff.x = x;
+            this.tilingOffset = tilOff;
+        }
+        get _MainTex_STY() {
+            return this._shaderValues.getVector(GPUSkinningUnlitMaterial.TILINGOFFSET).y;
+        }
+        set _MainTex_STY(y) {
+            var tilOff = this._shaderValues.getVector(GPUSkinningUnlitMaterial.TILINGOFFSET);
+            tilOff.y = y;
+            this.tilingOffset = tilOff;
+        }
+        get _MainTex_STZ() {
+            return this._shaderValues.getVector(GPUSkinningUnlitMaterial.TILINGOFFSET).z;
+        }
+        set _MainTex_STZ(z) {
+            var tilOff = this._shaderValues.getVector(GPUSkinningUnlitMaterial.TILINGOFFSET);
+            tilOff.z = z;
+            this.tilingOffset = tilOff;
+        }
+        get _MainTex_STW() {
+            return this._shaderValues.getVector(GPUSkinningUnlitMaterial.TILINGOFFSET).w;
+        }
+        set _MainTex_STW(w) {
+            var tilOff = this._shaderValues.getVector(GPUSkinningUnlitMaterial.TILINGOFFSET);
+            tilOff.w = w;
+            this.tilingOffset = tilOff;
+        }
+        get _Cutoff() {
+            return this.alphaTestValue;
+        }
+        set _Cutoff(value) {
+            this.alphaTestValue = value;
+        }
+        get albedoColorR() {
+            return this._ColorR;
+        }
+        set albedoColorR(value) {
+            this._ColorR = value;
+        }
+        get albedoColorG() {
+            return this._ColorG;
+        }
+        set albedoColorG(value) {
+            this._ColorG = value;
+        }
+        get albedoColorB() {
+            return this._ColorB;
+        }
+        set albedoColorB(value) {
+            this._ColorB = value;
+        }
+        get albedoColorA() {
+            return this._ColorA;
+        }
+        set albedoColorA(value) {
+            this._ColorA = value;
+        }
+        get albedoColor() {
+            return this._albedoColor;
+        }
+        set albedoColor(value) {
+            var finalAlbedo = this._shaderValues.getVector(GPUSkinningUnlitMaterial.ALBEDOCOLOR);
+            Vector4$2.scale(value, this._albedoIntensity, finalAlbedo);
+            this._albedoColor = value;
+            this._shaderValues.setVector(GPUSkinningUnlitMaterial.ALBEDOCOLOR, finalAlbedo);
+        }
+        get albedoIntensity() {
+            return this._albedoIntensity;
+        }
+        set albedoIntensity(value) {
+            this._AlbedoIntensity = value;
+        }
+        get albedoTexture() {
+            return this._shaderValues.getTexture(GPUSkinningUnlitMaterial.ALBEDOTEXTURE);
+        }
+        set albedoTexture(value) {
+            if (value)
+                this._shaderValues.addDefine(GPUSkinningUnlitMaterial.SHADERDEFINE_ALBEDOTEXTURE);
+            else
+                this._shaderValues.removeDefine(GPUSkinningUnlitMaterial.SHADERDEFINE_ALBEDOTEXTURE);
+            this._shaderValues.setTexture(GPUSkinningUnlitMaterial.ALBEDOTEXTURE, value);
+        }
+        get tilingOffsetX() {
+            return this._MainTex_STX;
+        }
+        set tilingOffsetX(x) {
+            this._MainTex_STX = x;
+        }
+        get tilingOffsetY() {
+            return this._MainTex_STY;
+        }
+        set tilingOffsetY(y) {
+            this._MainTex_STY = y;
+        }
+        get tilingOffsetZ() {
+            return this._MainTex_STZ;
+        }
+        set tilingOffsetZ(z) {
+            this._MainTex_STZ = z;
+        }
+        get tilingOffsetW() {
+            return this._MainTex_STW;
+        }
+        set tilingOffsetW(w) {
+            this._MainTex_STW = w;
+        }
+        get tilingOffset() {
+            return this._shaderValues.getVector(GPUSkinningUnlitMaterial.TILINGOFFSET);
+        }
+        set tilingOffset(value) {
+            if (value) {
+                if (value.x != 1 || value.y != 1 || value.z != 0 || value.w != 0)
+                    this._shaderValues.addDefine(GPUSkinningUnlitMaterial.SHADERDEFINE_TILINGOFFSET);
+                else
+                    this._shaderValues.removeDefine(GPUSkinningUnlitMaterial.SHADERDEFINE_TILINGOFFSET);
+            }
+            else {
+                this._shaderValues.removeDefine(GPUSkinningUnlitMaterial.SHADERDEFINE_TILINGOFFSET);
+            }
+            this._shaderValues.setVector(GPUSkinningUnlitMaterial.TILINGOFFSET, value);
+        }
+        get enableVertexColor() {
+            return this._enableVertexColor;
+        }
+        set enableVertexColor(value) {
+            this._enableVertexColor = value;
+            if (value)
+                this._shaderValues.addDefine(GPUSkinningUnlitMaterial.SHADERDEFINE_ENABLEVERTEXCOLOR);
+            else
+                this._shaderValues.removeDefine(GPUSkinningUnlitMaterial.SHADERDEFINE_ENABLEVERTEXCOLOR);
+        }
+        set renderMode(value) {
+            switch (value) {
+                case GPUSkinningUnlitMaterial.RENDERMODE_OPAQUE:
+                    this.alphaTest = false;
+                    this.renderQueue = Material.RENDERQUEUE_OPAQUE;
+                    this.depthWrite = true;
+                    this.cull = RenderState$1.CULL_BACK;
+                    this.blend = RenderState$1.BLEND_DISABLE;
+                    this.depthTest = RenderState$1.DEPTHTEST_LESS;
+                    break;
+                case GPUSkinningUnlitMaterial.RENDERMODE_CUTOUT:
+                    this.renderQueue = Material.RENDERQUEUE_ALPHATEST;
+                    this.alphaTest = true;
+                    this.depthWrite = true;
+                    this.cull = RenderState$1.CULL_BACK;
+                    this.blend = RenderState$1.BLEND_DISABLE;
+                    this.depthTest = RenderState$1.DEPTHTEST_LESS;
+                    break;
+                case GPUSkinningUnlitMaterial.RENDERMODE_TRANSPARENT:
+                    this.renderQueue = Material.RENDERQUEUE_TRANSPARENT;
+                    this.alphaTest = false;
+                    this.depthWrite = false;
+                    this.cull = RenderState$1.CULL_BACK;
+                    this.blend = RenderState$1.BLEND_ENABLE_ALL;
+                    this.blendSrc = RenderState$1.BLENDPARAM_SRC_ALPHA;
+                    this.blendDst = RenderState$1.BLENDPARAM_ONE_MINUS_SRC_ALPHA;
+                    this.depthTest = RenderState$1.DEPTHTEST_LESS;
+                    break;
+                default:
+                    throw new Error("GPUSkinningUnlitMaterial : renderMode value error.");
+            }
+        }
+        get depthWrite() {
+            return this._shaderValues.getBool(GPUSkinningUnlitMaterial.DEPTH_WRITE);
+        }
+        set depthWrite(value) {
+            this._shaderValues.setBool(GPUSkinningUnlitMaterial.DEPTH_WRITE, value);
+        }
+        get cull() {
+            return this._shaderValues.getInt(GPUSkinningUnlitMaterial.CULL);
+        }
+        set cull(value) {
+            this._shaderValues.setInt(GPUSkinningUnlitMaterial.CULL, value);
+        }
+        get blend() {
+            return this._shaderValues.getInt(GPUSkinningUnlitMaterial.BLEND);
+        }
+        set blend(value) {
+            this._shaderValues.setInt(GPUSkinningUnlitMaterial.BLEND, value);
+        }
+        get blendSrc() {
+            return this._shaderValues.getInt(GPUSkinningUnlitMaterial.BLEND_SRC);
+        }
+        set blendSrc(value) {
+            this._shaderValues.setInt(GPUSkinningUnlitMaterial.BLEND_SRC, value);
+        }
+        get blendDst() {
+            return this._shaderValues.getInt(GPUSkinningUnlitMaterial.BLEND_DST);
+        }
+        set blendDst(value) {
+            this._shaderValues.setInt(GPUSkinningUnlitMaterial.BLEND_DST, value);
+        }
+        get depthTest() {
+            return this._shaderValues.getInt(GPUSkinningUnlitMaterial.DEPTH_TEST);
+        }
+        set depthTest(value) {
+            this._shaderValues.setInt(GPUSkinningUnlitMaterial.DEPTH_TEST, value);
+        }
+        clone() {
+            var dest = new GPUSkinningUnlitMaterial();
+            this.cloneTo(dest);
+            return dest;
+        }
+    }
+    GPUSkinningUnlitMaterial.shaderName = "GPUSkinningUnlit";
+    GPUSkinningUnlitMaterial.RENDERMODE_OPAQUE = 0;
+    GPUSkinningUnlitMaterial.RENDERMODE_CUTOUT = 1;
+    GPUSkinningUnlitMaterial.RENDERMODE_TRANSPARENT = 2;
+    GPUSkinningUnlitMaterial.RENDERMODE_ADDTIVE = 3;
+    GPUSkinningUnlitMaterial.ALBEDOTEXTURE = Shader3D$4.propertyNameToID("u_AlbedoTexture");
+    GPUSkinningUnlitMaterial.ALBEDOCOLOR = Shader3D$4.propertyNameToID("u_AlbedoColor");
+    GPUSkinningUnlitMaterial.TILINGOFFSET = Shader3D$4.propertyNameToID("u_TilingOffset");
+    GPUSkinningUnlitMaterial.CULL = Shader3D$4.propertyNameToID("s_Cull");
+    GPUSkinningUnlitMaterial.BLEND = Shader3D$4.propertyNameToID("s_Blend");
+    GPUSkinningUnlitMaterial.BLEND_SRC = Shader3D$4.propertyNameToID("s_BlendSrc");
+    GPUSkinningUnlitMaterial.BLEND_DST = Shader3D$4.propertyNameToID("s_BlendDst");
+    GPUSkinningUnlitMaterial.DEPTH_TEST = Shader3D$4.propertyNameToID("s_DepthTest");
+    GPUSkinningUnlitMaterial.DEPTH_WRITE = Shader3D$4.propertyNameToID("s_DepthWrite");
 
     var LoaderManager = Laya.LoaderManager;
     var Loader = Laya.Loader;
@@ -2157,8 +2686,210 @@
             var mesh = GPUSkiningMesh._parse(lmData, loader._propertyParams, loader._constructParams);
             Laya3D._endLoad(loader, mesh);
         }
+        static GetAnimName(name) {
+            return `GPUSKinning_Anim_${name}.skinlani`;
+        }
+        static GetMeshName(name) {
+            return `GPUSKinning_Mesh_${name}.skinlm`;
+        }
+        static GetTextureName(name) {
+            return `GPUSKinning_Texture_${name}.bytes`;
+        }
+        static GetPath(name) {
+            return this.resRoot + name;
+        }
+        static LoadAsync(path, type) {
+            return new Promise((resolve) => {
+                Laya.loader.load(path, Laya.Handler.create(this, (data) => {
+                    resolve(data);
+                }), null, type);
+            });
+        }
+        static CreateByNameAsync(name, mainTexturePath, materialCls) {
+            return __awaiter(this, void 0, void 0, function* () {
+                if (!materialCls) {
+                    materialCls = GPUSkinningUnlitMaterial;
+                }
+                var animPath = this.GetPath(this.GetAnimName(name));
+                var meshPath = this.GetPath(this.GetMeshName(name));
+                var texturePath = this.GetPath(this.GetTextureName(name));
+                var anim = yield GPUSkinningAnimation.LoadAsync(animPath);
+                console.log(anim);
+                return null;
+                var mesh = yield GPUSkiningMesh.LoadAsync(meshPath);
+                var animTexture = yield this.LoadAsync(texturePath, Laya.Loader.TEXTURE2D);
+                var mainTexture = yield this.LoadAsync(mainTexturePath, Laya.Loader.TEXTURE2D);
+                var material = new materialCls();
+                material.albedoTexture = mainTexture;
+                var sprite = new Laya.MeshSprite3D();
+                var mono = sprite.addComponent(GPUSkinningPlayerMono);
+                mono.SetData(anim, mesh, material, animTexture);
+                return mono;
+            });
+        }
     }
     GPUSkining.EXT_SKING_MESH = "skinlm";
+    GPUSkining.resRoot = "res/gpuskining/";
+
+    class TestShader {
+        constructor() {
+            this.scene = TestScene.create();
+            Laya.stage.addChild(this.scene);
+            this.InitAsync();
+        }
+        InitAsync() {
+            return __awaiter(this, void 0, void 0, function* () {
+                yield MaterialInstall.install();
+                var mono = yield GPUSkining.CreateByNameAsync("Hero_1001_Dianguanglongqi_Skin1", "res/gpuskining/Hero_1001_Dianguanglongqi.jpg");
+                if (mono) {
+                    this.scene.addChild(mono.owner);
+                }
+                yield this.TestLoadCube();
+            });
+        }
+        TestGPUSkining() {
+            var anim, mesh, mtrl, textureRawData;
+            var sprite = new Laya.MeshSprite3D();
+            var mono = sprite.addComponent(GPUSkinningPlayerMono);
+            mono.SetData(anim, mesh, mtrl, textureRawData);
+        }
+        TestPrefab() {
+            let box = new Laya.MeshSprite3D(Laya.PrimitiveMesh.createBox(1, 1, 1));
+            box.transform.rotate(new Laya.Vector3(0, 45, 0), false, false);
+            var meshRenderer = box.meshRenderer;
+            let material = new Cartoon2Material();
+            material.enableLighting = true;
+            meshRenderer.material = material;
+            this.scene.addChild(box);
+        }
+        TestLoadCube() {
+            return __awaiter(this, void 0, void 0, function* () {
+                let prefabName = "Cube";
+                let path = this.GetPathByResId(prefabName);
+                let res = yield this.Load3DAsync(path);
+                res.transform.localRotationEulerX = -90;
+                this.scene.addChild(res);
+                res.transform.position = new Laya.Vector3(0, 0, 0);
+                window['res'] = res;
+            });
+        }
+        GetPathByResId(resId) {
+            return TestShader.Res3DRoot + resId + ".lh";
+        }
+        loadPrefab() {
+            return __awaiter(this, void 0, void 0, function* () {
+                yield MaterialInstall.install();
+                let prefabName = "Hero_1001_Dianguanglongqi_Skin1";
+                let path = this.GetPathByResId(prefabName);
+                let res = yield this.Load3DAsync(path);
+                let node1 = this.createRole(res);
+                let node2 = this.createRole(res);
+                node2.transform.localPositionX = 2;
+                node2.transform.localScaleX = -1;
+                var modelNode1 = node1.getChildByName("model");
+                var modelNode2 = node2.getChildByName("model");
+                let animator1 = modelNode1.getComponent(Laya.Animator);
+                let animator2 = modelNode2.getComponent(Laya.Animator);
+                Laya.timer.loop(3000, this, () => {
+                    animator1.play(Math.random() > 0.5 ? "RUN" : "IDLE");
+                    modelNode1.transform.localScaleX *= -1;
+                });
+                Laya.timer.loop(4000, this, () => {
+                    modelNode2.transform.localScaleX *= -1;
+                    animator2.play(Math.random() > 0.5 ? "RUN" : "IDLE");
+                });
+            });
+        }
+        createRole(res) {
+            let node = res.clone();
+            node.transform.position = new Laya.Vector3(0, 0, 0);
+            window['node'] = node;
+            var modelNode = node.getChildByName("model");
+            let animator = modelNode.getComponent(Laya.Animator);
+            let skinnedMeshSprite3D = (modelNode.getChildAt(1));
+            if (!(skinnedMeshSprite3D instanceof Laya.SkinnedMeshSprite3D)) {
+                skinnedMeshSprite3D = (modelNode.getChildAt(0));
+            }
+            let meshRenderer = skinnedMeshSprite3D.skinnedMeshRenderer;
+            let unlitMaterial = meshRenderer.material;
+            let material = new Cartoon2Material();
+            material.enableLighting = true;
+            material.albedoTexture = unlitMaterial.albedoTexture;
+            meshRenderer.material = material;
+            this.scene.addChild(node);
+            animator.play("IDLE");
+            return node;
+        }
+        Load3DAsync(path) {
+            return __awaiter(this, void 0, void 0, function* () {
+                return new Promise((resolve) => {
+                    Laya.loader.create(path, Laya.Handler.create(null, (res) => {
+                        resolve(res);
+                    }));
+                });
+            });
+        }
+    }
+    TestShader.Res3DRoot = "res3d/Conventional/";
+
+    var REG = Laya.ClassUtils.regClass;
+    var ui;
+    (function (ui) {
+        var test;
+        (function (test) {
+            class TestSceneUI extends Laya.Scene {
+                constructor() { super(); }
+                createChildren() {
+                    super.createChildren();
+                    this.loadScene("test/TestScene");
+                }
+            }
+            test.TestSceneUI = TestSceneUI;
+            REG("ui.test.TestSceneUI", TestSceneUI);
+        })(test = ui.test || (ui.test = {}));
+    })(ui || (ui = {}));
+
+    class GameUI extends ui.test.TestSceneUI {
+        constructor() {
+            super();
+            var scene = Laya.stage.addChild(new Laya.Scene3D());
+            var camera = (scene.addChild(new Laya.Camera(0, 0.1, 100)));
+            camera.transform.translate(new Laya.Vector3(0, 3, 3));
+            camera.transform.rotate(new Laya.Vector3(-30, 0, 0), true, false);
+            camera.addComponent(GPUSkinningPlayerMono);
+            var directionLight = scene.addChild(new Laya.DirectionLight());
+            directionLight.color = new Laya.Vector3(0.6, 0.6, 0.6);
+            directionLight.transform.worldMatrix.setForward(new Laya.Vector3(1, -1, 0));
+            var box = scene.addChild(new Laya.MeshSprite3D(Laya.PrimitiveMesh.createBox(1, 1, 1)));
+            box.transform.rotate(new Laya.Vector3(0, 45, 0), false, false);
+            var material = new Laya.BlinnPhongMaterial();
+            Laya.Texture2D.load("res/layabox.png", Laya.Handler.create(null, function (tex) {
+                material.albedoTexture = tex;
+            }));
+            box.meshRenderer.material = material;
+        }
+    }
+
+    class GameConfig {
+        constructor() { }
+        static init() {
+            var reg = Laya.ClassUtils.regClass;
+            reg("script/GameUI.ts", GameUI);
+        }
+    }
+    GameConfig.width = 640;
+    GameConfig.height = 1136;
+    GameConfig.scaleMode = "fixedwidth";
+    GameConfig.screenMode = "none";
+    GameConfig.alignV = "top";
+    GameConfig.alignH = "left";
+    GameConfig.startScene = "test/TestScene.scene";
+    GameConfig.sceneRoot = "";
+    GameConfig.debug = false;
+    GameConfig.stat = false;
+    GameConfig.physicsDebug = false;
+    GameConfig.exportSceneToJson = true;
+    GameConfig.init();
 
     class TestMain {
         constructor() {

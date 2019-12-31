@@ -3,6 +3,7 @@ import GPUSkinningClip from "./GPUSkinningClip";
 import { GPUSkinningQuality } from "./GPUSkinningQuality";
 
 import Byte = Laya.Byte;
+import ByteReadUtil from "./ByteReadUtil";
 
 /** 烘焙动画--全部数据信息 */
 export default class GPUSkinningAnimation
@@ -43,12 +44,88 @@ export default class GPUSkinningAnimation
     /** 骨骼品质 */
     skinQuality:GPUSkinningQuality = GPUSkinningQuality.Bone4;
 
-    FromBytes(data: ArrayBuffer): void
+    FromBytes(arrayBuffer: ArrayBuffer): void
     {
-        var b:Byte = new Byte(data);
+        var b:Byte = new Byte(arrayBuffer);
+        b.pos = 0;
+        var vision = b.readUTFString();
+
         this.guid = b.readUTFString();
         this.name = b.readUTFString();
         this.rootBoneIndex = b.readInt16();
+        this.textureWidth = b.readUint32();
+        this.textureHeight = b.readUint32();
+        this.sphereRadius = b.readFloat32();
+        this.bounds = ByteReadUtil.ReadBounds(b);
+
+        
+        // 剪辑列表 数量
+        var clipCount = b.readUint32();
+        // 骨骼列表 数量
+        var boneCount = b.readUint32();
+
+
+        // 剪辑列表 头信息
+        var clipPosLengthList:int[][] = [];
+        for(var i = 0; i < clipCount; i ++)
+        {
+            var info = [];
+            info[0] = b.readUint32(); // posBegin
+            info[1] = b.readUint32(); // length
+            clipPosLengthList.push(info);
+        }
+
+        console.log("clipPosLengthList", clipPosLengthList);
+
+        // 骨骼列表 头信息
+        var bonePosLengthList:int[][] = [];
+        for(var i = 0; i < boneCount; i ++)
+        {
+            var info = [];
+            info[0] = b.readUint32(); // posBegin
+            info[1] = b.readUint32(); // length
+            bonePosLengthList.push(info);
+        }
+
+        
+        // 剪辑列表 数据块
+        var clipList: GPUSkinningClip[] = [];
+        this.clips = clipList;
+        for(var i = 0; i < clipCount; i ++)
+        {
+            var itemInfo:int[] = clipPosLengthList[i];
+            var pos = itemInfo[0];
+            var len = itemInfo[1];
+
+            console.log(i, pos, len);
+
+            b.pos = pos;
+            console.log(b.readUTFString());
+            b.pos = pos;
+
+            var itemBuffer = b.readArrayBuffer(len);
+            // var itemBuffer = arrayBuffer.slice(pos, pos + len);
+            var item:any = GPUSkinningClip.CreateFromBytes(itemBuffer);
+            clipList.push(item);
+        }
+
+        
+        // 骨骼列表 数据块
+        var boneList: GPUSkinningBone[] = [];
+        this.bones = boneList;
+        for(var i = 0; i < boneCount; i ++)
+        {
+            var itemInfo:int[] = bonePosLengthList[i];
+            var pos = itemInfo[0];
+            var len = itemInfo[1];
+
+            b.pos = pos;
+            console.log(b.readUTFString());
+            b.pos = pos;
+            var itemBuffer = b.readArrayBuffer(len);
+            var item:any = GPUSkinningBone.CreateFromBytes(itemBuffer);
+            boneList.push(item);
+        }
 
     }
 

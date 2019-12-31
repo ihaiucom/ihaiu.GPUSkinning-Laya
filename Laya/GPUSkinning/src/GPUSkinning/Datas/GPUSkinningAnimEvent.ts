@@ -13,4 +13,20 @@ export default class GPUSkinningAnimEvent
     {
         return this.frameIndex > other.frameIndex ? -1 : 1;
     }
+
+    
+    FromBytes(data: ArrayBuffer): void
+    {
+        var b:Laya.Byte = new Laya.Byte(data);
+        this.frameIndex = b.readInt32();
+        this.eventId = b.readInt32();
+
+    }
+
+    static CreateFromBytes(data: ArrayBuffer):GPUSkinningAnimEvent
+    {
+        var obj = new GPUSkinningAnimEvent();
+        obj.FromBytes(data);
+        return obj;
+    }
 }
