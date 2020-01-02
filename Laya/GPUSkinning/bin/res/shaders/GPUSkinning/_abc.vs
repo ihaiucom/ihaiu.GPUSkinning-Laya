@@ -5,6 +5,11 @@
 #define CLUSTER_Z_COUNT 12
 #define ALBEDOTEXTURE
 #define ROOTOFF_BLENDOFF
+#ifdef GL_FRAGMENT_PRECISION_HIGH
+	precision highp float;
+#else
+	precision mediump float;
+#endif
 struct DirectionLight {
 	vec3 color;
 	vec3 direction;
@@ -207,18 +212,18 @@ struct GPUSkingingTextureMatrixs
 	mat4 m2;
 	mat4 m3;
 };
-vec4 indexToUV(float index)
+vec2 indexToUV(float index)
 {
-	int row = (int)(index / u_GPUSkinning_TextureSize_NumPixelsPerFrame.x);
-	float col = index - row * u_GPUSkinning_TextureSize_NumPixelsPerFrame.x;
-	return vec4(col / u_GPUSkinning_TextureSize_NumPixelsPerFrame.x, row / u_GPUSkinning_TextureSize_NumPixelsPerFrame.y, 0.0, 0.0);
+	float row = floor(index / u_GPUSkinning_TextureSize_NumPixelsPerFrame.x);
+	float col = floor(index - row * u_GPUSkinning_TextureSize_NumPixelsPerFrame.x);
+	return vec2(col / u_GPUSkinning_TextureSize_NumPixelsPerFrame.x, row / u_GPUSkinning_TextureSize_NumPixelsPerFrame.y);
 }
-mat4 getMatrix(int frameStartIndex, float boneIndex)
+mat4 getMatrix(float frameStartIndex, float boneIndex)
 {
-	float matStartIndex = frameStartIndex + boneIndex * 3;
-	vec4 row0 = texture2DLod(u_GPUSkinning_TextureMatrix, indexToUV(matStartIndex));
-	vec4 row1 = texture2DLod(u_GPUSkinning_TextureMatrix, indexToUV(matStartIndex + 1));
-	vec4 row2 = texture2DLod(u_GPUSkinning_TextureMatrix, indexToUV(matStartIndex + 2));
+	float matStartIndex = frameStartIndex + boneIndex * 3.0;
+	vec4 row0 = texture2D(u_GPUSkinning_TextureMatrix, indexToUV(matStartIndex));
+	vec4 row1 = texture2D(u_GPUSkinning_TextureMatrix, indexToUV(matStartIndex + 1.0));
+	vec4 row2 = texture2D(u_GPUSkinning_TextureMatrix, indexToUV(matStartIndex + 2.0));
 	vec4 row3 = vec4(0.0, 0.0, 0.0, 1.0);
 	mat4 mat = mat4(row0, row1, row2, row3);
 	return mat;
@@ -231,7 +236,6 @@ float getFrameStartIndex()
 	float frameStartIndex = segment + frameIndex * u_GPUSkinning_TextureSize_NumPixelsPerFrame.z;
 	return frameStartIndex;
 }
-#ifdef !defined(ROOTON_BLENDOFF) && !defined(ROOTOFF_BLENDOFF)
 float getFrameStartIndex_crossFade()
 {
 	vec3 frameIndex_segment = u_GPUSkinning_FrameIndex_PixelSegmentation_Blend_CrossFade;
@@ -240,16 +244,15 @@ float getFrameStartIndex_crossFade()
 	float frameStartIndex = segment + frameIndex * u_GPUSkinning_TextureSize_NumPixelsPerFrame.z;
 	return frameStartIndex;
 }
-#endif
 GPUSkingingTextureMatrixs textureMatrix(vec4 uv2, vec4 uv3)
 {
     GPUSkingingTextureMatrixs s;
     float frameStartIndex = getFrameStartIndex();
     s.frameStartIndex = frameStartIndex;
     s.m0 = getMatrix(frameStartIndex, uv2.x);
-    s.m2 = getMatrix(frameStartIndex, uv2.z);
-    s.m3 = getMatrix(frameStartIndex, uv3.x);
-    s.m4 = getMatrix(frameStartIndex, uv3.z);
+    s.m1 = getMatrix(frameStartIndex, uv2.z);
+    s.m2 = getMatrix(frameStartIndex, uv3.x);
+    s.m3 = getMatrix(frameStartIndex, uv3.z);
     return s;
 }
 GPUSkingingTextureMatrixs textureMatrix_crossFade(vec4 uv2, vec4 uv3)
@@ -258,12 +261,12 @@ GPUSkingingTextureMatrixs textureMatrix_crossFade(vec4 uv2, vec4 uv3)
     float frameStartIndex = getFrameStartIndex_crossFade();
     s.frameStartIndex = frameStartIndex;
     s.m0 = getMatrix(frameStartIndex, uv2.x);
-    s.m2 = getMatrix(frameStartIndex, uv2.z);
-    s.m3 = getMatrix(frameStartIndex, uv3.x);
-    s.m4 = getMatrix(frameStartIndex, uv3.z);
+    s.m1 = getMatrix(frameStartIndex, uv2.z);
+    s.m2 = getMatrix(frameStartIndex, uv3.x);
+    s.m3 = getMatrix(frameStartIndex, uv3.z);
     return s;
 }
-vec3 skin_blend(pos0, pos1)
+vec3 skin_blend(vec4 pos0, vec4 pos1)
 {
     return pos1.xyz + (pos0.xyz - pos1.xyz) * u_GPUSkinning_FrameIndex_PixelSegmentation_Blend_CrossFade.z;
 } 

@@ -4,6 +4,9 @@
 	precision mediump float;
 #endif
 
+	// uniform sampler2D u_GPUSkinning_TextureMatrix;
+	// varying vec4 v_Texcoord1;
+
 #if defined(COLOR)&&defined(ENABLEVERTEXCOLOR)
 	varying vec4 v_Color;
 #endif
@@ -34,6 +37,10 @@ void main()
 	#ifdef ALBEDOTEXTURE
 		color *= texture2D(u_AlbedoTexture, v_Texcoord0);
 	#endif
+
+	// color = texture2D(u_GPUSkinning_TextureMatrix, v_Texcoord0);
+	// color = texture2D(u_AlbedoTexture, v_Texcoord0);
+
 	#if defined(COLOR)&&defined(ENABLEVERTEXCOLOR)
 		color *= v_Color;
 	#endif

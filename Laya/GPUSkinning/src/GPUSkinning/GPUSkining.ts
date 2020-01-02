@@ -19,6 +19,8 @@ export default class GPUSkining
       
       var GPUSkinningIncludegGLSL: string = await GPUSkinningBaseMaterial.loadShaderGlslAsync("GPUSkinningInclude");
       Shader3D.addInclude("GPUSkinningInclude.glsl", GPUSkinningIncludegGLSL);
+
+      GPUSkinningBaseMaterial.__initDefine__();
       await GPUSkinningUnlitMaterial.install();
       
 
@@ -86,7 +88,8 @@ export default class GPUSkining
 			Laya.loader.load(path, Laya.Handler.create(this, (arrayBuffer:ArrayBuffer)=>
 			{
         var imageData = new Uint8Array(arrayBuffer);
-        var texture: Laya.Texture2D = new Laya.Texture2D(width, height, Laya.TextureFormat.R32G32B32A32, false, true);
+        
+        var texture: Laya.Texture2D = new Laya.Texture2D(width, height, Laya.TextureFormat.R8G8B8A8, false, true);
         texture.setPixels(imageData);
         window['animBuffer'] = arrayBuffer;
         window['animTexture'] = texture;
@@ -125,10 +128,11 @@ export default class GPUSkining
       console.log(mesh);
       var animTexture = await this.LoadAnimTextureAsync(texturePath, anim.textureWidth, anim.textureHeight);
       console.log(animTexture);
-      var mainTexture = await this.LoadAsync(mainTexturePath, Laya.Loader.TEXTURE2D);
+      var mainTexture:Laya.Texture2D = await this.LoadAsync(mainTexturePath, Laya.Loader.TEXTURE2D);
       console.log(mainTexture);
       var material:GPUSkinningUnlitMaterial = new materialCls();
       material.albedoTexture = mainTexture;
+      // material.GPUSkinning_TextureMatrix = animTexture;
       console.log(material);
 
       var sprite = new Laya.MeshSprite3D();

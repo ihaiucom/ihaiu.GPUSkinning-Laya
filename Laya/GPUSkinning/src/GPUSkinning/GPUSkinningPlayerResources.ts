@@ -286,6 +286,7 @@ export default class GPUSkinningPlayerResources
     /** 获取材质，根据状态 */
     public GetMaterial(state: MaterialState ):GPUSkinningMaterial
     {
+        console.log("GetMaterial", state, GPUSkinningPlayerResources.keywords[state]);
         return this.mtrls[state];
     }
 
@@ -322,6 +323,10 @@ export default class GPUSkinningPlayerResources
             material.name = GPUSkinningPlayerResources.keywords[i];
            
             material._shaderValues.addDefine(SKILL_N);
+            window['am'] = material;
+
+            console.log(material);
+            console.log("SKILL_N,", SKILL_N, "skinningQuality=", skinningQuality);
 
             // TODO 还未实现
             // material.enableInstancing = true; // enable instancing in Unity 5.6
@@ -336,6 +341,7 @@ export default class GPUSkinningPlayerResources
         {
             if(i == ki)
             {
+                console.log("addDefine", ki, GPUSkinningPlayerResources.keywords[i], GPUSkinningPlayerResources.keywordDefines[i]);
                 mtrl.material._shaderValues.addDefine(GPUSkinningPlayerResources.keywordDefines[i]);
             }
             else

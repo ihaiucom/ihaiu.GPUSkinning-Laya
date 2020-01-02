@@ -10,6 +10,7 @@ import Scene3DShaderDeclaration = Laya.Scene3DShaderDeclaration;
 import BaseTexture = Laya.BaseTexture;
 import Material = Laya.Material;
 import { GPUSkinningBaseMaterial } from "./GPUSkinningBaseMaterial";
+import GPUSkiningVertexMesh from "../Mesh/GPUSkiningVertexMesh";
 
 
 
@@ -51,11 +52,20 @@ export class GPUSkinningUnlitMaterial extends GPUSkinningBaseMaterial
 			'a_Position': VertexMesh.MESH_POSITION0,
 			'a_Color': VertexMesh.MESH_COLOR0,
 			'a_Texcoord0': VertexMesh.MESH_TEXTURECOORDINATE0,
+			'a_Texcoord1': VertexMesh.MESH_TEXTURECOORDINATE1,
+			'a_Texcoord2': GPUSkiningVertexMesh.MESH_TEXTURECOORDINATE2,
 			'a_MvpMatrix': VertexMesh.MESH_MVPMATRIX_ROW0
 		};
 
         uniformMap = 
         {
+			'u_GPUSkinning_TextureMatrix': Shader3D.PERIOD_MATERIAL,
+			'u_GPUSkinning_TextureSize_NumPixelsPerFrame': Shader3D.PERIOD_MATERIAL,
+			'u_GPUSkinning_FrameIndex_PixelSegmentation': Shader3D.PERIOD_MATERIAL,
+			'u_GPUSkinning_FrameIndex_PixelSegmentation_Blend_CrossFade': Shader3D.PERIOD_MATERIAL,
+			'u_GPUSkinning_RootMotion': Shader3D.PERIOD_MATERIAL,
+			'u_GPUSkinning_RootMotion_CrossFade': Shader3D.PERIOD_MATERIAL,
+			
 			'u_AlbedoTexture': Shader3D.PERIOD_MATERIAL,
 			'u_AlbedoColor': Shader3D.PERIOD_MATERIAL,
 			'u_TilingOffset': Shader3D.PERIOD_MATERIAL,
@@ -535,6 +545,9 @@ export class GPUSkinningUnlitMaterial extends GPUSkinningBaseMaterial
 		this.setShaderName(GPUSkinningUnlitMaterial.shaderName);
 		this._shaderValues.setVector(GPUSkinningUnlitMaterial.ALBEDOCOLOR, new Vector4(1.0, 1.0, 1.0, 1.0));
 		this.renderMode = GPUSkinningUnlitMaterial.RENDERMODE_OPAQUE;
+
+		// this._shaderValues.addDefine(Shader3D.getDefineByName("SKIN_4"));
+		
 	}
 
 	/**

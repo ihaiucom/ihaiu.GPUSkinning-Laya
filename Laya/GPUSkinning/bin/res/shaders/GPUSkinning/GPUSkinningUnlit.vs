@@ -1,6 +1,11 @@
+#ifdef GL_FRAGMENT_PRECISION_HIGH
+	precision highp float;
+#else
+	precision mediump float;
+#endif
+
 #include "Lighting.glsl";
 #include "GPUSkinningInclude.glsl";
-
 //==============================================
 // attribute 顶点属性
 //----------------------------------------------
@@ -31,27 +36,31 @@ attribute vec4 a_Color;
 varying vec2 v_Texcoord0;
 varying vec4 v_Color;
 
+varying vec4 v_Texcoord1;
 
 //  主函数
 void main() 
 {
-	vec4 position;
+	vec4 position ;
 
+	// position = a_Texcoord2;
 
-	#ifdef SKILL_1
-        position= skin1(a_Position, a_Texcoord1, a_Texcoord2);
-	#endif
+	// #ifdef SKIN_1
+    //     position= skin1(a_Position, a_Texcoord1, a_Texcoord2);
+	// #endif
 
     
-	#ifdef SKILL_2
-        position= skin2(a_Position, a_Texcoord1, a_Texcoord2);
-	#endif
+	// #ifdef SKIN_2
+    //     position= skin2(a_Position, a_Texcoord1, a_Texcoord2);
+	// #endif
 
-	#ifdef SKILL_4
-        position= skin4(a_Position, a_Texcoord1, a_Texcoord2);
-	#endif
+	// #ifdef SKIN_4
+    //     position= skin4(a_Position, a_Texcoord1, a_Texcoord2);
+	// #endif
 
+	position= skin4(a_Position, a_Texcoord1, a_Texcoord2);
 
+v_Texcoord1 = a_Texcoord1;
     
     // 模型坐标 转 屏幕裁剪坐标
 	#ifdef GPU_INSTANCE

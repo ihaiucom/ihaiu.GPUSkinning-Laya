@@ -26,20 +26,20 @@ struct GPUSkingingTextureMatrixs
 	mat4 m3;
 };
 
-vec4 indexToUV(float index)
+vec2 indexToUV(float index)
 {
-	int row = (int)(index / u_GPUSkinning_TextureSize_NumPixelsPerFrame.x);
-	float col = index - row * u_GPUSkinning_TextureSize_NumPixelsPerFrame.x;
-	return vec4(col / u_GPUSkinning_TextureSize_NumPixelsPerFrame.x, row / u_GPUSkinning_TextureSize_NumPixelsPerFrame.y, 0.0, 0.0);
+	float row = floor(index / u_GPUSkinning_TextureSize_NumPixelsPerFrame.x);
+	float col = floor(index - row * u_GPUSkinning_TextureSize_NumPixelsPerFrame.x);
+	return vec2(col / u_GPUSkinning_TextureSize_NumPixelsPerFrame.x, row / u_GPUSkinning_TextureSize_NumPixelsPerFrame.y);
 }
 
 
-mat4 getMatrix(int frameStartIndex, float boneIndex)
+mat4 getMatrix(float frameStartIndex, float boneIndex)
 {
-	float matStartIndex = frameStartIndex + boneIndex * 3;
-	vec4 row0 = texture2DLod(u_GPUSkinning_TextureMatrix, indexToUV(matStartIndex));
-	vec4 row1 = texture2DLod(u_GPUSkinning_TextureMatrix, indexToUV(matStartIndex + 1));
-	vec4 row2 = texture2DLod(u_GPUSkinning_TextureMatrix, indexToUV(matStartIndex + 2));
+	float matStartIndex = frameStartIndex + boneIndex * 3.0;
+	vec4 row0 = texture2D(u_GPUSkinning_TextureMatrix, indexToUV(matStartIndex));
+	vec4 row1 = texture2D(u_GPUSkinning_TextureMatrix, indexToUV(matStartIndex + 1.0));
+	vec4 row2 = texture2D(u_GPUSkinning_TextureMatrix, indexToUV(matStartIndex + 2.0));
 	vec4 row3 = vec4(0.0, 0.0, 0.0, 1.0);
 	mat4 mat = mat4(row0, row1, row2, row3);
 	return mat;
@@ -55,7 +55,6 @@ float getFrameStartIndex()
 	return frameStartIndex;
 }
 
-#ifdef !defined(ROOTON_BLENDOFF) && !defined(ROOTOFF_BLENDOFF)
 float getFrameStartIndex_crossFade()
 {
 	vec3 frameIndex_segment = u_GPUSkinning_FrameIndex_PixelSegmentation_Blend_CrossFade;
@@ -64,7 +63,6 @@ float getFrameStartIndex_crossFade()
 	float frameStartIndex = segment + frameIndex * u_GPUSkinning_TextureSize_NumPixelsPerFrame.z;
 	return frameStartIndex;
 }
-#endif
 
 // bone0
 // uv2.x = bone0.index
@@ -84,9 +82,9 @@ GPUSkingingTextureMatrixs textureMatrix(vec4 uv2, vec4 uv3)
     float frameStartIndex = getFrameStartIndex();
     s.frameStartIndex = frameStartIndex;
     s.m0 = getMatrix(frameStartIndex, uv2.x);
-    s.m2 = getMatrix(frameStartIndex, uv2.z);
-    s.m3 = getMatrix(frameStartIndex, uv3.x);
-    s.m4 = getMatrix(frameStartIndex, uv3.z);
+    s.m1 = getMatrix(frameStartIndex, uv2.z);
+    s.m2 = getMatrix(frameStartIndex, uv3.x);
+    s.m3 = getMatrix(frameStartIndex, uv3.z);
     return s;
 }
 
@@ -96,402 +94,408 @@ GPUSkingingTextureMatrixs textureMatrix_crossFade(vec4 uv2, vec4 uv3)
     float frameStartIndex = getFrameStartIndex_crossFade();
     s.frameStartIndex = frameStartIndex;
     s.m0 = getMatrix(frameStartIndex, uv2.x);
-    s.m2 = getMatrix(frameStartIndex, uv2.z);
-    s.m3 = getMatrix(frameStartIndex, uv3.x);
-    s.m4 = getMatrix(frameStartIndex, uv3.z);
+    s.m1 = getMatrix(frameStartIndex, uv2.z);
+    s.m2 = getMatrix(frameStartIndex, uv3.x);
+    s.m3 = getMatrix(frameStartIndex, uv3.z);
     return s;
 }
 
-vec3 skin_blend(pos0, pos1)
+vec3 skin_blend(vec4 pos0, vec4 pos1)
 {
     return pos1.xyz + (pos0.xyz - pos1.xyz) * u_GPUSkinning_FrameIndex_PixelSegmentation_Blend_CrossFade.z;
 } 
 
 
-// SKILL_1 Begin
-#ifdef SKILL_1
+// // SKIN_1 Begin
+// #ifdef SKIN_1
+
+// #ifdef ROOTOFF_BLENDOFF
+// vec4 skin1_noroot(GPUSkingingTextureMatrixs s, vec4 uv2, vec4 uv3)
+// {
+//     return mul(s.m0, vertex) * uv2.y;
+// }
+// #endif
+
+
+// #ifdef ROOTON_BLENDOFF
+// vec4 skin1_root(GPUSkingingTextureMatrixs s, vec4 uv2, vec4 uv3, mat4 root)
+// {
+//     return mul(root, mul(s.m0, vertex)) * uv2.y;
+// }
+// #endif
+
+
+
+// #ifdef ROOTOFF_BLENDOFF
+// vec4 rootOff_BlendOff_1(vec4 uv2, vec4 uv3)
+// {
+//     GPUSkingingTextureMatrixs s = textureMatrix(uv2, uv3);
+//     return skin1_root(s, uv2, uv3, );
+// }
+// #endif
+
+
+// #ifdef ROOTON_BLENDOFF
+// vec4 rootOn_BlendOff_1(vec4 uv2, vec4 uv3)
+// {
+//     GPUSkingingTextureMatrixs s = textureMatrix(uv2, uv3);
+//     return skin1_noroot(s, uv2, uv3, u_GPUSkinning_RootMotion);
+// }
+// #endif
+
+
+// #ifdef ROOTON_BLENDON_CROSSFADEROOTON
+// vec4 rootOn_BlendOn_CrossFadeRootOn_1(vec4 uv2, vec4 uv3)
+// {
+//     GPUSkingingTextureMatrixs s0 = textureMatrix(uv2, uv3);
+//     GPUSkingingTextureMatrixs s1 = textureMatrix_crossFade(uv2, uv3);
+//     vec4 pos0 = skin1_root(s0, uv2, uv3, u_GPUSkinning_RootMotion);
+//     vec4 pos1 = skin1_root(s1, uv2, uv3, u_GPUSkinning_RootMotion_CrossFade);
+//     return vec4(skin_blend(pos0, pos1), 1);
+// }
+// #endif
+
+
+// #if ROOTON_BLENDON_CROSSFADEROOTOFF
+// vec4 rootOn_BlendOn_CrossFadeRootOff_1(vec4 uv2, vec4 uv3)
+// {
+//     GPUSkingingTextureMatrixs s0 = textureMatrix(uv2, uv3);
+//     GPUSkingingTextureMatrixs s1 = textureMatrix_crossFade(uv2, uv3);
+//     vec4 pos0 = skin1_root(s0, uv2, uv3, u_GPUSkinning_RootMotion);
+//     vec4 pos1 = skin1_noroot(s1, uv2, uv3);
+//     return vec4(skin_blend(pos0, pos1), 1);
+// }
+// #endif
+
+
+// #ifdef ROOTOFF_BLENDON_CROSSFADEROOTON
+// vec4 rootOff_BlendOn_CrossFadeRootOn_1(vec4 uv2, vec4 uv3)
+// {
+//     GPUSkingingTextureMatrixs s0 = textureMatrix(uv2, uv3);
+//     GPUSkingingTextureMatrixs s1 = textureMatrix_crossFade(uv2, uv3);
+//     vec4 pos0 = skin1_noroot(s0, uv2, uv3);
+//     vec4 pos1 = skin1_root(s1, uv2, uv3, u_GPUSkinning_RootMotion_CrossFade);
+//     return vec4(skin_blend(pos0, pos1), 1);
+// }
+// #endif
+
+
+// #ifdef ROOTOFF_BLENDON_CROSSFADEROOTOFF
+// vec4 rootOff_BlendOn_CrossFadeRootOff_1(vec4 uv2, vec4 uv3)
+// {
+//     GPUSkingingTextureMatrixs s0 = textureMatrix(uv2, uv3);
+//     GPUSkingingTextureMatrixs s1 = textureMatrix_crossFade(uv2, uv3);
+//     vec4 pos0 = skin1_noroot(s0, uv2, uv3);
+//     vec4 pos1 = skin1_noroot(s1, uv2, uv3);
+//     return vec4(skin_blend(pos0, pos1), 1);
+// }
+// #endif
+
+
+// vec4 skin1(vec4 vertex, vec4 uv2, vec4 uv3)
+// {
+//     #ifdef ROOTOFF_BLENDOFF
+//         rootOff_BlendOff_1();
+//     #endif
+
+//     #ifdef ROOTON_BLENDOFF
+//         rootOn_BlendOff_1();
+//     #endif
+
+//     #ifdef ROOTON_BLENDON_CROSSFADEROOTON
+//         rootOn_BlendOn_CrossFadeRootOn_1();
+//     #endif
+
+//     #ifdef ROOTON_BLENDON_CROSSFADEROOTOFF
+//         rootOn_BlendOn_CrossFadeRootOff_1();
+//     #endif
+
+//     #ifdef ROOTOFF_BLENDON_CROSSFADEROOTON
+//         rootOff_BlendOn_CrossFadeRootOn_1();
+//     #endif
+
+//     #ifdef ROOTOFF_BLENDON_CROSSFADEROOTOFF
+//         rootOff_BlendOn_CrossFadeRootOff_1();
+//     #endif
+
+//     return vec4(0.0, 0.0, 0.0, 0.0);
+// }
+
+// #endif
+// // SKIN_1 End
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// // SKIN_2 Begin
+// #ifdef SKIN_2
+
+// #ifdef ROOTOFF_BLENDOFF
+// vec4 skin2_noroot(GPUSkingingTextureMatrixs s, vec4 uv2, vec4 uv3)
+// {
+//     return mul(s.m0, vertex) * uv2.y 
+//            + mul(s.m1, vertex) * uv2.w;
+// }
+// #endif
+
+
+// #ifdef ROOTON_BLENDOFF
+// vec4 skin2_root(GPUSkingingTextureMatrixs s, vec4 uv2, vec4 uv3, mat4 root)
+// {
+//     return mul(root, mul(s.m0, vertex)) * uv2.y 
+//            + mul(root, mul(s.m1, vertex)) * uv2.w;
+// }
+// #endif
+
+
+
+// #ifdef ROOTOFF_BLENDOFF
+// vec4 rootOff_BlendOff_2(vec4 uv2, vec4 uv3)
+// {
+//     GPUSkingingTextureMatrixs s = textureMatrix(uv2, uv3);
+//     return skin2_root(s, uv2, uv3, );
+// }
+// #endif
+
+
+// #ifdef ROOTON_BLENDOFF
+// vec4 rootOn_BlendOff_2(vec4 uv2, vec4 uv3)
+// {
+//     GPUSkingingTextureMatrixs s = textureMatrix(uv2, uv3);
+//     return skin2_noroot(s, uv2, uv3, u_GPUSkinning_RootMotion);
+// }
+// #endif
+
+
+// #ifdef ROOTON_BLENDON_CROSSFADEROOTON
+// vec4 rootOn_BlendOn_CrossFadeRootOn_2(vec4 uv2, vec4 uv3)
+// {
+//     GPUSkingingTextureMatrixs s0 = textureMatrix(uv2, uv3);
+//     GPUSkingingTextureMatrixs s1 = textureMatrix_crossFade(uv2, uv3);
+//     vec4 pos0 = skin2_root(s0, uv2, uv3, u_GPUSkinning_RootMotion);
+//     vec4 pos1 = skin2_root(s1, uv2, uv3, u_GPUSkinning_RootMotion_CrossFade);
+//     return vec4(skin_blend(pos0, pos1), 1);
+// }
+// #endif
+
+
+// #if ROOTON_BLENDON_CROSSFADEROOTOFF
+// vec4 rootOn_BlendOn_CrossFadeRootOff_2(vec4 uv2, vec4 uv3)
+// {
+//     GPUSkingingTextureMatrixs s0 = textureMatrix(uv2, uv3);
+//     GPUSkingingTextureMatrixs s1 = textureMatrix_crossFade(uv2, uv3);
+//     vec4 pos0 = skin2_root(s0, uv2, uv3, u_GPUSkinning_RootMotion);
+//     vec4 pos1 = skin2_noroot(s1, uv2, uv3);
+//     return vec4(skin_blend(pos0, pos1), 1);
+// }
+// #endif
+
+
+// #ifdef ROOTOFF_BLENDON_CROSSFADEROOTON
+// vec4 rootOff_BlendOn_CrossFadeRootOn_2(vec4 uv2, vec4 uv3)
+// {
+//     GPUSkingingTextureMatrixs s0 = textureMatrix(uv2, uv3);
+//     GPUSkingingTextureMatrixs s1 = textureMatrix_crossFade(uv2, uv3);
+//     vec4 pos0 = skin2_noroot(s0, uv2, uv3);
+//     vec4 pos1 = skin2_root(s1, uv2, uv3, u_GPUSkinning_RootMotion_CrossFade);
+//     return vec4(skin_blend(pos0, pos1), 1);
+// }
+// #endif
+
+
+// #ifdef ROOTOFF_BLENDON_CROSSFADEROOTOFF
+// vec4 rootOff_BlendOn_CrossFadeRootOff_2(vec4 uv2, vec4 uv3)
+// {
+//     GPUSkingingTextureMatrixs s0 = textureMatrix(uv2, uv3);
+//     GPUSkingingTextureMatrixs s1 = textureMatrix_crossFade(uv2, uv3);
+//     vec4 pos0 = skin2_noroot(s0, uv2, uv3);
+//     vec4 pos1 = skin2_noroot(s1, uv2, uv3);
+//     return vec4(skin_blend(pos0, pos1), 1);
+// }
+// #endif
+
+
+// vec4 skin2(vec4 vertex, vec4 uv2, vec4 uv3)
+// {
+//     #ifdef ROOTOFF_BLENDOFF
+//         rootOff_BlendOff_2();
+//     #endif
+
+//     #ifdef ROOTON_BLENDOFF
+//         rootOn_BlendOff_2();
+//     #endif
+
+//     #ifdef ROOTON_BLENDON_CROSSFADEROOTON
+//         rootOn_BlendOn_CrossFadeRootOn_2();
+//     #endif
+
+//     #ifdef ROOTON_BLENDON_CROSSFADEROOTOFF
+//         rootOn_BlendOn_CrossFadeRootOff_2();
+//     #endif
+
+//     #ifdef ROOTOFF_BLENDON_CROSSFADEROOTON
+//         rootOff_BlendOn_CrossFadeRootOn_2();
+//     #endif
+
+//     #ifdef ROOTOFF_BLENDON_CROSSFADEROOTOFF
+//         rootOff_BlendOn_CrossFadeRootOff_2();
+//     #endif
+
+//     return vec4(0.0, 0.0, 0.0, 0.0);
+// }
+
+// #endif
+// // SKIN_2 End
+
+
+
+
+
+
+
+
+
+
+
+// SKIN_4 Begin
+#ifdef SKIN_4
 
 #ifdef ROOTOFF_BLENDOFF
-vec4 skin1_noroot(GPUSkingingTextureMatrixs s, vec4 uv2, vec4 uv3)
+vec4 skin4_noroot(GPUSkingingTextureMatrixs s, vec4 vertex, vec4 uv2, vec4 uv3)
 {
-    return mul(s.m0, vertex) * uv2.y;
+    // return vertex;
+    return s.m0 * vertex * uv2.y 
+        + s.m1 * vertex * uv2.w 
+        + s.m2 * vertex * uv3.y 
+        + s.m3 * vertex * uv3.w ;
+    // return vertex;
+    // return s.m0 * vertex * uv2.w;
+    //        + mul(s.m1, vertex) * uv2.w
+    //        + mul(s.m2, vertex) * uv3.y
+    //        + mul(s.m3, vertex) * uv3.w;
 }
 #endif
 
 
-#ifdef ROOTON_BLENDOFF
-vec4 skin1_root(GPUSkingingTextureMatrixs s, vec4 uv2, vec4 uv3, mat4 root)
-{
-    return mul(root, mul(s.m0, vertex)) * uv2.y;
-}
-#endif
+// #ifdef ROOTON_BLENDOFF
+// vec4 skin4_root(GPUSkingingTextureMatrixs s, vec4 uv2, vec4 uv3, mat4 root)
+// {
+//     return mul(root, mul(s.m0, vertex)) * uv2.y 
+//            + mul(root, mul(s.m1, vertex)) * uv2.w
+//            + mul(root, mul(s.m2, vertex)) * uv3.y;
+//            + mul(root, mul(s.m3, vertex)) * uv3.w;
+// }
+// #endif
 
 
 
 #ifdef ROOTOFF_BLENDOFF
-vec4 rootOff_BlendOff_1(vec4 uv2, vec4 uv3)
+vec4 rootOff_BlendOff_4(vec4 vertex, vec4 uv2, vec4 uv3)
 {
     GPUSkingingTextureMatrixs s = textureMatrix(uv2, uv3);
-    return skin1_root(s, uv2, uv3, );
+    return skin4_noroot(s, vertex, uv2, uv3);
 }
 #endif
 
 
-#ifdef ROOTON_BLENDOFF
-vec4 rootOn_BlendOff_1(vec4 uv2, vec4 uv3)
-{
-    GPUSkingingTextureMatrixs s = textureMatrix(uv2, uv3);
-    return skin1_noroot(s, uv2, uv3, u_GPUSkinning_RootMotion);
-}
-#endif
-
-
-#ifdef ROOTON_BLENDON_CROSSFADEROOTON
-vec4 rootOn_BlendOn_CrossFadeRootOn_1(vec4 uv2, vec4 uv3)
-{
-    GPUSkingingTextureMatrixs s0 = textureMatrix(uv2, uv3);
-    GPUSkingingTextureMatrixs s1 = textureMatrix_crossFade(uv2, uv3);
-    vec4 pos0 = skin1_root(s0, uv2, uv3, u_GPUSkinning_RootMotion);
-    vec4 pos1 = skin1_root(s1, uv2, uv3, u_GPUSkinning_RootMotion_CrossFade);
-    return vec4(skin_blend(pos0, pos1), 1);
-}
-#endif
-
-
-#if ROOTON_BLENDON_CROSSFADEROOTOFF
-vec4 rootOn_BlendOn_CrossFadeRootOff_1(vec4 uv2, vec4 uv3)
-{
-    GPUSkingingTextureMatrixs s0 = textureMatrix(uv2, uv3);
-    GPUSkingingTextureMatrixs s1 = textureMatrix_crossFade(uv2, uv3);
-    vec4 pos0 = skin1_root(s0, uv2, uv3, u_GPUSkinning_RootMotion);
-    vec4 pos1 = skin1_noroot(s1, uv2, uv3);
-    return vec4(skin_blend(pos0, pos1), 1);
-}
-#endif
-
-
-#ifdef ROOTOFF_BLENDON_CROSSFADEROOTON
-vec4 rootOff_BlendOn_CrossFadeRootOn_1(vec4 uv2, vec4 uv3)
-{
-    GPUSkingingTextureMatrixs s0 = textureMatrix(uv2, uv3);
-    GPUSkingingTextureMatrixs s1 = textureMatrix_crossFade(uv2, uv3);
-    vec4 pos0 = skin1_noroot(s0, uv2, uv3);
-    vec4 pos1 = skin1_root(s1, uv2, uv3, u_GPUSkinning_RootMotion_CrossFade);
-    return vec4(skin_blend(pos0, pos1), 1);
-}
-#endif
-
-
-#ifdef ROOTOFF_BLENDON_CROSSFADEROOTOFF
-vec4 rootOff_BlendOn_CrossFadeRootOff_1(vec4 uv2, vec4 uv3)
-{
-    GPUSkingingTextureMatrixs s0 = textureMatrix(uv2, uv3);
-    GPUSkingingTextureMatrixs s1 = textureMatrix_crossFade(uv2, uv3);
-    vec4 pos0 = skin1_noroot(s0, uv2, uv3);
-    vec4 pos1 = skin1_noroot(s1, uv2, uv3);
-    return vec4(skin_blend(pos0, pos1), 1);
-}
-#endif
-
-
-vec4 skin1(vec4 vertex, vec4 uv2, vec4 uv3)
-{
-    #ifdef ROOTOFF_BLENDOFF
-        rootOff_BlendOff_1();
-    #endif
-
-    #ifdef ROOTON_BLENDOFF
-        rootOn_BlendOff_1();
-    #endif
-
-    #ifdef ROOTON_BLENDON_CROSSFADEROOTON
-        rootOn_BlendOn_CrossFadeRootOn_1();
-    #endif
-
-    #ifdef ROOTON_BLENDON_CROSSFADEROOTOFF
-        rootOn_BlendOn_CrossFadeRootOff_1();
-    #endif
-
-    #ifdef ROOTOFF_BLENDON_CROSSFADEROOTON
-        rootOff_BlendOn_CrossFadeRootOn_1();
-    #endif
-
-    #ifdef ROOTOFF_BLENDON_CROSSFADEROOTOFF
-        rootOff_BlendOn_CrossFadeRootOff_1();
-    #endif
-
-    return vec4(0.0, 0.0, 0.0, 0.0);
-}
-
-#endif
-// SKILL_1 End
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// SKILL_2 Begin
-#ifdef SKILL_2
-
-#ifdef ROOTOFF_BLENDOFF
-vec4 skin2_noroot(GPUSkingingTextureMatrixs s, vec4 uv2, vec4 uv3)
-{
-    return mul(s.m0, vertex) * uv2.y 
-           + mul(s.m1, vertex) * uv2.w;
-}
-#endif
-
-
-#ifdef ROOTON_BLENDOFF
-vec4 skin2_root(GPUSkingingTextureMatrixs s, vec4 uv2, vec4 uv3, mat4 root)
-{
-    return mul(root, mul(s.m0, vertex)) * uv2.y 
-           + mul(root, mul(s.m1, vertex)) * uv2.w;
-}
-#endif
-
-
-
-#ifdef ROOTOFF_BLENDOFF
-vec4 rootOff_BlendOff_2(vec4 uv2, vec4 uv3)
-{
-    GPUSkingingTextureMatrixs s = textureMatrix(uv2, uv3);
-    return skin2_root(s, uv2, uv3, );
-}
-#endif
-
-
-#ifdef ROOTON_BLENDOFF
-vec4 rootOn_BlendOff_2(vec4 uv2, vec4 uv3)
-{
-    GPUSkingingTextureMatrixs s = textureMatrix(uv2, uv3);
-    return skin2_noroot(s, uv2, uv3, u_GPUSkinning_RootMotion);
-}
-#endif
-
-
-#ifdef ROOTON_BLENDON_CROSSFADEROOTON
-vec4 rootOn_BlendOn_CrossFadeRootOn_2(vec4 uv2, vec4 uv3)
-{
-    GPUSkingingTextureMatrixs s0 = textureMatrix(uv2, uv3);
-    GPUSkingingTextureMatrixs s1 = textureMatrix_crossFade(uv2, uv3);
-    vec4 pos0 = skin2_root(s0, uv2, uv3, u_GPUSkinning_RootMotion);
-    vec4 pos1 = skin2_root(s1, uv2, uv3, u_GPUSkinning_RootMotion_CrossFade);
-    return vec4(skin_blend(pos0, pos1), 1);
-}
-#endif
-
-
-#if ROOTON_BLENDON_CROSSFADEROOTOFF
-vec4 rootOn_BlendOn_CrossFadeRootOff_2(vec4 uv2, vec4 uv3)
-{
-    GPUSkingingTextureMatrixs s0 = textureMatrix(uv2, uv3);
-    GPUSkingingTextureMatrixs s1 = textureMatrix_crossFade(uv2, uv3);
-    vec4 pos0 = skin2_root(s0, uv2, uv3, u_GPUSkinning_RootMotion);
-    vec4 pos1 = skin2_noroot(s1, uv2, uv3);
-    return vec4(skin_blend(pos0, pos1), 1);
-}
-#endif
-
-
-#ifdef ROOTOFF_BLENDON_CROSSFADEROOTON
-vec4 rootOff_BlendOn_CrossFadeRootOn_2(vec4 uv2, vec4 uv3)
-{
-    GPUSkingingTextureMatrixs s0 = textureMatrix(uv2, uv3);
-    GPUSkingingTextureMatrixs s1 = textureMatrix_crossFade(uv2, uv3);
-    vec4 pos0 = skin2_noroot(s0, uv2, uv3);
-    vec4 pos1 = skin2_root(s1, uv2, uv3, u_GPUSkinning_RootMotion_CrossFade);
-    return vec4(skin_blend(pos0, pos1), 1);
-}
-#endif
-
-
-#ifdef ROOTOFF_BLENDON_CROSSFADEROOTOFF
-vec4 rootOff_BlendOn_CrossFadeRootOff_2(vec4 uv2, vec4 uv3)
-{
-    GPUSkingingTextureMatrixs s0 = textureMatrix(uv2, uv3);
-    GPUSkingingTextureMatrixs s1 = textureMatrix_crossFade(uv2, uv3);
-    vec4 pos0 = skin2_noroot(s0, uv2, uv3);
-    vec4 pos1 = skin2_noroot(s1, uv2, uv3);
-    return vec4(skin_blend(pos0, pos1), 1);
-}
-#endif
-
-
-vec4 skin2(vec4 vertex, vec4 uv2, vec4 uv3)
-{
-    #ifdef ROOTOFF_BLENDOFF
-        rootOff_BlendOff_2();
-    #endif
-
-    #ifdef ROOTON_BLENDOFF
-        rootOn_BlendOff_2();
-    #endif
-
-    #ifdef ROOTON_BLENDON_CROSSFADEROOTON
-        rootOn_BlendOn_CrossFadeRootOn_2();
-    #endif
-
-    #ifdef ROOTON_BLENDON_CROSSFADEROOTOFF
-        rootOn_BlendOn_CrossFadeRootOff_2();
-    #endif
-
-    #ifdef ROOTOFF_BLENDON_CROSSFADEROOTON
-        rootOff_BlendOn_CrossFadeRootOn_2();
-    #endif
-
-    #ifdef ROOTOFF_BLENDON_CROSSFADEROOTOFF
-        rootOff_BlendOn_CrossFadeRootOff_2();
-    #endif
-
-    return vec4(0.0, 0.0, 0.0, 0.0);
-}
-
-#endif
-// SKILL_2 End
-
-
-
-
-
-
-
-
-
-
-
-// SKILL_4 Begin
-#ifdef SKILL_4
-
-#ifdef ROOTOFF_BLENDOFF
-vec4 skin4_noroot(GPUSkingingTextureMatrixs s, vec4 uv2, vec4 uv3)
-{
-    return mul(s.m0, vertex) * uv2.y 
-           + mul(s.m1, vertex) * uv2.w
-           + mul(s.m2, vertex) * uv3.y
-           + mul(s.m3, vertex) * uv3.w;
-}
-#endif
-
-
-#ifdef ROOTON_BLENDOFF
-vec4 skin4_root(GPUSkingingTextureMatrixs s, vec4 uv2, vec4 uv3, mat4 root)
-{
-    return mul(root, mul(s.m0, vertex)) * uv2.y 
-           + mul(root, mul(s.m1, vertex)) * uv2.w
-           + mul(root, mul(s.m2, vertex)) * uv3.y;
-           + mul(root, mul(s.m3, vertex)) * uv3.w;
-}
-#endif
-
-
-
-#ifdef ROOTOFF_BLENDOFF
-vec4 rootOff_BlendOff_4(vec4 uv2, vec4 uv3)
-{
-    GPUSkingingTextureMatrixs s = textureMatrix(uv2, uv3);
-    return skin4_root(s, uv2, uv3, );
-}
-#endif
-
-
-#ifdef ROOTON_BLENDOFF
-vec4 rootOn_BlendOff_4(vec4 uv2, vec4 uv3)
-{
-    GPUSkingingTextureMatrixs s = textureMatrix(uv2, uv3);
-    return skin4_noroot(s, uv2, uv3, u_GPUSkinning_RootMotion);
-}
-#endif
-
-
-#ifdef ROOTON_BLENDON_CROSSFADEROOTON
-vec4 rootOn_BlendOn_CrossFadeRootOn_4(vec4 uv2, vec4 uv3)
-{
-    GPUSkingingTextureMatrixs s0 = textureMatrix(uv2, uv3);
-    GPUSkingingTextureMatrixs s1 = textureMatrix_crossFade(uv2, uv3);
-    vec4 pos0 = skin4_root(s0, uv2, uv3, u_GPUSkinning_RootMotion);
-    vec4 pos1 = skin4_root(s1, uv2, uv3, u_GPUSkinning_RootMotion_CrossFade);
-    return vec4(skin_blend(pos0, pos1), 1);
-}
-#endif
-
-
-#if ROOTON_BLENDON_CROSSFADEROOTOFF
-vec4 rootOn_BlendOn_CrossFadeRootOff_4(vec4 uv2, vec4 uv3)
-{
-    GPUSkingingTextureMatrixs s0 = textureMatrix(uv2, uv3);
-    GPUSkingingTextureMatrixs s1 = textureMatrix_crossFade(uv2, uv3);
-    vec4 pos0 = skin4_root(s0, uv2, uv3, u_GPUSkinning_RootMotion);
-    vec4 pos1 = skin4_noroot(s1, uv2, uv3);
-    return vec4(skin_blend(pos0, pos1), 1);
-}
-#endif
-
-
-#ifdef ROOTOFF_BLENDON_CROSSFADEROOTON
-vec4 rootOff_BlendOn_CrossFadeRootOn_4(vec4 uv2, vec4 uv3)
-{
-    GPUSkingingTextureMatrixs s0 = textureMatrix(uv2, uv3);
-    GPUSkingingTextureMatrixs s1 = textureMatrix_crossFade(uv2, uv3);
-    vec4 pos0 = skin4_noroot(s0, uv2, uv3);
-    vec4 pos1 = skin4_root(s1, uv2, uv3, u_GPUSkinning_RootMotion_CrossFade);
-    return vec4(skin_blend(pos0, pos1), 1);
-}
-#endif
-
-
-#ifdef ROOTOFF_BLENDON_CROSSFADEROOTOFF
-vec4 rootOff_BlendOn_CrossFadeRootOff_4(vec4 uv2, vec4 uv3)
-{
-    GPUSkingingTextureMatrixs s0 = textureMatrix(uv2, uv3);
-    GPUSkingingTextureMatrixs s1 = textureMatrix_crossFade(uv2, uv3);
-    vec4 pos0 = skin4_noroot(s0, uv2, uv3);
-    vec4 pos1 = skin4_noroot(s1, uv2, uv3);
-    return vec4(skin_blend(pos0, pos1), 1);
-}
-#endif
+// #ifdef ROOTON_BLENDOFF
+// vec4 rootOn_BlendOff_4(vec4 uv2, vec4 uv3)
+// {
+//     GPUSkingingTextureMatrixs s = textureMatrix(uv2, uv3);
+//     return skin4_noroot(s, uv2, uv3, u_GPUSkinning_RootMotion);
+// }
+// #endif
+
+
+// #ifdef ROOTON_BLENDON_CROSSFADEROOTON
+// vec4 rootOn_BlendOn_CrossFadeRootOn_4(vec4 uv2, vec4 uv3)
+// {
+//     GPUSkingingTextureMatrixs s0 = textureMatrix(uv2, uv3);
+//     GPUSkingingTextureMatrixs s1 = textureMatrix_crossFade(uv2, uv3);
+//     vec4 pos0 = skin4_root(s0, uv2, uv3, u_GPUSkinning_RootMotion);
+//     vec4 pos1 = skin4_root(s1, uv2, uv3, u_GPUSkinning_RootMotion_CrossFade);
+//     return vec4(skin_blend(pos0, pos1), 1);
+// }
+// #endif
+
+
+// #if ROOTON_BLENDON_CROSSFADEROOTOFF
+// vec4 rootOn_BlendOn_CrossFadeRootOff_4(vec4 uv2, vec4 uv3)
+// {
+//     GPUSkingingTextureMatrixs s0 = textureMatrix(uv2, uv3);
+//     GPUSkingingTextureMatrixs s1 = textureMatrix_crossFade(uv2, uv3);
+//     vec4 pos0 = skin4_root(s0, uv2, uv3, u_GPUSkinning_RootMotion);
+//     vec4 pos1 = skin4_noroot(s1, uv2, uv3);
+//     return vec4(skin_blend(pos0, pos1), 1);
+// }
+// #endif
+
+
+// #ifdef ROOTOFF_BLENDON_CROSSFADEROOTON
+// vec4 rootOff_BlendOn_CrossFadeRootOn_4(vec4 uv2, vec4 uv3)
+// {
+//     GPUSkingingTextureMatrixs s0 = textureMatrix(uv2, uv3);
+//     GPUSkingingTextureMatrixs s1 = textureMatrix_crossFade(uv2, uv3);
+//     vec4 pos0 = skin4_noroot(s0, uv2, uv3);
+//     vec4 pos1 = skin4_root(s1, uv2, uv3, u_GPUSkinning_RootMotion_CrossFade);
+//     return vec4(skin_blend(pos0, pos1), 1);
+// }
+// #endif
+
+
+// #ifdef ROOTOFF_BLENDON_CROSSFADEROOTOFF
+// vec4 rootOff_BlendOn_CrossFadeRootOff_4(vec4 uv2, vec4 uv3)
+// {
+//     GPUSkingingTextureMatrixs s0 = textureMatrix(uv2, uv3);
+//     GPUSkingingTextureMatrixs s1 = textureMatrix_crossFade(uv2, uv3);
+//     vec4 pos0 = skin4_noroot(s0, uv2, uv3);
+//     vec4 pos1 = skin4_noroot(s1, uv2, uv3);
+//     return vec4(skin_blend(pos0, pos1), 1);
+// }
+// #endif
 
 
 vec4 skin4(vec4 vertex, vec4 uv2, vec4 uv3)
 {
     #ifdef ROOTOFF_BLENDOFF
-        rootOff_BlendOff_4();
+        return rootOff_BlendOff_4(vertex, uv2, uv3);
     #endif
 
-    #ifdef ROOTON_BLENDOFF
-        rootOn_BlendOff_4();
-    #endif
+    // #ifdef ROOTON_BLENDOFF
+    //     rootOn_BlendOff_4();
+    // #endif
 
-    #ifdef ROOTON_BLENDON_CROSSFADEROOTON
-        rootOn_BlendOn_CrossFadeRootOn_4();
-    #endif
+    // #ifdef ROOTON_BLENDON_CROSSFADEROOTON
+    //     rootOn_BlendOn_CrossFadeRootOn_4();
+    // #endif
 
-    #ifdef ROOTON_BLENDON_CROSSFADEROOTOFF
-        rootOn_BlendOn_CrossFadeRootOff_4();
-    #endif
+    // #ifdef ROOTON_BLENDON_CROSSFADEROOTOFF
+    //     rootOn_BlendOn_CrossFadeRootOff_4();
+    // #endif
 
-    #ifdef ROOTOFF_BLENDON_CROSSFADEROOTON
-        rootOff_BlendOn_CrossFadeRootOn_4();
-    #endif
+    // #ifdef ROOTOFF_BLENDON_CROSSFADEROOTON
+    //     rootOff_BlendOn_CrossFadeRootOn_4();
+    // #endif
 
-    #ifdef ROOTOFF_BLENDON_CROSSFADEROOTOFF
-        rootOff_BlendOn_CrossFadeRootOff_4();
-    #endif
+    // #ifdef ROOTOFF_BLENDON_CROSSFADEROOTOFF
+    //     rootOff_BlendOn_CrossFadeRootOff_4();
+    // #endif
 
     return vec4(0.0, 0.0, 0.0, 0.0);
 }
 
 #endif
-// SKILL_4 End
+// SKIN_4 End
 
 
 

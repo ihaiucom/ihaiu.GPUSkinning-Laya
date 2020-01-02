@@ -35,7 +35,7 @@ export default class TestShader
             this.scene.addChild(mono.owner);
         }
 
-        await this.TestLoadCube();
+        // await this.TestLoadCube();
     }
 
     TestGPUSkining()

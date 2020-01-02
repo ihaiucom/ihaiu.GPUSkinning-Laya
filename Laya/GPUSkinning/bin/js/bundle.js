@@ -964,6 +964,7 @@
             return lastPlayedClip != null && crossFadeTime > 0 && crossFadeProgress <= crossFadeTime;
         }
         GetMaterial(state) {
+            console.log("GetMaterial", state, GPUSkinningPlayerResources.keywords[state]);
             return this.mtrls[state];
         }
         InitMaterial(originalMaterial, skinningQuality) {
@@ -989,12 +990,16 @@
                 mtrls[i] = materialItem;
                 material.name = GPUSkinningPlayerResources.keywords[i];
                 material._shaderValues.addDefine(SKILL_N);
+                window['am'] = material;
+                console.log(material);
+                console.log("SKILL_N,", SKILL_N, "skinningQuality=", skinningQuality);
                 this.EnableKeywords(i, materialItem);
             }
         }
         EnableKeywords(ki, mtrl) {
             for (let i = 0; i < this.mtrls.length; ++i) {
                 if (i == ki) {
+                    console.log("addDefine", ki, GPUSkinningPlayerResources.keywords[i], GPUSkinningPlayerResources.keywordDefines[i]);
                     mtrl.material._shaderValues.addDefine(GPUSkinningPlayerResources.keywordDefines[i]);
                 }
                 else {
@@ -2381,10 +2386,18 @@
                         'a_Position': VertexMesh$2.MESH_POSITION0,
                         'a_Color': VertexMesh$2.MESH_COLOR0,
                         'a_Texcoord0': VertexMesh$2.MESH_TEXTURECOORDINATE0,
+                        'a_Texcoord1': VertexMesh$2.MESH_TEXTURECOORDINATE1,
+                        'a_Texcoord2': GPUSkiningVertexMesh.MESH_TEXTURECOORDINATE2,
                         'a_MvpMatrix': VertexMesh$2.MESH_MVPMATRIX_ROW0
                     };
                 uniformMap =
                     {
+                        'u_GPUSkinning_TextureMatrix': Shader3D$4.PERIOD_MATERIAL,
+                        'u_GPUSkinning_TextureSize_NumPixelsPerFrame': Shader3D$4.PERIOD_MATERIAL,
+                        'u_GPUSkinning_FrameIndex_PixelSegmentation': Shader3D$4.PERIOD_MATERIAL,
+                        'u_GPUSkinning_FrameIndex_PixelSegmentation_Blend_CrossFade': Shader3D$4.PERIOD_MATERIAL,
+                        'u_GPUSkinning_RootMotion': Shader3D$4.PERIOD_MATERIAL,
+                        'u_GPUSkinning_RootMotion_CrossFade': Shader3D$4.PERIOD_MATERIAL,
                         'u_AlbedoTexture': Shader3D$4.PERIOD_MATERIAL,
                         'u_AlbedoColor': Shader3D$4.PERIOD_MATERIAL,
                         'u_TilingOffset': Shader3D$4.PERIOD_MATERIAL,
@@ -2728,6 +2741,7 @@
             return __awaiter(this, void 0, void 0, function* () {
                 var GPUSkinningIncludegGLSL = yield GPUSkinningBaseMaterial.loadShaderGlslAsync("GPUSkinningInclude");
                 Shader3D$5.addInclude("GPUSkinningInclude.glsl", GPUSkinningIncludegGLSL);
+                GPUSkinningBaseMaterial.__initDefine__();
                 yield GPUSkinningUnlitMaterial.install();
                 LayaExtends_Node.Init();
                 Laya3D_Extend.Init();
@@ -2763,7 +2777,7 @@
             return new Promise((resolve) => {
                 Laya.loader.load(path, Laya.Handler.create(this, (arrayBuffer) => {
                     var imageData = new Uint8Array(arrayBuffer);
-                    var texture = new Laya.Texture2D(width, height, Laya.TextureFormat.R32G32B32A32, false, true);
+                    var texture = new Laya.Texture2D(width, height, Laya.TextureFormat.R8G8B8A8, false, true);
                     texture.setPixels(imageData);
                     window['animBuffer'] = arrayBuffer;
                     window['animTexture'] = texture;
@@ -2823,7 +2837,6 @@
                 if (mono) {
                     this.scene.addChild(mono.owner);
                 }
-                yield this.TestLoadCube();
             });
         }
         TestGPUSkining() {
