@@ -524,6 +524,14 @@ public class GPUSkinningSampler : MonoBehaviour
                     pixels[pixelIndex++] = new Color(matrix.m00, matrix.m01, matrix.m02, matrix.m03);
                     pixels[pixelIndex++] = new Color(matrix.m10, matrix.m11, matrix.m12, matrix.m13);
                     pixels[pixelIndex++] = new Color(matrix.m20, matrix.m21, matrix.m22, matrix.m23);
+
+                    if(clipIndex < 1 && frameIndex < 10)
+                    {
+                        Debug.LogFormat("{0}, {1}, {2}, {3}", matrix.m00, matrix.m01, matrix.m02, matrix.m03);
+                        Debug.LogFormat("{0}, {1}, {2}, {3}", matrix.m10, matrix.m11, matrix.m12, matrix.m13);
+                        Debug.LogFormat("{0}, {1}, {2}, {3}", matrix.m20, matrix.m21, matrix.m22, matrix.m23);
+                    }
+
                 }
             }
         }

@@ -52,7 +52,6 @@ export default class GPUSkinningClip
         var frameCount = b.readUint32();
         // 事件列表 数量
         var eventCount = b.readUint32();
-
         
         // 帧列表 头信息
         var framePosLengthList:int[][] = [];

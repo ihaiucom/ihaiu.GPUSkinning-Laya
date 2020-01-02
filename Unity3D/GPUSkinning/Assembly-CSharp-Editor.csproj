@@ -9,7 +9,7 @@
     <ProductVersion>10.0.20506</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <RootNamespace></RootNamespace>
-    <ProjectGuid>{BB0967C4-A29B-3348-6CD6-1E44029DF375}</ProjectGuid>
+    <ProjectGuid>{22C6C651-616D-353E-E6E4-AD612D9F2872}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <AssemblyName>Assembly-CSharp-Editor</AssemblyName>
@@ -60,26 +60,27 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Assets\GPUSkinning\Editor\GPUSkinningMeshExport\BinaryWriterUtils.cs" />
+    <Compile Include="Assets\GPUSkinning\Editor\GPUSkinningMeshExport\GPUSkinningAnimExport.cs" />
     <Compile Include="Assets\GPUSkinning\Editor\GPUSkinningMeshExport\GPUSkinningExportMenu.cs" />
     <Compile Include="Assets\GPUSkinning\Editor\GPUSkinningMeshExport\GPUSkinningMeshExport.cs" />
+    <Compile Include="Assets\GPUSkinning\Editor\GPUSkinningMeshExport\LayaMeshExport.cs" />
     <Compile Include="Assets\GPUSkinning\Editor\GPUSkinningPlayerMonoEditor.cs" />
     <Compile Include="Assets\GPUSkinning\Editor\GPUSkinningSamplerEditor.cs" />
     <Compile Include="Assets\GPUSkinning\Editor\GPUSkinningStandardShaderGUI.cs" />
     <Reference Include="Unity.TextMeshPro.Editor">
-      <HintPath>E:/zengfeng/githubs/GPUSkinning-master/GPUSkinning-master/Library/ScriptAssemblies/Unity.TextMeshPro.Editor.dll</HintPath>
+      <HintPath>E:/zengfeng/githubs/ihaiu.GPUSkinning-Laya/Unity3D/GPUSkinning/Library/ScriptAssemblies/Unity.TextMeshPro.Editor.dll</HintPath>
     </Reference>
     <Reference Include="Unity.PackageManagerUI.Editor">
-      <HintPath>E:/zengfeng/githubs/GPUSkinning-master/GPUSkinning-master/Library/ScriptAssemblies/Unity.PackageManagerUI.Editor.dll</HintPath>
+      <HintPath>E:/zengfeng/githubs/ihaiu.GPUSkinning-Laya/Unity3D/GPUSkinning/Library/ScriptAssemblies/Unity.PackageManagerUI.Editor.dll</HintPath>
     </Reference>
     <Reference Include="Unity.CollabProxy.Editor">
-      <HintPath>E:/zengfeng/githubs/GPUSkinning-master/GPUSkinning-master/Library/ScriptAssemblies/Unity.CollabProxy.Editor.dll</HintPath>
+      <HintPath>E:/zengfeng/githubs/ihaiu.GPUSkinning-Laya/Unity3D/GPUSkinning/Library/ScriptAssemblies/Unity.CollabProxy.Editor.dll</HintPath>
     </Reference>
     <Reference Include="Unity.TextMeshPro">
-      <HintPath>E:/zengfeng/githubs/GPUSkinning-master/GPUSkinning-master/Library/ScriptAssemblies/Unity.TextMeshPro.dll</HintPath>
+      <HintPath>E:/zengfeng/githubs/ihaiu.GPUSkinning-Laya/Unity3D/GPUSkinning/Library/ScriptAssemblies/Unity.TextMeshPro.dll</HintPath>
     </Reference>
     <Reference Include="Unity.Analytics.DataPrivacy">
-      <HintPath>E:/zengfeng/githubs/GPUSkinning-master/GPUSkinning-master/Library/ScriptAssemblies/Unity.Analytics.DataPrivacy.dll</HintPath>
+      <HintPath>E:/zengfeng/githubs/ihaiu.GPUSkinning-Laya/Unity3D/GPUSkinning/Library/ScriptAssemblies/Unity.Analytics.DataPrivacy.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.AIModule">
       <HintPath>E:/Program Files/Unity2018.4.0f1/Editor/Data/Managed/UnityEngine/UnityEngine.AIModule.dll</HintPath>
@@ -316,25 +317,25 @@
       <HintPath>C:/Program Files (x86)/Microsoft Visual Studio Tools for Unity/15.0/Editor/SyntaxTree.VisualStudio.Unity.Bridge.dll</HintPath>
     </Reference>
     <Reference Include="LayaAirLibrary">
-      <HintPath>E:/zengfeng/githubs/GPUSkinning-master/GPUSkinning-master/Assets/LayaAir3D/LayaTool/LayaAirLibrary.dll</HintPath>
+      <HintPath>E:/zengfeng/githubs/ihaiu.GPUSkinning-Laya/Unity3D/GPUSkinning/Assets/LayaAir3D/LayaTool/LayaAirLibrary.dll</HintPath>
     </Reference>
     <Reference Include="zxing.unity">
-      <HintPath>E:/zengfeng/githubs/GPUSkinning-master/GPUSkinning-master/Assets/LayaAir3D/LayaTool/Util/zxing.unity.dll</HintPath>
+      <HintPath>E:/zengfeng/githubs/ihaiu.GPUSkinning-Laya/Unity3D/GPUSkinning/Assets/LayaAir3D/LayaTool/Util/zxing.unity.dll</HintPath>
     </Reference>
     <Reference Include="UnityEditor.Advertisements">
-      <HintPath>E:/zengfeng/githubs/GPUSkinning-master/GPUSkinning-master/Library/PackageCache/com.unity.ads@2.0.8/Editor/UnityEditor.Advertisements.dll</HintPath>
+      <HintPath>E:/zengfeng/githubs/ihaiu.GPUSkinning-Laya/Unity3D/GPUSkinning/Library/PackageCache/com.unity.ads@2.0.8/Editor/UnityEditor.Advertisements.dll</HintPath>
     </Reference>
     <Reference Include="Unity.Analytics.Editor">
-      <HintPath>E:/zengfeng/githubs/GPUSkinning-master/GPUSkinning-master/Library/PackageCache/com.unity.analytics@3.2.2/Unity.Analytics.Editor.dll</HintPath>
+      <HintPath>E:/zengfeng/githubs/ihaiu.GPUSkinning-Laya/Unity3D/GPUSkinning/Library/PackageCache/com.unity.analytics@3.2.2/Unity.Analytics.Editor.dll</HintPath>
     </Reference>
     <Reference Include="Unity.Analytics.StandardEvents">
-      <HintPath>E:/zengfeng/githubs/GPUSkinning-master/GPUSkinning-master/Library/PackageCache/com.unity.analytics@3.2.2/Unity.Analytics.StandardEvents.dll</HintPath>
+      <HintPath>E:/zengfeng/githubs/ihaiu.GPUSkinning-Laya/Unity3D/GPUSkinning/Library/PackageCache/com.unity.analytics@3.2.2/Unity.Analytics.StandardEvents.dll</HintPath>
     </Reference>
     <Reference Include="Unity.Analytics.Tracker">
-      <HintPath>E:/zengfeng/githubs/GPUSkinning-master/GPUSkinning-master/Library/PackageCache/com.unity.analytics@3.2.2/Unity.Analytics.Tracker.dll</HintPath>
+      <HintPath>E:/zengfeng/githubs/ihaiu.GPUSkinning-Laya/Unity3D/GPUSkinning/Library/PackageCache/com.unity.analytics@3.2.2/Unity.Analytics.Tracker.dll</HintPath>
     </Reference>
     <Reference Include="UnityEditor.Purchasing">
-      <HintPath>E:/zengfeng/githubs/GPUSkinning-master/GPUSkinning-master/Library/PackageCache/com.unity.purchasing@2.0.3/Editor/UnityEditor.Purchasing.dll</HintPath>
+      <HintPath>E:/zengfeng/githubs/ihaiu.GPUSkinning-Laya/Unity3D/GPUSkinning/Library/PackageCache/com.unity.purchasing@2.0.3/Editor/UnityEditor.Purchasing.dll</HintPath>
     </Reference>
     <Reference Include="mscorlib">
       <HintPath>E:/Program Files/Unity2018.4.0f1/Editor/Data/MonoBleedingEdge/lib/mono/4.7.1-api/mscorlib.dll</HintPath>
@@ -693,7 +694,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="Assembly-CSharp.csproj">
-      <Project>{92268F92-F890-208D-701B-B01FA43A1D06}</Project>
+      <Project>{16ABEB0C-560A-ED85-500E-ACF05B7385AD}</Project>
       <Name>Assembly-CSharp</Name>
     </ProjectReference>
   </ItemGroup>

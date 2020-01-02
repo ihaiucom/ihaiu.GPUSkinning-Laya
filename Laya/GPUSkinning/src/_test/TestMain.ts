@@ -8,7 +8,6 @@ import GPUSkining from "../GPUSkinning/GPUSkining";
     {
 		this.InitLaya();
 
-		GPUSkining.Init();
 
 		// 启动游戏
 		new TestShader();

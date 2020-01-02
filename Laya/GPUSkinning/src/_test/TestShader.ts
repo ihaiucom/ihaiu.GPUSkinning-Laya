@@ -23,6 +23,8 @@ export default class TestShader
 
     async InitAsync()
     {
+        
+		await GPUSkining.InitAsync();
 		// 初始化shader
         await MaterialInstall.install();
         // this.TestPrefab();

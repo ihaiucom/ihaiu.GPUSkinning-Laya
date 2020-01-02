@@ -42,5 +42,23 @@ namespace GPUSkingings
             export.SetMesh(mesh);
             export.Export();
         }
+
+        [MenuItem("Assets/GPUSkinning ReadAnim", false, 1)]
+        public static void ReadAnim()
+        {
+            Object[] objs = Selection.objects;
+            for (int i = 0; i < objs.Length; i++)
+            {
+
+                if (objs[i] is TextAsset)
+                {
+                    TextAsset asset = (TextAsset) objs[i];
+                    byte[] bytes = asset.bytes;
+                    Debug.Log(bytes);
+                    GPUSkinningAnimation anim = GPUSkinningAnimation.CreateFromBytes(bytes);
+                }
+
+            }
+        }
     }
 }

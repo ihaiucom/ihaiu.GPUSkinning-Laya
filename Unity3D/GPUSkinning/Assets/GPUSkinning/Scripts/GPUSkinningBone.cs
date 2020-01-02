@@ -57,8 +57,8 @@ public class GPUSkinningBone
     {
         MemoryStream stream = new MemoryStream();
         BinaryWriter b = new BinaryWriter(stream);
-        b.WriteString(name);
-        b.WriteString(guid);
+        b.WriteUTFString(name);
+        b.WriteUTFString(guid);
         b.Write((bool) isExposed);
         b.Write((int) parentBoneIndex);
         b.WriteMatrix4x4(bindpose);

@@ -19,8 +19,14 @@ export class GPUSkinningUnlitMaterial extends GPUSkinningBaseMaterial
     /** Shader名称 */
     public static shaderName = "GPUSkinningUnlit";
 
+	private static _isInstalled: boolean = false;
     public static async install()
     {
+		if(this._isInstalled)
+		{
+			return;
+		}
+		this._isInstalled = true;
         GPUSkinningUnlitMaterial.__initDefine__();
         await GPUSkinningUnlitMaterial.initShader();
 

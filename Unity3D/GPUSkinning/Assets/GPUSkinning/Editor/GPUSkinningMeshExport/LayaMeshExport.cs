@@ -167,7 +167,7 @@ namespace Laya
             stringsByteLength = 0;
             for (int i = 0; i < _strings.Count; i++)
             {
-                w.WriteString(_strings[i]);
+                w.WriteUTFString(_strings[i]);
                 stringsByteLength += 2 + (uint)_strings[i].Length;
             }
             stringBuffer = stream;
@@ -323,7 +323,7 @@ namespace Laya
             MemoryStream stream = new MemoryStream();
             BinaryWriter w = new BinaryWriter(stream);
             // version
-            w.WriteString(version);
+            w.WriteUTFString(version);
 
 
             // _Data

@@ -34,6 +34,13 @@ public class GPUSkinningClip
 
     public void FromBytes(byte[] bytes)
     {
+        MemoryStream stream = new MemoryStream(bytes);
+        stream.Position = 0;
+        BinaryReader b = new BinaryReader(stream);
+        name = b.ReadUTFString();
+        length = b.ReadSingle();
+        Debug.LogFormat("name={0}", name);
+        Debug.LogFormat("length={0}", length);
 
 
     }
@@ -42,8 +49,9 @@ public class GPUSkinningClip
     public MemoryStream ToSteam()
     {
         MemoryStream stream = new MemoryStream();
+        stream.Position = 0;
         BinaryWriter b = new BinaryWriter(stream);
-        b.WriteString(name);
+        b.WriteUTFString(name);
         b.Write((float) length);
         b.Write((uint) fps);
         b.Write((int) wrapMode);
@@ -57,10 +65,10 @@ public class GPUSkinningClip
         // 事件列表 数量
         b.Write((uint)events.Length);
 
-        int longSize = sizeof(long);
+        int intSize = sizeof(int);
         long posBegin = stream.Position;
-        posBegin += frames.Length * (longSize + longSize);
-        posBegin += events.Length * (longSize + longSize);
+        posBegin += frames.Length * (intSize + intSize);
+        posBegin += events.Length * (intSize + intSize);
 
 
         // 帧列表 头信息
@@ -70,8 +78,8 @@ public class GPUSkinningClip
             GPUSkinningFrame item = frames[i];
             MemoryStream itemStream = item.ToSteam();
             frameSteamList.Add(itemStream);
-            b.Write((ulong)posBegin);
-            b.Write((ulong)itemStream.Length);
+            b.Write((uint)posBegin);
+            b.Write((uint)itemStream.Length);
             posBegin += itemStream.Length;
         }
 
@@ -84,8 +92,8 @@ public class GPUSkinningClip
             GPUSkinningAnimEvent item = events[i];
             MemoryStream itemStream = item.ToSteam();
             eventSteamList.Add(itemStream);
-            b.Write((ulong)posBegin);
-            b.Write((ulong)itemStream.Length);
+            b.Write((uint)posBegin);
+            b.Write((uint)itemStream.Length);
             posBegin += itemStream.Length;
         }
 
@@ -114,7 +122,8 @@ public class GPUSkinningClip
             itemStream.Dispose();
         }
 
-
+        b.Flush();
+        stream.Flush();
 
         return stream;
     }

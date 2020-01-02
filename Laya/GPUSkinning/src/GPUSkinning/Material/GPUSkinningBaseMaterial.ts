@@ -18,6 +18,21 @@ export class GPUSkinningBaseMaterial extends Laya.Material
     {
         return this.SHADER_PATH_ROOT + filename  + ".fs";
     }
+
+    
+    // 获取--Shader路径--glsl
+    static getShaderGLSL(filename: string)
+    {
+        return this.SHADER_PATH_ROOT + filename  + ".glsl";
+    }
+
+    
+    // 加载Shader
+    static async loadShaderGlslAsync(filename: string): Promise<string>
+    {
+        let code = await this.loadAsync(this.getShaderGLSL(filename), Laya.Loader.TEXT);
+        return code.replace(/\r/g, "");
+    }
     
     // 加载Shader
     static async loadShaderVSAsync(filename: string): Promise<string>

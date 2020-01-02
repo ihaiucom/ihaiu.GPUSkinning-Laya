@@ -38,9 +38,11 @@ public class GPUSkinningAnimation : ScriptableObject
     public void FromBytes(byte[] bytes)
     {
         MemoryStream stream = new MemoryStream(bytes);
+        stream.Position = 0;
+        Debug.Log(stream.Length);
         BinaryReader b = new BinaryReader(stream);
-        guid = b.ReadString();
-        name = b.ReadString();
+        guid = b.ReadUTFString();
+        name = b.ReadUTFString();
         rootBoneIndex = b.ReadInt16();
         textureWidth = (int) b.ReadUInt32();
         textureHeight = (int) b.ReadUInt32();
@@ -52,24 +54,25 @@ public class GPUSkinningAnimation : ScriptableObject
         // 骨骼列表 数量
         uint boneCount = b.ReadUInt32();
 
+
         // 剪辑列表 头信息
         List<ulong[]> clipPosLengthList = new List<ulong[]>();
         for(int i = 0; i < clipCount; i ++)
         {
             ulong[] info = new ulong[2];
-            info[0] = b.ReadUInt64(); // posBegin
-            info[1] = b.ReadUInt64(); // length
+            info[0] = b.ReadUInt32(); // posBegin
+            info[1] = b.ReadUInt32(); // length
             clipPosLengthList.Add(info);
         }
 
 
         // 骨骼列表 头信息
         List<ulong[]> bonePosLengthList = new List<ulong[]>();
-        for (int i = 0; i < clipCount; i++)
+        for (int i = 0; i < boneCount; i++)
         {
             ulong[] info = new ulong[2];
-            info[0] = b.ReadUInt64(); // posBegin
-            info[1] = b.ReadUInt64(); // length
+            info[0] = b.ReadUInt32(); // posBegin
+            info[1] = b.ReadUInt32(); // length
             bonePosLengthList.Add(info);
         }
 
@@ -83,6 +86,10 @@ public class GPUSkinningAnimation : ScriptableObject
 
             stream.Position = (long)pos;
             byte[] itemBytes = b.ReadBytes((int)len);
+            stream.Position = (long)pos;
+
+
+
             GPUSkinningClip item = GPUSkinningClip.CreateFromBytes(itemBytes);
             clipList.Add(item);
         }
@@ -121,8 +128,8 @@ public class GPUSkinningAnimation : ScriptableObject
     {
         MemoryStream stream = new MemoryStream();
         BinaryWriter b = new BinaryWriter(stream);
-        b.WriteString(guid);
-        b.WriteString(name);
+        b.WriteUTFString(guid);
+        b.WriteUTFString(name);
         b.Write((short)rootBoneIndex);
         b.Write((uint)textureWidth);
         b.Write((uint)textureHeight);
@@ -131,7 +138,7 @@ public class GPUSkinningAnimation : ScriptableObject
 
 
 
-        int longSize = sizeof(long);
+        int intSize = sizeof(int);
 
         List<GPUSkinningBone> exportBoneList = new List<GPUSkinningBone>();
         for (int i = 0; i < bones.Length; i++)
@@ -151,8 +158,8 @@ public class GPUSkinningAnimation : ScriptableObject
 
 
         long posBegin = stream.Position ;
-        posBegin += clips.Length * (longSize + longSize);
-        posBegin += exportBoneList.Count * (longSize + longSize);
+        posBegin += clips.Length * (intSize + intSize);
+        posBegin += exportBoneList.Count * (intSize + intSize);
 
         // 写入剪辑列表 头信息
         List<MemoryStream> clipSteamList = new List<MemoryStream>();
@@ -161,8 +168,8 @@ public class GPUSkinningAnimation : ScriptableObject
             GPUSkinningClip item = clips[i];
             MemoryStream itemStream = item.ToSteam();
             clipSteamList.Add(itemStream);
-            b.Write((ulong)posBegin);
-            b.Write((ulong)itemStream.Length);
+            b.Write((uint)posBegin);
+            b.Write((uint)itemStream.Length);
             posBegin += itemStream.Length;
         }
 
@@ -174,8 +181,8 @@ public class GPUSkinningAnimation : ScriptableObject
             GPUSkinningBone item = exportBoneList[i];
             MemoryStream itemSteam = item.ToSteam();
             boneSteamList.Add(itemSteam);
-            b.Write((ulong)posBegin);
-            b.Write((ulong)itemSteam.Length);
+            b.Write((uint)posBegin);
+            b.Write((uint)itemSteam.Length);
             posBegin += itemSteam.Length;
         }
 
@@ -187,6 +194,7 @@ public class GPUSkinningAnimation : ScriptableObject
         // 写入剪辑列表 数据块
         for (int i = 0; i < clipSteamList.Count; i++)
         {
+
             MemoryStream itemStream = clipSteamList[i];
             b.WriteMemoryStream(itemStream);
 

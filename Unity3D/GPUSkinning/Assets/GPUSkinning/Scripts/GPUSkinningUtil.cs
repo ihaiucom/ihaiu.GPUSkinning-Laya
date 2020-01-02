@@ -33,6 +33,7 @@ public class GPUSkinningUtil
         texture.LoadRawTextureData(textureRawData.bytes);
         texture.Apply(false, true);
 
+
         return texture;
     }
 

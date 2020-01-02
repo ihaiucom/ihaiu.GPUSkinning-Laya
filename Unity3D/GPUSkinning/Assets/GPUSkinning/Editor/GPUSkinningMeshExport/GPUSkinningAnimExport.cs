@@ -30,16 +30,14 @@ namespace GPUSkingings
             name = anim.name;
 
             MemoryStream stream = new MemoryStream();
+            stream.Position = 0;
             BinaryWriter b = new BinaryWriter(stream);
             // version
-            b.WriteString(version);
+            b.WriteUTFString(version);
 
             MemoryStream animStream = anim.ToSteam();
+            b.Write((uint)animStream.Length);
             b.WriteMemoryStream(animStream);
-
-            animStream.Close();
-            animStream.Dispose();
-
 
 
 
@@ -47,9 +45,11 @@ namespace GPUSkingings
             dir = Path.GetDirectoryName(dir);
 
             string savedPath = dir + "/GPUSKinning_Anim_" + name + ".skinlani";
+            //string savedPath = dir + "/GPUSKinning_Anim_" + name + ".bytes";
 
             using (FileStream fileStream = new FileStream(savedPath, FileMode.Create))
             {
+                stream.Position = 0;
                 byte[] bytes = stream.GetBuffer();
                 fileStream.Write(bytes, 0, (int)stream.Length);
                 fileStream.Flush();

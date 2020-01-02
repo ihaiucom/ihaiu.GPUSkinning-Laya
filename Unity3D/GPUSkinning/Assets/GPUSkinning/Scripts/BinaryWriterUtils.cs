@@ -98,7 +98,7 @@ public static class BinaryWriterUtils
 
 
 
-    public static BinaryWriter WriteString(this BinaryWriter src, string v)
+    public static BinaryWriter WriteUTFString(this BinaryWriter src, string v)
     {
 
         byte[] stringBytes = Encoding.UTF8.GetBytes(v);

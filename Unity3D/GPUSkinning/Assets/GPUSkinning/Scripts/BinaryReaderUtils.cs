@@ -10,9 +10,9 @@ public static class BinaryReaderUtils
 
 
 
-    public static string ReadString(this BinaryReader src)
+    public static string ReadUTFString(this BinaryReader src)
     {
-        int len = src.ReadUInt16();
+        int len = (int) src.ReadUInt16();
         byte[] bytes = src.ReadBytes(len);
         string str = Encoding.UTF8.GetString(bytes);
         return str;

@@ -8,6 +8,7 @@ import ByteReadUtil from "./ByteReadUtil";
 /** 烘焙动画--全部数据信息 */
 export default class GPUSkinningAnimation
 {
+    version:string;
     /** 编号 */
     guid: string;
 
@@ -46,9 +47,15 @@ export default class GPUSkinningAnimation
 
     FromBytes(arrayBuffer: ArrayBuffer): void
     {
+        
+        // var b:Byte = new Byte(arrayBuffer);
+        // b.pos = 0;
+        // var vision = b.readUTFString();
+        // var len = b.readUint32();
+        // var arrayBuffer = arrayBuffer.slice(b.pos, pos + len);
+
         var b:Byte = new Byte(arrayBuffer);
         b.pos = 0;
-        var vision = b.readUTFString();
 
         this.guid = b.readUTFString();
         this.name = b.readUTFString();
@@ -75,7 +82,6 @@ export default class GPUSkinningAnimation
             clipPosLengthList.push(info);
         }
 
-        console.log("clipPosLengthList", clipPosLengthList);
 
         // 骨骼列表 头信息
         var bonePosLengthList:int[][] = [];
@@ -97,14 +103,9 @@ export default class GPUSkinningAnimation
             var pos = itemInfo[0];
             var len = itemInfo[1];
 
-            console.log(i, pos, len);
-
-            b.pos = pos;
-            console.log(b.readUTFString());
             b.pos = pos;
 
             var itemBuffer = b.readArrayBuffer(len);
-            // var itemBuffer = arrayBuffer.slice(pos, pos + len);
             var item:any = GPUSkinningClip.CreateFromBytes(itemBuffer);
             clipList.push(item);
         }
@@ -120,7 +121,6 @@ export default class GPUSkinningAnimation
             var len = itemInfo[1];
 
             b.pos = pos;
-            console.log(b.readUTFString());
             b.pos = pos;
             var itemBuffer = b.readArrayBuffer(len);
             var item:any = GPUSkinningBone.CreateFromBytes(itemBuffer);
@@ -131,8 +131,16 @@ export default class GPUSkinningAnimation
 
     static CreateFromBytes(data: ArrayBuffer):GPUSkinningAnimation
     {
+        
+        var b:Byte = new Byte(data);
+        b.pos = 0;
+        var version = b.readUTFString();
+        var len = b.readUint32();
+        var arrayBuffer = b.readArrayBuffer(len);
+
         var obj = new GPUSkinningAnimation();
-        obj.FromBytes(data);
+        obj.version = version;
+        obj.FromBytes(arrayBuffer);
         return obj;
     }
 

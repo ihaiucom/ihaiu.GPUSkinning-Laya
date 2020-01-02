@@ -2207,7 +2207,6 @@
         FromBytes(arrayBuffer) {
             var b = new Byte$2(arrayBuffer);
             b.pos = 0;
-            var vision = b.readUTFString();
             this.guid = b.readUTFString();
             this.name = b.readUTFString();
             this.rootBoneIndex = b.readInt16();
@@ -2224,7 +2223,6 @@
                 info[1] = b.readUint32();
                 clipPosLengthList.push(info);
             }
-            console.log("clipPosLengthList", clipPosLengthList);
             var bonePosLengthList = [];
             for (var i = 0; i < boneCount; i++) {
                 var info = [];
@@ -2238,9 +2236,6 @@
                 var itemInfo = clipPosLengthList[i];
                 var pos = itemInfo[0];
                 var len = itemInfo[1];
-                console.log(i, pos, len);
-                b.pos = pos;
-                console.log(b.readUTFString());
                 b.pos = pos;
                 var itemBuffer = b.readArrayBuffer(len);
                 var item = GPUSkinningClip.CreateFromBytes(itemBuffer);
@@ -2253,7 +2248,6 @@
                 var pos = itemInfo[0];
                 var len = itemInfo[1];
                 b.pos = pos;
-                console.log(b.readUTFString());
                 b.pos = pos;
                 var itemBuffer = b.readArrayBuffer(len);
                 var item = GPUSkinningBone.CreateFromBytes(itemBuffer);
@@ -2261,8 +2255,14 @@
             }
         }
         static CreateFromBytes(data) {
+            var b = new Byte$2(data);
+            b.pos = 0;
+            var version = b.readUTFString();
+            var len = b.readUint32();
+            var arrayBuffer = b.readArrayBuffer(len);
             var obj = new GPUSkinningAnimation();
-            obj.FromBytes(data);
+            obj.version = version;
+            obj.FromBytes(arrayBuffer);
             return obj;
         }
         static LoadAsync(path) {
@@ -2291,6 +2291,15 @@
         }
         static getShaderPS(filename) {
             return this.SHADER_PATH_ROOT + filename + ".fs";
+        }
+        static getShaderGLSL(filename) {
+            return this.SHADER_PATH_ROOT + filename + ".glsl";
+        }
+        static loadShaderGlslAsync(filename) {
+            return __awaiter(this, void 0, void 0, function* () {
+                let code = yield this.loadAsync(this.getShaderGLSL(filename), Laya.Loader.TEXT);
+                return code.replace(/\r/g, "");
+            });
         }
         static loadShaderVSAsync(filename) {
             return __awaiter(this, void 0, void 0, function* () {
@@ -2348,6 +2357,10 @@
         }
         static install() {
             return __awaiter(this, void 0, void 0, function* () {
+                if (this._isInstalled) {
+                    return;
+                }
+                this._isInstalled = true;
                 GPUSkinningUnlitMaterial.__initDefine__();
                 yield GPUSkinningUnlitMaterial.initShader();
                 GPUSkinningUnlitMaterial.defaultMaterial = new GPUSkinningUnlitMaterial();
@@ -2651,6 +2664,7 @@
         }
     }
     GPUSkinningUnlitMaterial.shaderName = "GPUSkinningUnlit";
+    GPUSkinningUnlitMaterial._isInstalled = false;
     GPUSkinningUnlitMaterial.RENDERMODE_OPAQUE = 0;
     GPUSkinningUnlitMaterial.RENDERMODE_CUTOUT = 1;
     GPUSkinningUnlitMaterial.RENDERMODE_TRANSPARENT = 2;
@@ -2665,17 +2679,64 @@
     GPUSkinningUnlitMaterial.DEPTH_TEST = Shader3D$4.propertyNameToID("s_DepthTest");
     GPUSkinningUnlitMaterial.DEPTH_WRITE = Shader3D$4.propertyNameToID("s_DepthWrite");
 
+    class LayaUtil {
+        static GetComponentsInChildren(go, componentType, outComponents) {
+            if (!outComponents) {
+                outComponents = [];
+            }
+            for (let i = 0, len = go.numChildren; i < len; i++) {
+                let child = go.getChildAt(i);
+                let component = child.getComponent(componentType);
+                if (component) {
+                    outComponents.push(component);
+                }
+                this.GetComponentsInChildren(child, componentType, outComponents);
+            }
+            return outComponents;
+        }
+    }
+
+    class LayaExtends_Node {
+        constructor() {
+            Laya.Node.prototype.getComponentsInChildren = this.getComponentsInChildren;
+        }
+        static Init() {
+            if (this.isInited)
+                return;
+            this.isInited = true;
+            new LayaExtends_Node();
+        }
+        getComponentsInChildren(componentType, outComponents) {
+            if (outComponents) {
+                outComponents.length = 0;
+            }
+            else {
+                outComponents = [];
+            }
+            LayaUtil.GetComponentsInChildren(this, componentType, outComponents);
+            return outComponents;
+        }
+    }
+    LayaExtends_Node.isInited = false;
+
     var LoaderManager = Laya.LoaderManager;
     var Loader = Laya.Loader;
     var Event = Laya.Event;
+    var Shader3D$5 = Laya.Shader3D;
     class GPUSkining {
-        static Init() {
-            Laya3D_Extend.Init();
-            Laya3D.SKING_MESH = "SKING_MESH";
-            var createMap = LoaderManager.createMap;
-            createMap["skinlm"] = [Laya3D.SKING_MESH, GPUSkiningMesh._parse];
-            var parserMap = Loader.parserMap;
-            parserMap[Laya3D.SKING_MESH] = this._loadMesh;
+        static InitAsync() {
+            return __awaiter(this, void 0, void 0, function* () {
+                var GPUSkinningIncludegGLSL = yield GPUSkinningBaseMaterial.loadShaderGlslAsync("GPUSkinningInclude");
+                Shader3D$5.addInclude("GPUSkinningInclude.glsl", GPUSkinningIncludegGLSL);
+                yield GPUSkinningUnlitMaterial.install();
+                LayaExtends_Node.Init();
+                Laya3D_Extend.Init();
+                Laya3D.SKING_MESH = "SKING_MESH";
+                var createMap = LoaderManager.createMap;
+                createMap["skinlm"] = [Laya3D.SKING_MESH, GPUSkiningMesh._parse];
+                var parserMap = Loader.parserMap;
+                parserMap[Laya3D.SKING_MESH] = this._loadMesh;
+            });
         }
         static _loadMesh(loader) {
             loader.on(Event.LOADED, null, this._onMeshLmLoaded, [loader]);
@@ -2698,6 +2759,18 @@
         static GetPath(name) {
             return this.resRoot + name;
         }
+        static LoadAnimTextureAsync(path, width, height) {
+            return new Promise((resolve) => {
+                Laya.loader.load(path, Laya.Handler.create(this, (arrayBuffer) => {
+                    var imageData = new Uint8Array(arrayBuffer);
+                    var texture = new Laya.Texture2D(width, height, Laya.TextureFormat.R32G32B32A32, false, true);
+                    texture.setPixels(imageData);
+                    window['animBuffer'] = arrayBuffer;
+                    window['animTexture'] = texture;
+                    resolve(texture);
+                }), null, Laya.Loader.BUFFER);
+            });
+        }
         static LoadAsync(path, type) {
             return new Promise((resolve) => {
                 Laya.loader.load(path, Laya.Handler.create(this, (data) => {
@@ -2715,15 +2788,20 @@
                 var texturePath = this.GetPath(this.GetTextureName(name));
                 var anim = yield GPUSkinningAnimation.LoadAsync(animPath);
                 console.log(anim);
-                return null;
                 var mesh = yield GPUSkiningMesh.LoadAsync(meshPath);
-                var animTexture = yield this.LoadAsync(texturePath, Laya.Loader.TEXTURE2D);
+                console.log(mesh);
+                var animTexture = yield this.LoadAnimTextureAsync(texturePath, anim.textureWidth, anim.textureHeight);
+                console.log(animTexture);
                 var mainTexture = yield this.LoadAsync(mainTexturePath, Laya.Loader.TEXTURE2D);
+                console.log(mainTexture);
                 var material = new materialCls();
                 material.albedoTexture = mainTexture;
+                console.log(material);
                 var sprite = new Laya.MeshSprite3D();
                 var mono = sprite.addComponent(GPUSkinningPlayerMono);
                 mono.SetData(anim, mesh, material, animTexture);
+                window['mono'] = mono;
+                console.log(mono);
                 return mono;
             });
         }
@@ -2739,6 +2817,7 @@
         }
         InitAsync() {
             return __awaiter(this, void 0, void 0, function* () {
+                yield GPUSkining.InitAsync();
                 yield MaterialInstall.install();
                 var mono = yield GPUSkining.CreateByNameAsync("Hero_1001_Dianguanglongqi_Skin1", "res/gpuskining/Hero_1001_Dianguanglongqi.jpg");
                 if (mono) {
@@ -2894,7 +2973,6 @@
     class TestMain {
         constructor() {
             this.InitLaya();
-            GPUSkining.Init();
             new TestShader();
         }
         InitLaya() {
