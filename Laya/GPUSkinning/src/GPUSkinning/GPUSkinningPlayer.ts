@@ -68,7 +68,7 @@ export default class GPUSkinningPlayer
     }
 
     /** 是否显示 */
-    private visible: boolean = false;
+    private visible: boolean = true;
     public get Visible(): boolean
     {
         return this.visible;

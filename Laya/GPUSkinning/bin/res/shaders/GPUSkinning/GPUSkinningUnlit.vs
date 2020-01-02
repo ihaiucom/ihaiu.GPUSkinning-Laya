@@ -60,6 +60,11 @@ void main()
 
 	position= skin4(a_Position, a_Texcoord1, a_Texcoord2);
 
+	//position.x *= u_GPUSkinning_FrameIndex_PixelSegmentation.z * 0.0001;
+
+	// position = a_Position;
+	// position.x += a_Texcoord2.x ;
+
 v_Texcoord1 = a_Texcoord1;
     
     // 模型坐标 转 屏幕裁剪坐标

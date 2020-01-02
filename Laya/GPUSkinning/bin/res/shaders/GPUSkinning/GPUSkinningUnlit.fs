@@ -4,8 +4,10 @@
 	precision mediump float;
 #endif
 
-	// uniform sampler2D u_GPUSkinning_TextureMatrix;
-	// varying vec4 v_Texcoord1;
+// #include "GPUSkinningInclude.glsl";
+	uniform sampler2D u_GPUSkinning_TextureMatrix;
+	varying vec4 v_Texcoord1;
+// uniform vec2 u_GPUSkinning_FrameIndex_PixelSegmentation;
 
 #if defined(COLOR)&&defined(ENABLEVERTEXCOLOR)
 	varying vec4 v_Color;
@@ -38,8 +40,13 @@ void main()
 		color *= texture2D(u_AlbedoTexture, v_Texcoord0);
 	#endif
 
-	// color = texture2D(u_GPUSkinning_TextureMatrix, v_Texcoord0);
-	// color = texture2D(u_AlbedoTexture, v_Texcoord0);
+    // float frameStartIndex = getFrameStartIndex();
+	// float matStartIndex = frameStartIndex + v_Texcoord1.x * 3.0;
+	// vec4 row0 = texture2D(u_GPUSkinning_TextureMatrix, indexToUV(matStartIndex));
+	// color = row0;
+	// color = texture2D(u_AlbedoTexture, v_Texcoord1.yw);
+	color = texture2D(u_GPUSkinning_TextureMatrix, v_Texcoord0) ;
+	// + vec4(1.0, 1.0, 1.0, 1.0) * 0.5;
 
 	#if defined(COLOR)&&defined(ENABLEVERTEXCOLOR)
 		color *= v_Color;

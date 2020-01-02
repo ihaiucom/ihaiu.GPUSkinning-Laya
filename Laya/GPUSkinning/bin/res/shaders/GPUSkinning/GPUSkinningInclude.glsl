@@ -2,6 +2,8 @@
 #define GPUSKINNING_INCLUDE
 
 
+
+
 uniform sampler2D u_GPUSkinning_TextureMatrix;
 // x=textureWidth, y=textureHeight, z=bones.Length * 3
 uniform vec3 u_GPUSkinning_TextureSize_NumPixelsPerFrame;
@@ -30,18 +32,41 @@ vec2 indexToUV(float index)
 {
 	float row = floor(index / u_GPUSkinning_TextureSize_NumPixelsPerFrame.x);
 	float col = floor(index - row * u_GPUSkinning_TextureSize_NumPixelsPerFrame.x);
-	return vec2(col / u_GPUSkinning_TextureSize_NumPixelsPerFrame.x, row / u_GPUSkinning_TextureSize_NumPixelsPerFrame.y);
+	return vec2(col / u_GPUSkinning_TextureSize_NumPixelsPerFrame.x, 1.0 - row / u_GPUSkinning_TextureSize_NumPixelsPerFrame.y);
 }
 
 
+mat4 iMatrix(mat4 m)
+{
+    mat4 n = mat4 (
+        m[0].x, m[1].x, m[2].x, m[3].x,
+        m[0].y, m[1].y, m[2].y, m[3].y,
+        m[0].z, m[1].z, m[2].z, m[3].z,
+        m[0].w, m[1].w, m[2].w, m[3].w
+    );
+
+    return n;
+}
+
 mat4 getMatrix(float frameStartIndex, float boneIndex)
 {
-	float matStartIndex = frameStartIndex + boneIndex * 3.0;
+	// float matStartIndex = frameStartIndex + boneIndex * 3.0;
+	float matStartIndex = boneIndex * 3.0;
 	vec4 row0 = texture2D(u_GPUSkinning_TextureMatrix, indexToUV(matStartIndex));
 	vec4 row1 = texture2D(u_GPUSkinning_TextureMatrix, indexToUV(matStartIndex + 1.0));
 	vec4 row2 = texture2D(u_GPUSkinning_TextureMatrix, indexToUV(matStartIndex + 2.0));
+    // row0= vec4(1.0, 0.0, 0.0, 0.0);
+    // row1= vec4(0.0, 1.0, 0.0, 0.0);
+    // row2= vec4(0.0, 0.0, 1.0, 0.0);
 	vec4 row3 = vec4(0.0, 0.0, 0.0, 1.0);
+
+    // row0 = row0 - vec4(1.0, 1.0, 1.0, 1.0) * 0.5;
+    // row1 = row1 - vec4(1.0, 1.0, 1.0, 1.0) * 0.5;
+    // row2 = row2 - vec4(1.0, 1.0, 1.0, 1.0) * 0.5;
+
+    
 	mat4 mat = mat4(row0, row1, row2, row3);
+    // mat = iMatrix(mat);
 	return mat;
 }
 
@@ -373,11 +398,13 @@ vec3 skin_blend(vec4 pos0, vec4 pos1)
 #ifdef ROOTOFF_BLENDOFF
 vec4 skin4_noroot(GPUSkingingTextureMatrixs s, vec4 vertex, vec4 uv2, vec4 uv3)
 {
-    // return vertex;
-    return s.m0 * vertex * uv2.y 
-        + s.m1 * vertex * uv2.w 
-        + s.m2 * vertex * uv3.y 
-        + s.m3 * vertex * uv3.w ;
+    return  s.m0 * vertex;
+    // return vertex + s.m0[0].x  ;
+    // return vertex + s.m0 * vec4(1.0, 1.0, 1.0, 1.0) * 0.01 ;
+    // return s.m0 * vertex * uv2.y 
+    //     + s.m1 * vertex * uv2.w 
+    //     + s.m2 * vertex * uv3.y 
+    //     + s.m3 * vertex * uv3.w ;
     // return vertex;
     // return s.m0 * vertex * uv2.w;
     //        + mul(s.m1, vertex) * uv2.w

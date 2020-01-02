@@ -941,7 +941,7 @@
                 let anim = this.anim;
                 mtrl.executeOncePerFrame.MarkAsExecuted();
                 mtrl.material._shaderValues.setTexture(GPUSkinningPlayerResources.shaderPropID_GPUSkinning_TextureMatrix, this.texture);
-                mtrl.material._shaderValues.setVector(GPUSkinningPlayerResources.shaderPropID_GPUSkinning_TextureSize_NumPixelsPerFrame, new Vector4$1(anim.textureWidth, anim.textureHeight, anim.bones.length * 3, 0));
+                mtrl.material._shaderValues.setVector(GPUSkinningPlayerResources.shaderPropID_GPUSkinning_TextureSize_NumPixelsPerFrame, new Vector4$1(anim.textureWidth, anim.textureHeight, anim.bonesCount * 3, 0));
             }
         }
         UpdatePlayingData(mpb, playingClip, frameIndex, frame, rootMotionEnabled, lastPlayedClip, frameIndex_crossFade, crossFadeTime, crossFadeProgress) {
@@ -964,7 +964,6 @@
             return lastPlayedClip != null && crossFadeTime > 0 && crossFadeProgress <= crossFadeTime;
         }
         GetMaterial(state) {
-            console.log("GetMaterial", state, GPUSkinningPlayerResources.keywords[state]);
             return this.mtrls[state];
         }
         InitMaterial(originalMaterial, skinningQuality) {
@@ -990,16 +989,12 @@
                 mtrls[i] = materialItem;
                 material.name = GPUSkinningPlayerResources.keywords[i];
                 material._shaderValues.addDefine(SKILL_N);
-                window['am'] = material;
-                console.log(material);
-                console.log("SKILL_N,", SKILL_N, "skinningQuality=", skinningQuality);
                 this.EnableKeywords(i, materialItem);
             }
         }
         EnableKeywords(ki, mtrl) {
             for (let i = 0; i < this.mtrls.length; ++i) {
                 if (i == ki) {
-                    console.log("addDefine", ki, GPUSkinningPlayerResources.keywords[i], GPUSkinningPlayerResources.keywordDefines[i]);
                     mtrl.material._shaderValues.addDefine(GPUSkinningPlayerResources.keywordDefines[i]);
                 }
                 else {
@@ -1126,7 +1121,7 @@
             this.sAnimEvent = new Typed2Signal();
             this.rootMotionEnabled = false;
             this.cullingMode = GPUSKinningCullingMode.CullUpdateTransforms;
-            this.visible = false;
+            this.visible = true;
             this.lodEnabled = false;
             this.isPlaying = false;
             this.joints = null;
@@ -1578,7 +1573,7 @@
         }
         onUpdate() {
             if (this.player != null) {
-                this.player.Update(Laya.timer.delta / 1000);
+                this.player.Update(Laya.timer.delta / 1000 * 0.5);
             }
         }
         onDestroy() {
@@ -1659,6 +1654,7 @@
                         case "UV2":
                             element = new VertexElement(offset, VertexElementFormat.Vector4, this.MESH_TEXTURECOORDINATE2);
                             offset += 16;
+                            console.log("UV2", element);
                             break;
                         case "BLENDWEIGHT":
                             element = new VertexElement(offset, VertexElementFormat.Vector4, this.MESH_BLENDWEIGHT0);
@@ -1677,6 +1673,7 @@
                         case "TANGENT":
                             element = new VertexElement(offset, VertexElementFormat.Vector4, this.MESH_TANGENT0);
                             offset += 16;
+                            console.log("TANGENT", element);
                             break;
                         default:
                             throw "VertexMesh: unknown vertex flag.";
@@ -1689,7 +1686,7 @@
             return verDec;
         }
     }
-    GPUSkiningVertexMesh.MESH_TEXTURECOORDINATE2 = 16;
+    GPUSkiningVertexMesh.MESH_TEXTURECOORDINATE2 = 6;
     GPUSkiningVertexMesh._declarationMap = {};
 
     var IndexBuffer3D = Laya.IndexBuffer3D;
@@ -2019,7 +2016,7 @@
         }
         static ReadVector3(b) {
             var v = new Vector3$3();
-            v.x = b.readFloat32();
+            v.x = b.readFloat32() * -1;
             v.y = b.readFloat32();
             v.z = b.readFloat32();
             return v;
@@ -2203,6 +2200,7 @@
     var Byte$2 = Laya.Byte;
     class GPUSkinningAnimation {
         constructor() {
+            this.bonesCount = 67;
             this.rootBoneIndex = 0;
             this.textureWidth = 0;
             this.textureHeight = 0;
@@ -2776,9 +2774,9 @@
         static LoadAnimTextureAsync(path, width, height) {
             return new Promise((resolve) => {
                 Laya.loader.load(path, Laya.Handler.create(this, (arrayBuffer) => {
-                    var imageData = new Uint8Array(arrayBuffer);
+                    var i8 = new Uint8Array(arrayBuffer);
                     var texture = new Laya.Texture2D(width, height, Laya.TextureFormat.R8G8B8A8, false, true);
-                    texture.setPixels(imageData);
+                    texture.setPixels(i8);
                     window['animBuffer'] = arrayBuffer;
                     window['animTexture'] = texture;
                     resolve(texture);
@@ -2801,21 +2799,18 @@
                 var meshPath = this.GetPath(this.GetMeshName(name));
                 var texturePath = this.GetPath(this.GetTextureName(name));
                 var anim = yield GPUSkinningAnimation.LoadAsync(animPath);
-                console.log(anim);
                 var mesh = yield GPUSkiningMesh.LoadAsync(meshPath);
-                console.log(mesh);
                 var animTexture = yield this.LoadAnimTextureAsync(texturePath, anim.textureWidth, anim.textureHeight);
-                console.log(animTexture);
                 var mainTexture = yield this.LoadAsync(mainTexturePath, Laya.Loader.TEXTURE2D);
-                console.log(mainTexture);
                 var material = new materialCls();
                 material.albedoTexture = mainTexture;
-                console.log(material);
+                material.GPUSkinning_TextureMatrix = animTexture;
                 var sprite = new Laya.MeshSprite3D();
                 var mono = sprite.addComponent(GPUSkinningPlayerMono);
                 mono.SetData(anim, mesh, material, animTexture);
                 window['mono'] = mono;
                 console.log(mono);
+                mono.Player.Play("IDLE");
                 return mono;
             });
         }
@@ -2836,6 +2831,8 @@
                 var mono = yield GPUSkining.CreateByNameAsync("Hero_1001_Dianguanglongqi_Skin1", "res/gpuskining/Hero_1001_Dianguanglongqi.jpg");
                 if (mono) {
                     this.scene.addChild(mono.owner);
+                    var sprite = mono.owner;
+                    sprite.transform.localRotationEulerX = -90;
                 }
             });
         }
@@ -2969,18 +2966,19 @@
             reg("script/GameUI.ts", GameUI);
         }
     }
-    GameConfig.width = 640;
-    GameConfig.height = 1136;
-    GameConfig.scaleMode = "fixedwidth";
+    GameConfig.width = 1334;
+    GameConfig.height = 750;
+    GameConfig.scaleMode = Laya.Stage.SCALE_FIXED_AUTO;
     GameConfig.screenMode = "none";
     GameConfig.alignV = "top";
     GameConfig.alignH = "left";
     GameConfig.startScene = "test/TestScene.scene";
     GameConfig.sceneRoot = "";
     GameConfig.debug = false;
-    GameConfig.stat = false;
+    GameConfig.stat = true;
     GameConfig.physicsDebug = false;
     GameConfig.exportSceneToJson = true;
+    GameConfig.useWebGL2 = true;
     GameConfig.init();
 
     class TestMain {

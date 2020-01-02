@@ -15,6 +15,8 @@ export default class GPUSkinningAnimation
     /** 名称 */
     name: string;
 
+    bonesCount = 67;
+
     /** 骨骼列表 */
     bones: GPUSkinningBone[];
 

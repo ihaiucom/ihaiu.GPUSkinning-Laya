@@ -4,6 +4,7 @@ import LoaderManager = Laya.LoaderManager;
 import Loader = Laya.Loader;
 import Event = Laya.Event;
 import Shader3D = Laya.Shader3D;
+import HalfFloatUtils = Laya.HalfFloatUtils;
 import Laya3D_Extend from "./Mesh/Laya3D_Extend";
 import GPUSkinningAnimation from "./Datas/GPUSkinningAnimation";
 import GPUSkinningPlayerMono from "./GPUSkinningPlayerMono";
@@ -83,14 +84,26 @@ export default class GPUSkining
     
 	static LoadAnimTextureAsync(path: string, width: int, height:int): Promise<any>
 	{
+    WebGLRenderingContext
 		return new  Promise<any>((resolve)=>
 		{
 			Laya.loader.load(path, Laya.Handler.create(this, (arrayBuffer:ArrayBuffer)=>
 			{
-        var imageData = new Uint8Array(arrayBuffer);
+        var i8 = new Uint8Array(arrayBuffer);
+        // var i16 = new Uint16Array(arrayBuffer);
+        // var count = arrayBuffer.byteLength / 2;
+        // var f32 = new Float32Array(count);
+        // var reader = new Laya.Byte(arrayBuffer);
+        // for(var i = 0; i < count; i++)
+        // {
+        //   f32[i] =  HalfFloatUtils.convertToNumber(reader.getUint16());
+        //   f32[i] = 1.0;
+        // }
+        
+
         
         var texture: Laya.Texture2D = new Laya.Texture2D(width, height, Laya.TextureFormat.R8G8B8A8, false, true);
-        texture.setPixels(imageData);
+        texture.setPixels(i8);
         window['animBuffer'] = arrayBuffer;
         window['animTexture'] = texture;
         resolve(texture);
@@ -122,24 +135,25 @@ export default class GPUSkining
       var texturePath: string = this.GetPath(this.GetTextureName(name));
 
       var anim = await GPUSkinningAnimation.LoadAsync(animPath);
-      console.log(anim);
+      // console.log(anim);
 
       var mesh = await GPUSkiningMesh.LoadAsync(meshPath);
-      console.log(mesh);
+      // console.log(mesh);
       var animTexture = await this.LoadAnimTextureAsync(texturePath, anim.textureWidth, anim.textureHeight);
-      console.log(animTexture);
+      // console.log(animTexture);
       var mainTexture:Laya.Texture2D = await this.LoadAsync(mainTexturePath, Laya.Loader.TEXTURE2D);
-      console.log(mainTexture);
+      // console.log(mainTexture);
       var material:GPUSkinningUnlitMaterial = new materialCls();
       material.albedoTexture = mainTexture;
-      // material.GPUSkinning_TextureMatrix = animTexture;
-      console.log(material);
+      material.GPUSkinning_TextureMatrix = animTexture;
+      // console.log(material);
 
       var sprite = new Laya.MeshSprite3D();
       var mono: GPUSkinningPlayerMono = sprite.addComponent(GPUSkinningPlayerMono);
       mono.SetData(anim, mesh, material, animTexture);
       window['mono'] = mono;
       console.log(mono);
+      mono.Player.Play("IDLE");
 
       return mono;
     }

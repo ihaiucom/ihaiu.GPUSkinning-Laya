@@ -237,8 +237,10 @@ export default class GPUSkinningPlayerResources
             let anim = this.anim;
             mtrl.executeOncePerFrame.MarkAsExecuted();
             mtrl.material._shaderValues.setTexture(GPUSkinningPlayerResources.shaderPropID_GPUSkinning_TextureMatrix, this.texture);
+            // console.log("textureWidth=", anim.textureWidth, "textureHeight=", anim.textureWidth, "anim.bonesCount * 3=",anim.bonesCount* 3);
+        
             mtrl.material._shaderValues.setVector(GPUSkinningPlayerResources.shaderPropID_GPUSkinning_TextureSize_NumPixelsPerFrame, 
-                new Vector4(anim.textureWidth, anim.textureHeight, anim.bones.length * 3/*treat 3 pixels as a float3x4*/, 0));
+                new Vector4(anim.textureWidth, anim.textureHeight, anim.bonesCount * 3/*treat 3 pixels as a float3x4*/, 0));
         }
     }
 
@@ -248,6 +250,7 @@ export default class GPUSkinningPlayerResources
     public UpdatePlayingData( mpb: Laya.ShaderData , playingClip: GPUSkinningClip , frameIndex: int , frame: GPUSkinningFrame , rootMotionEnabled: boolean ,
         lastPlayedClip: GPUSkinningClip , frameIndex_crossFade: int , crossFadeTime: float , crossFadeProgress: float )
     {
+        // console.log(playingClip.name,"frameIndex=", frameIndex, "pixelSegmentation", playingClip.pixelSegmentation);
         mpb.setVector( GPUSkinningPlayerResources.shaderPorpID_GPUSkinning_FrameIndex_PixelSegmentation, new Vector4(frameIndex, playingClip.pixelSegmentation, 0, 0));
 
         if (rootMotionEnabled)
@@ -286,7 +289,6 @@ export default class GPUSkinningPlayerResources
     /** 获取材质，根据状态 */
     public GetMaterial(state: MaterialState ):GPUSkinningMaterial
     {
-        console.log("GetMaterial", state, GPUSkinningPlayerResources.keywords[state]);
         return this.mtrls[state];
     }
 
@@ -323,10 +325,7 @@ export default class GPUSkinningPlayerResources
             material.name = GPUSkinningPlayerResources.keywords[i];
            
             material._shaderValues.addDefine(SKILL_N);
-            window['am'] = material;
 
-            console.log(material);
-            console.log("SKILL_N,", SKILL_N, "skinningQuality=", skinningQuality);
 
             // TODO 还未实现
             // material.enableInstancing = true; // enable instancing in Unity 5.6
@@ -341,7 +340,6 @@ export default class GPUSkinningPlayerResources
         {
             if(i == ki)
             {
-                console.log("addDefine", ki, GPUSkinningPlayerResources.keywords[i], GPUSkinningPlayerResources.keywordDefines[i]);
                 mtrl.material._shaderValues.addDefine(GPUSkinningPlayerResources.keywordDefines[i]);
             }
             else

@@ -58,7 +58,7 @@ export default class GPUSkinningPlayerMono extends Laya.Script3D
     {
         if(this.player != null)
         {
-            this.player.Update(Laya.timer.delta / 1000);
+            this.player.Update(Laya.timer.delta / 1000 * 0.5);
         }
     }
 

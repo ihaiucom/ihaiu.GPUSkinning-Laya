@@ -7,7 +7,7 @@ import VertexElementFormat = Laya.VertexElementFormat;
 export default class GPUSkiningVertexMesh extends VertexMesh
 {
     
-	static MESH_TEXTURECOORDINATE2: number = 16;
+	static MESH_TEXTURECOORDINATE2: number = 6;
 	private static _declarationMap: any = {};
 
     /**
@@ -46,7 +46,8 @@ export default class GPUSkiningVertexMesh extends VertexMesh
 						break;
                     case "UV2":
                         element = new VertexElement(offset, VertexElementFormat.Vector4, this.MESH_TEXTURECOORDINATE2);
-                        offset += 16;
+						offset += 16;
+						console.log("UV2", element)
                         break;
 					case "BLENDWEIGHT":
 						element = new VertexElement(offset, VertexElementFormat.Vector4, this.MESH_BLENDWEIGHT0);
@@ -64,6 +65,7 @@ export default class GPUSkiningVertexMesh extends VertexMesh
 					case "TANGENT":
 						element = new VertexElement(offset, VertexElementFormat.Vector4, this.MESH_TANGENT0);
 						offset += 16;
+						console.log("TANGENT", element)
 						break;
 					default:
 						throw "VertexMesh: unknown vertex flag.";

@@ -22,7 +22,7 @@ export default class ByteReadUtil
     static ReadVector3(b:Byte):Vector3
     {
         var v = new Vector3();
-        v.x = b.readFloat32();
+        v.x = b.readFloat32() * -1;
         v.y = b.readFloat32();
         v.z = b.readFloat32();
         return v;

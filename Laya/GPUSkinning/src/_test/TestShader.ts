@@ -33,6 +33,9 @@ export default class TestShader
         if(mono)
         {
             this.scene.addChild(mono.owner);
+
+            var sprite: Laya.MeshSprite3D = <Laya.MeshSprite3D> mono.owner
+            sprite.transform.localRotationEulerX = -90;
         }
 
         // await this.TestLoadCube();
