@@ -23,7 +23,7 @@
     <OtherSetting>True</OtherSetting>
     <CoverOriginalFile>True</CoverOriginalFile>
     <CustomizeDirectory>True</CustomizeDirectory>
-    <CustomizeDirectoryName>res3d</CustomizeDirectoryName>
+    <CustomizeDirectoryName>res3d2</CustomizeDirectoryName>
     <Ios>False</Ios>
     <Android>False</Android>
     <Conventional>True</Conventional>
@@ -155,5 +155,5 @@
     <ScrollPositionY>0</ScrollPositionY>
   </config5>
   <language>1</language>
-  <time>1577673369</time>
+  <time>1578037812</time>
 </LayaExportSetting>

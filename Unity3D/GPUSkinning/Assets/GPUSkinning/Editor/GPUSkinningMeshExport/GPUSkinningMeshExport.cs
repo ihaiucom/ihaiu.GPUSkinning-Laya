@@ -126,12 +126,12 @@ namespace GPUSkingings
                 Vector4 tangent = tangents[i];
                 vertexStride += 16;
 
-                w.WriteVector3(position, -1);
-                w.WriteVector3(normal, -1);
+                w.WriteVector3(position, 1);
+                w.WriteVector3(normal, 1);
                 w.WriteUVVector2(uv);
                 w.WriteVector4(uv1);
                 w.WriteVector4(uv2);
-                w.WriteVector4(tangent, -1);
+                w.WriteVector4(tangent, 1);
 
 
             }

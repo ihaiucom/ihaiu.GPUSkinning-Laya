@@ -7,6 +7,16 @@ declare namespace laya.display
 
 }
 
+declare namespace laya.resource
+{
+    interface Texture2D
+    {
+        setFloatPixels(pixels: Uint8Array | Float32Array, miplevel?: number): void 
+        _setFloatPixels(pixels: Uint8Array | Float32Array, miplevel: number, width: number, height: number): void
+    }
+
+}
+
 
 declare module Laya {
 enum TextureFormat

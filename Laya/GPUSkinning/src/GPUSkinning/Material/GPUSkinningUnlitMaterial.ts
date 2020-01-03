@@ -95,7 +95,7 @@ export class GPUSkinningUnlitMaterial extends GPUSkinningBaseMaterial
         
 
         var mainPass =  subShader.addShaderPass(vs, ps, stateMap);
-        // mainPass.renderState.cull = Laya.RenderState.CULL_NONE;
+        // mainPass.renderState.cull = Laya.RenderState.CULL_BACK;
         
         
     }
@@ -438,7 +438,7 @@ export class GPUSkinningUnlitMaterial extends GPUSkinningBaseMaterial
 				this.alphaTest = false;
 				this.renderQueue = Material.RENDERQUEUE_OPAQUE;
 				this.depthWrite = true;
-				this.cull = RenderState.CULL_BACK;
+				this.cull = RenderState.CULL_FRONT;
 				this.blend = RenderState.BLEND_DISABLE;
 				this.depthTest = RenderState.DEPTHTEST_LESS;
 				break;
@@ -446,7 +446,7 @@ export class GPUSkinningUnlitMaterial extends GPUSkinningBaseMaterial
 				this.renderQueue = Material.RENDERQUEUE_ALPHATEST;
 				this.alphaTest = true;
 				this.depthWrite = true;
-				this.cull = RenderState.CULL_BACK;
+				this.cull = RenderState.CULL_FRONT;
 				this.blend = RenderState.BLEND_DISABLE;
 				this.depthTest = RenderState.DEPTHTEST_LESS;
 				break;
@@ -454,7 +454,7 @@ export class GPUSkinningUnlitMaterial extends GPUSkinningBaseMaterial
 				this.renderQueue = Material.RENDERQUEUE_TRANSPARENT;
 				this.alphaTest = false;
 				this.depthWrite = false;
-				this.cull = RenderState.CULL_BACK;
+				this.cull = RenderState.CULL_FRONT;
 				this.blend = RenderState.BLEND_ENABLE_ALL;
 				this.blendSrc = RenderState.BLENDPARAM_SRC_ALPHA;
 				this.blendDst = RenderState.BLENDPARAM_ONE_MINUS_SRC_ALPHA;

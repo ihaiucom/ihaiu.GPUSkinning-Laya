@@ -2606,7 +2606,7 @@
                     this.alphaTest = false;
                     this.renderQueue = Material.RENDERQUEUE_OPAQUE;
                     this.depthWrite = true;
-                    this.cull = RenderState$1.CULL_BACK;
+                    this.cull = RenderState$1.CULL_FRONT;
                     this.blend = RenderState$1.BLEND_DISABLE;
                     this.depthTest = RenderState$1.DEPTHTEST_LESS;
                     break;
@@ -2614,7 +2614,7 @@
                     this.renderQueue = Material.RENDERQUEUE_ALPHATEST;
                     this.alphaTest = true;
                     this.depthWrite = true;
-                    this.cull = RenderState$1.CULL_BACK;
+                    this.cull = RenderState$1.CULL_FRONT;
                     this.blend = RenderState$1.BLEND_DISABLE;
                     this.depthTest = RenderState$1.DEPTHTEST_LESS;
                     break;
@@ -2622,7 +2622,7 @@
                     this.renderQueue = Material.RENDERQUEUE_TRANSPARENT;
                     this.alphaTest = false;
                     this.depthWrite = false;
-                    this.cull = RenderState$1.CULL_BACK;
+                    this.cull = RenderState$1.CULL_FRONT;
                     this.blend = RenderState$1.BLEND_ENABLE_ALL;
                     this.blendSrc = RenderState$1.BLENDPARAM_SRC_ALPHA;
                     this.blendDst = RenderState$1.BLENDPARAM_ONE_MINUS_SRC_ALPHA;
@@ -2730,6 +2730,48 @@
     }
     LayaExtends_Node.isInited = false;
 
+    var LayaGL$1 = Laya.LayaGL;
+    var WebGLContext = Laya.WebGLContext;
+    class LayaExtends_Texture2D {
+        constructor() {
+            Laya.Texture2D.prototype.setFloatPixels = this.setFloatPixels;
+            Laya.Texture2D.prototype._setFloatPixels = this._setFloatPixels;
+        }
+        static Init() {
+            if (this.isInited)
+                return;
+            this.isInited = true;
+            new LayaExtends_Texture2D();
+        }
+        setFloatPixels(pixels, miplevel = 0) {
+            if (this._gpuCompressFormat())
+                throw "Texture2D:the format is GPU compression format.";
+            if (!pixels)
+                throw "Texture2D:pixels can't be null.";
+            var width = Math.max(this._width >> miplevel, 1);
+            var height = Math.max(this._height >> miplevel, 1);
+            var pixelsCount = width * height * this._getFormatByteCount();
+            if (pixels.length < pixelsCount)
+                throw "Texture2D:pixels length should at least " + pixelsCount + ".";
+            this._setFloatPixels(pixels, miplevel, width, height);
+            if (this._canRead)
+                this._pixels = pixels;
+            this._readyed = true;
+            this._activeResource();
+        }
+        _setFloatPixels(pixels, miplevel, width, height) {
+            var gl = LayaGL$1.instance;
+            var halfFloat = gl.getExtension('OES_texture_half_float');
+            gl.getExtension('OES_texture_half_float_linear');
+            var textureType = this._glTextureType;
+            var glFormat = this._getGLFormat();
+            WebGLContext.bindTexture(gl, textureType, this._glTexture);
+            gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+            gl.texImage2D(textureType, miplevel, gl.RGBA, width, height, 0, glFormat, halfFloat.HALF_FLOAT_OES, pixels);
+        }
+    }
+    LayaExtends_Texture2D.isInited = false;
+
     var LoaderManager = Laya.LoaderManager;
     var Loader = Laya.Loader;
     var Event = Laya.Event;
@@ -2742,6 +2784,7 @@
                 GPUSkinningBaseMaterial.__initDefine__();
                 yield GPUSkinningUnlitMaterial.install();
                 LayaExtends_Node.Init();
+                LayaExtends_Texture2D.Init();
                 Laya3D_Extend.Init();
                 Laya3D.SKING_MESH = "SKING_MESH";
                 var createMap = LoaderManager.createMap;
@@ -2800,8 +2843,8 @@
                 var texturePath = this.GetPath(this.GetTextureName(name));
                 var anim = yield GPUSkinningAnimation.LoadAsync(animPath);
                 var mesh = yield GPUSkiningMesh.LoadAsync(meshPath);
-                var animTexture = yield this.LoadAnimTextureAsync(texturePath, anim.textureWidth, anim.textureHeight);
                 var mainTexture = yield this.LoadAsync(mainTexturePath, Laya.Loader.TEXTURE2D);
+                var animTexture = yield this.LoadAnimTextureAsync(texturePath, anim.textureWidth, anim.textureHeight);
                 var material = new materialCls();
                 material.albedoTexture = mainTexture;
                 material.GPUSkinning_TextureMatrix = animTexture;
@@ -2832,7 +2875,7 @@
                 if (mono) {
                     this.scene.addChild(mono.owner);
                     var sprite = mono.owner;
-                    sprite.transform.localRotationEulerX = -90;
+                    window['sprite'] = sprite;
                 }
             });
         }

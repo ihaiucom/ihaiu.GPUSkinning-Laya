@@ -507,6 +507,12 @@ public class GPUSkinningSampler : MonoBehaviour
     {
         Texture2D texture = new Texture2D(gpuSkinningAnim.textureWidth, gpuSkinningAnim.textureHeight, TextureFormat.RGBAHalf, false, true);
         Color[] pixels = texture.GetPixels();
+        StringWriter sw = new StringWriter();
+
+        Vector3 scale = new Vector3(-1, 1, 1);
+        Matrix4x4 scaleMatrix = Matrix4x4.Scale(scale);
+        Quaternion rotation = Quaternion.Euler(0, 180, 0);
+        Matrix4x4 rotationMatrix = Matrix4x4.Rotate(rotation);
         int pixelIndex = 0;
         for (int clipIndex = 0; clipIndex < gpuSkinningAnim.clips.Length; ++clipIndex)
         {
@@ -525,18 +531,39 @@ public class GPUSkinningSampler : MonoBehaviour
                     pixels[pixelIndex++] = new Color(matrix.m10, matrix.m11, matrix.m12, matrix.m13);
                     pixels[pixelIndex++] = new Color(matrix.m20, matrix.m21, matrix.m22, matrix.m23);
 
-                    if(clipIndex < 1 && frameIndex < 10)
+                    //if(clipIndex < 1 && frameIndex < 10)
+                    //{
+                    //    Debug.LogFormat("clipIndex={0}, frameIndex={1},  matrixIndex={2}", clipIndex, frameIndex, matrixIndex);
+                    //    Debug.LogFormat("{0}, {1}, {2}, {3}", matrix.m00, matrix.m01, matrix.m02, matrix.m03);
+                    //    Debug.LogFormat("{0}, {1}, {2}, {3}", matrix.m10, matrix.m11, matrix.m12, matrix.m13);
+                    //    Debug.LogFormat("{0}, {1}, {2}, {3}", matrix.m20, matrix.m21, matrix.m22, matrix.m23);
+                    //}
+                    if(clipIndex < 1 && frameIndex  <= 1 )
                     {
-                        Debug.LogFormat("{0}, {1}, {2}, {3}", matrix.m00, matrix.m01, matrix.m02, matrix.m03);
-                        Debug.LogFormat("{0}, {1}, {2}, {3}", matrix.m10, matrix.m11, matrix.m12, matrix.m13);
-                        Debug.LogFormat("{0}, {1}, {2}, {3}", matrix.m20, matrix.m21, matrix.m22, matrix.m23);
+                        matrix = matrix.transpose;
+                        string m = $"{matrix.m00}, {matrix.m01}, { matrix.m02}, { matrix.m03}, \n" +
+                                   $"{matrix.m10}, {matrix.m11}, { matrix.m12}, { matrix.m13}, \n" +
+                                   $"{matrix.m20}, {matrix.m21}, { matrix.m22}, { matrix.m23}, \n" +
+                                   $"{matrix.m30}, {matrix.m31}, { matrix.m32}, { matrix.m33}"
+                            ;
+                        //sw.WriteLine(string.Format("ms[{0}] = mat4(\n{1}\n);\n\n", matrixIndex, m));
+
+                        sw.WriteLine(string.Format("if(boneIndex == {0}){{ return mat4(\n{1}\n);}}\n\n", matrixIndex, m));
                     }
 
                 }
             }
         }
+
+        string savedPath2 = dir + "/GPUSKinning_mat4_" + animName + "2.txt";
+        File.WriteAllText(savedPath2, sw.ToString());
+        //return;
+
         texture.SetPixels(pixels);
         texture.Apply();
+
+
+     
 
         string savedPath = dir + "/GPUSKinning_Texture_" + animName + ".bytes";
         using (FileStream fileStream = new FileStream(savedPath, FileMode.Create))
@@ -784,8 +811,16 @@ public class GPUSkinningSampler : MonoBehaviour
             Transform boneTransform = bones[i].transform;
             GPUSkinningBone currentBone = GetBoneByTransform(boneTransform);
             frame.matrices[i] = currentBone.bindpose;
+            //frame.matrices[i] = Matrix4x4.identity;
             do
             {
+                //Vector3 pos = currentBone.transform.localPosition;
+                //pos.x *= -1;
+                //Vector3 localEulerAngles = currentBone.transform.localEulerAngles;
+                //localEulerAngles.y *= -1;
+                //localEulerAngles.z *= -1;
+                //Quaternion localRotation = Quaternion.Euler(localEulerAngles);
+                //Matrix4x4 mat = Matrix4x4.TRS(pos, localRotation, currentBone.transform.localScale);
                 Matrix4x4 mat = Matrix4x4.TRS(currentBone.transform.localPosition, currentBone.transform.localRotation, currentBone.transform.localScale);
                 frame.matrices[i] = mat * frame.matrices[i];
                 if (currentBone.parentBoneIndex == -1)
