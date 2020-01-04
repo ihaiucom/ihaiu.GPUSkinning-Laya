@@ -17,6 +17,8 @@ attribute vec4 a_Texcoord1;
 attribute vec4 a_Texcoord2;
 attribute vec4 a_Color;
 
+	uniform sampler2D u_AlbedoTexture;
+
 //==============================================
 // uniform 全局变量
 //----------------------------------------------
@@ -1228,10 +1230,15 @@ void main()
 
 	//position.x *= u_GPUSkinning_FrameIndex_PixelSegmentation.z * 0.0001;
 
-	mat4 m = getMatrix(int(a_Texcoord1.x));
+	// mat4 m = getMatrix(int(a_Texcoord1.x));
+	// position = a_Position;
+	// position = m * position ;
+	
 	position = a_Position;
-	position = m * position ;
-	//position = mul42(m, position) ;
+	vec4 c = texture2D(u_AlbedoTexture, a_Texcoord0);
+	position.x += c.x;
+	//position.x += 1.0;
+
 	
 	
 	//position = mul42(r, position) ;

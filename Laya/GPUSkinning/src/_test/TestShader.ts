@@ -8,6 +8,7 @@ import Mesh = Laya.Mesh;
 import Material = Laya.Material;
 import Texture2D = Laya.Texture2D;
 import GPUSkining from "../GPUSkinning/GPUSkining";
+import { GPUSkinningUnlitMaterial } from "../GPUSkinning/Material/GPUSkinningUnlitMaterial";
 
 
 export default class TestShader
@@ -28,17 +29,18 @@ export default class TestShader
 		// 初始化shader
         await MaterialInstall.install();
         // this.TestPrefab();
+        var plane2:Laya.MeshSprite3D = <any> this.scene.addChild(new Laya.MeshSprite3D(Laya.PrimitiveMesh.createPlane(5, 5, 1,1)));
+        plane2.transform.localRotationEulerX = 20;
 
-        
-        var plane:Laya.MeshSprite3D = <any> this.scene.addChild(new Laya.MeshSprite3D(Laya.PrimitiveMesh.createPlane(5, 5, 2,2)));
-        var mat = new Laya.UnlitMaterial();
-        plane.meshRenderer.sharedMaterial = mat;
+        var plane:Laya.MeshSprite3D = <any> this.scene.addChild(new Laya.MeshSprite3D(Laya.PrimitiveMesh.createPlane(5, 5, 1,1)));
+        var mat = new GPUSkinningUnlitMaterial();
         plane.transform.localRotationEulerX = 20;
         window['planemat'] = mat;
         window['plane'] = plane;
 
         var texture =  await this.LoadAnimTextureAsync("res/gpuskining/rili.bytes", 2, 2);
         mat.albedoTexture = texture;
+        plane.meshRenderer.sharedMaterial = mat;
         return;
 
 
@@ -82,6 +84,9 @@ export default class TestShader
         // var ext = gl.getExtension('OES_texture_float');
         // gl.getExtension('EXT_shader_texture_lod');
         var texture: Laya.Texture2D = new Laya.Texture2D(width, height, Laya.TextureFormat.R8G8B8A8, false, true);
+        texture.wrapModeU = Laya.BaseTexture.WARPMODE_CLAMP;
+        texture.wrapModeV = Laya.BaseTexture.WARPMODE_CLAMP;
+        texture.filterMode = Laya.BaseTexture.FILTERMODE_POINT;
         texture.setPixels(<any>i8);
         
         window['animBuffer2'] = arrayBuffer;

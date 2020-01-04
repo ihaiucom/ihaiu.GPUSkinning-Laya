@@ -2554,7 +2554,7 @@
                     this.alphaTest = false;
                     this.renderQueue = Material.RENDERQUEUE_OPAQUE;
                     this.depthWrite = true;
-                    this.cull = RenderState$1.CULL_FRONT;
+                    this.cull = RenderState$1.CULL_BACK;
                     this.blend = RenderState$1.BLEND_DISABLE;
                     this.depthTest = RenderState$1.DEPTHTEST_LESS;
                     break;
@@ -2562,7 +2562,7 @@
                     this.renderQueue = Material.RENDERQUEUE_ALPHATEST;
                     this.alphaTest = true;
                     this.depthWrite = true;
-                    this.cull = RenderState$1.CULL_FRONT;
+                    this.cull = RenderState$1.CULL_BACK;
                     this.blend = RenderState$1.BLEND_DISABLE;
                     this.depthTest = RenderState$1.DEPTHTEST_LESS;
                     break;
@@ -2570,7 +2570,7 @@
                     this.renderQueue = Material.RENDERQUEUE_TRANSPARENT;
                     this.alphaTest = false;
                     this.depthWrite = false;
-                    this.cull = RenderState$1.CULL_FRONT;
+                    this.cull = RenderState$1.CULL_BACK;
                     this.blend = RenderState$1.BLEND_ENABLE_ALL;
                     this.blendSrc = RenderState$1.BLENDPARAM_SRC_ALPHA;
                     this.blendDst = RenderState$1.BLENDPARAM_ONE_MINUS_SRC_ALPHA;
@@ -2765,6 +2765,9 @@
                 Laya.loader.load(path, Laya.Handler.create(this, (arrayBuffer) => {
                     var i8 = new Uint8Array(arrayBuffer);
                     var texture = new Laya.Texture2D(width, height, Laya.TextureFormat.R8G8B8A8, false, true);
+                    texture.wrapModeU = Laya.BaseTexture.WARPMODE_CLAMP;
+                    texture.wrapModeV = Laya.BaseTexture.WARPMODE_CLAMP;
+                    texture.filterMode = Laya.BaseTexture.FILTERMODE_POINT;
                     texture.setPixels(i8);
                     window['animBuffer'] = arrayBuffer;
                     window['animTexture'] = texture;
@@ -2816,14 +2819,16 @@
         async InitAsync() {
             await GPUSkining.InitAsync();
             await MaterialInstall.install();
-            var plane = this.scene.addChild(new Laya.MeshSprite3D(Laya.PrimitiveMesh.createPlane(5, 5, 2, 2)));
-            var mat = new Laya.UnlitMaterial();
-            plane.meshRenderer.sharedMaterial = mat;
+            var plane2 = this.scene.addChild(new Laya.MeshSprite3D(Laya.PrimitiveMesh.createPlane(5, 5, 1, 1)));
+            plane2.transform.localRotationEulerX = 20;
+            var plane = this.scene.addChild(new Laya.MeshSprite3D(Laya.PrimitiveMesh.createPlane(5, 5, 1, 1)));
+            var mat = new GPUSkinningUnlitMaterial();
             plane.transform.localRotationEulerX = 20;
             window['planemat'] = mat;
             window['plane'] = plane;
             var texture = await this.LoadAnimTextureAsync("res/gpuskining/rili.bytes", 2, 2);
             mat.albedoTexture = texture;
+            plane.meshRenderer.sharedMaterial = mat;
             return;
             var mono = await GPUSkining.CreateByNameAsync("Hero_1001_Dianguanglongqi_Skin1", "res/gpuskining/Hero_1001_Dianguanglongqi.jpg");
             if (mono) {
@@ -2837,6 +2842,9 @@
                 Laya.loader.load(path, Laya.Handler.create(this, (arrayBuffer) => {
                     var i8 = new Uint8Array(arrayBuffer);
                     var texture = new Laya.Texture2D(width, height, Laya.TextureFormat.R8G8B8A8, false, true);
+                    texture.wrapModeU = Laya.BaseTexture.WARPMODE_CLAMP;
+                    texture.wrapModeV = Laya.BaseTexture.WARPMODE_CLAMP;
+                    texture.filterMode = Laya.BaseTexture.FILTERMODE_POINT;
                     texture.setPixels(i8);
                     window['animBuffer2'] = arrayBuffer;
                     window['animTexture2'] = texture;

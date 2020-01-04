@@ -109,6 +109,9 @@ export default class GPUSkining
         // var ext = gl.getExtension('OES_texture_float');
         // gl.getExtension('EXT_shader_texture_lod');
         var texture: Laya.Texture2D = new Laya.Texture2D(width, height, Laya.TextureFormat.R8G8B8A8, false, true);
+        texture.wrapModeU = Laya.BaseTexture.WARPMODE_CLAMP;
+        texture.wrapModeV = Laya.BaseTexture.WARPMODE_CLAMP;
+        texture.filterMode = Laya.BaseTexture.FILTERMODE_POINT;
         texture.setPixels(<any>i8);
         
         window['animBuffer'] = arrayBuffer;
