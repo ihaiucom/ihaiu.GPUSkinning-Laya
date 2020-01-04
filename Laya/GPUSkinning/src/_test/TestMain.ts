@@ -9,6 +9,11 @@ import GPUSkining from "../GPUSkinning/GPUSkining";
 		this.InitLaya();
 
 
+		if(Laya.Browser.onWeiXin)
+		{
+			Laya.URL.basePath = "http://192.168.100.205:8900/bin/";
+		}
+		
 		// 启动游戏
 		new TestShader();
 		

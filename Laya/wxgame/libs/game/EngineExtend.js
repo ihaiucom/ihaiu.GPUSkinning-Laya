@@ -1,0 +1,1 @@
+function meval(i){return new Function("return "+i)()}fairygui.GRichTextField.prototype.handleSizeChanged=function(){this.div.size(this.width,this.height),this.div.style.width=this.width,this.div.style.height=this.height};

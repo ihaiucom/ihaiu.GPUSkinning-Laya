@@ -1,0 +1,69 @@
+{
+	"list": [
+		{
+			"name": "测试服--上海",
+			"ip": "h5-jjsg-auth-sanbox.123u.com",
+			"port": 5000,
+			"https": true,
+			"test": false,
+			"state": 1
+		},  
+		{
+			"name": "测试服--成都",
+			"ip": "h5-jjsgchengdu-auth-sandbox.123u.com",
+			"port": 5000,
+			"https": true,
+			"test": false,
+			"state": 1
+		},
+		{
+			"name": "官网",
+			"ip": "h5-jjsg.123u.com",
+			"port": 443,
+			"https": true,
+			"test": false,
+			"state": 1
+		},
+		{
+			"name": "QA--董建伟",
+			"ip": "192.168.11.96",
+			"port": 5000,
+			"https": false,
+			"test": false,
+			"state": 1
+		},
+		{
+			"name": "测试--球生",
+			"ip": "192.168.100.66",
+			"port": 5000,
+			"https": false,
+			"test": false,
+			"state": 1
+		},
+		{
+			"name": "测试--张嫣",
+			"ip": "192.168.100.14",
+			"port": 5000,
+			"https": false,
+			"test": false,
+			"state": 1
+		},
+		{
+			"name": "测试--邱浩",
+			"ip": "192.168.100.133",
+			"port": 5000,
+			"https": false,
+			"test": false,
+			"state": 1
+		},
+		{
+			"name": "测试--钟晓辉",
+			"ip": "192.168.100.27",
+			"port": 5000,
+			"https": false,
+			"test": false,
+			"state": 1
+		}
+	],
+	"defaultServer": "测试服--上海"
+}

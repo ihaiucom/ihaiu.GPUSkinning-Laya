@@ -45,8 +45,8 @@ void main()
 	// float matStartIndex = frameStartIndex + v_Texcoord1.x * 3.0;
 	// vec4 row0 = texture2D(u_GPUSkinning_TextureMatrix, indexToUV(matStartIndex));
 	// color = row0;
-	 color = texture2D(u_AlbedoTexture, v_Texcoord0);
-	// color = texture2DLodEXT(u_GPUSkinning_TextureMatrix, v_Texcoord0, 255.0) ;
+	 //color = texture2D(u_AlbedoTexture, v_Texcoord0);
+	color = texture2D(u_GPUSkinning_TextureMatrix, v_Texcoord0) ;
 	//color = texture2D(u_GPUSkinning_TextureMatrix, v_Texcoord0)  ;
 	// + vec4(1.0, 1.0, 1.0, 1.0) * 0.5;
 	// color = texture2DGradEXT(u_GPUSkinning_TextureMatrix, mod(v_Texcoord0, vec2(0.1, 0.5)), 

@@ -103,6 +103,7 @@ export default class GPUSkining
         //   // f32[i] =  HalfFloatUtils.convertToNumber(reader.getUint16());
         //   i16[i] = 1;
         // }
+        
 
         // var gl = Laya.LayaGL.instance;
         // var ext = gl.getExtension('OES_texture_float');
@@ -153,6 +154,9 @@ export default class GPUSkining
       material.albedoTexture = mainTexture;
       material.GPUSkinning_TextureMatrix = animTexture;
       // console.log(material);
+
+      var mat:Laya.UnlitMaterial = window['planemat'];
+      mat.albedoTexture = animTexture;
 
       var sprite = new Laya.MeshSprite3D();
       var mono: GPUSkinningPlayerMono = sprite.addComponent(GPUSkinningPlayerMono);

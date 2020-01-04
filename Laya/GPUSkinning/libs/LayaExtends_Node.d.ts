@@ -5,6 +5,7 @@ declare namespace laya.display
         getComponentsInChildren<T>(componentType: typeof Laya.Component, outComponents?:T[]): T[];
     }
 
+    
 }
 
 declare namespace laya.resource

@@ -29,6 +29,19 @@ export default class TestShader
         await MaterialInstall.install();
         // this.TestPrefab();
 
+        
+        var plane:Laya.MeshSprite3D = <any> this.scene.addChild(new Laya.MeshSprite3D(Laya.PrimitiveMesh.createPlane(5, 5, 2,2)));
+        var mat = new Laya.UnlitMaterial();
+        plane.meshRenderer.sharedMaterial = mat;
+        plane.transform.localRotationEulerX = 20;
+        window['planemat'] = mat;
+        window['plane'] = plane;
+
+        var texture =  await this.LoadAnimTextureAsync("res/gpuskining/rili.bytes", 2, 2);
+        mat.albedoTexture = texture;
+        return;
+
+
         var mono = await GPUSkining.CreateByNameAsync("Hero_1001_Dianguanglongqi_Skin1", "res/gpuskining/Hero_1001_Dianguanglongqi.jpg");
         if(mono)
         {
@@ -39,8 +52,45 @@ export default class TestShader
             // sprite.transform.localRotationEulerX = -90;
         }
 
+
+
         // await this.TestLoadCube();
     }
+
+    
+	LoadAnimTextureAsync(path: string, width: int, height:int): Promise<any>
+	{
+		return new  Promise<any>((resolve)=>
+		{
+			Laya.loader.load(path, Laya.Handler.create(this, (arrayBuffer:ArrayBuffer)=>
+			{
+        var i8 = new Uint8Array(arrayBuffer);
+        // var texture: Laya.Texture2D = new Laya.Texture2D(width, height, Laya.TextureFormat.R8G8B8A8, false, true);
+        // texture.setPixels(i8);
+        // var i16 = new Uint16Array(arrayBuffer);
+        // var count = arrayBuffer.byteLength / 2;
+        // var f32 = new Float32Array(count);
+        // // var reader = new Laya.Byte(arrayBuffer);
+        // for(var i = 0; i < i16.length; i++)
+        // {
+        //   // f32[i] =  HalfFloatUtils.convertToNumber(reader.getUint16());
+        //   i16[i] = 1;
+        // }
+        
+
+        // var gl = Laya.LayaGL.instance;
+        // var ext = gl.getExtension('OES_texture_float');
+        // gl.getExtension('EXT_shader_texture_lod');
+        var texture: Laya.Texture2D = new Laya.Texture2D(width, height, Laya.TextureFormat.R8G8B8A8, false, true);
+        texture.setPixels(<any>i8);
+        
+        window['animBuffer2'] = arrayBuffer;
+        window['animTexture2'] = texture;
+        resolve(texture);
+
+			}), null, Laya.Loader.BUFFER);
+		});
+	}
 
     TestGPUSkining()
     {
