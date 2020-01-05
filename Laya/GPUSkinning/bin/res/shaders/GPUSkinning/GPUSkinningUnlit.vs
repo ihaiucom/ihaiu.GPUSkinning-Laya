@@ -1206,6 +1206,11 @@ vec4 lmul2(mat4 m, vec4 v)
 	return r;
 }
 
+float colorToFoat(vec4 c)
+{
+	return (c.x * 10000.0 + c.y * 100.0 + c.z) * (c.w * 10.0 - 1.0);
+}
+
 //  主函数
 void main() 
 {
@@ -1235,8 +1240,10 @@ void main()
 	// position = m * position ;
 	
 	position = a_Position;
-	vec4 c = texture2D(u_AlbedoTexture, a_Texcoord0);
-	position.x += c.x;
+	vec2 uv = a_Texcoord0;
+	vec4 c = texture2D(u_AlbedoTexture, uv);
+	float f = colorToFoat(c);
+	position.x += f;
 	//position.x += 1.0;
 
 	

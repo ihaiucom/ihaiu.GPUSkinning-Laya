@@ -497,7 +497,8 @@ public class GPUSkinningSampler : MonoBehaviour
 
             GPUSkinningFrame[] frames = clip.frames;
             int numFrames = frames.Length;
-            numPixels += gpuSkinningAnim.bones.Length * 3/*treat 3 pixels as a float3x4*/ * numFrames;
+            //numPixels += gpuSkinningAnim.bones.Length * 3/*treat 3 pixels as a float3x4*/ * numFrames;
+            numPixels += gpuSkinningAnim.bones.Length * 3 * 4/* 3 * 4 pixel */ * numFrames;
         }
 
         CalculateTextureSize(numPixels, out gpuSkinningAnim.textureWidth, out gpuSkinningAnim.textureHeight);
@@ -505,9 +506,74 @@ public class GPUSkinningSampler : MonoBehaviour
 
     private void CreateTextureMatrix(string dir, GPUSkinningAnimation gpuSkinningAnim)
     {
+        Texture2D texture = new Texture2D(gpuSkinningAnim.textureWidth, gpuSkinningAnim.textureHeight, TextureFormat.RGBA32, false, true);
+        //Texture2D texture = new Texture2D(gpuSkinningAnim.textureWidth, gpuSkinningAnim.textureHeight, TextureFormat.RGBA, false, true);
+        Color[] pixels = texture.GetPixels();
+
+      
+        int pixelIndex = 0;
+        for (int clipIndex = 0; clipIndex < gpuSkinningAnim.clips.Length; ++clipIndex)
+        {
+            GPUSkinningClip clip = gpuSkinningAnim.clips[clipIndex];
+            GPUSkinningFrame[] frames = clip.frames;
+            int numFrames = frames.Length;
+            for (int frameIndex = 0; frameIndex < numFrames; ++frameIndex)
+            {
+                GPUSkinningFrame frame = frames[frameIndex];
+                Matrix4x4[] matrices = frame.matrices;
+                int numMatrices = matrices.Length;
+                for (int matrixIndex = 0; matrixIndex < numMatrices; ++matrixIndex)
+                {
+                    Matrix4x4 matrix = matrices[matrixIndex];
+                    pixels[pixelIndex++] = matrix.m00.ToColor();
+                    pixels[pixelIndex++] = matrix.m01.ToColor();
+                    pixels[pixelIndex++] = matrix.m02.ToColor();
+                    pixels[pixelIndex++] = matrix.m03.ToColor();
+
+                    
+                    pixels[pixelIndex++] = matrix.m10.ToColor();
+                    pixels[pixelIndex++] = matrix.m11.ToColor();
+                    pixels[pixelIndex++] = matrix.m12.ToColor();
+                    pixels[pixelIndex++] = matrix.m13.ToColor();
+
+                    
+                    pixels[pixelIndex++] = matrix.m20.ToColor();
+                    pixels[pixelIndex++] = matrix.m21.ToColor();
+                    pixels[pixelIndex++] = matrix.m22.ToColor();
+                    pixels[pixelIndex++] = matrix.m23.ToColor();
+
+
+                }
+            }
+        }
+
+        texture.SetPixels(pixels);
+        texture.Apply();
+
+
+     
+
+        string savedPath = dir + "/GPUSKinning_Laya_Texture_" + animName + ".bytes";
+        using (FileStream fileStream = new FileStream(savedPath, FileMode.Create))
+        {
+            byte[] bytes = texture.GetRawTextureData();
+            fileStream.Write(bytes, 0, bytes.Length);
+            fileStream.Flush();
+            fileStream.Close();
+            fileStream.Dispose();
+        }
+        WriteTempData(TEMP_SAVED_TEXTURE_PATH, savedPath);
+
+        savedPath = dir + "/GPUSKinning_Laya_Texture_" + animName + ".asset";
+        AssetDatabase.CreateAsset(texture, savedPath);
+    }
+
+    
+    private void CreateTextureMatrix2(string dir, GPUSkinningAnimation gpuSkinningAnim)
+    {
         Texture2D texture = new Texture2D(gpuSkinningAnim.textureWidth, gpuSkinningAnim.textureHeight, TextureFormat.RGBAHalf, false, true);
         Color[] pixels = texture.GetPixels();
-        StringWriter sw = new StringWriter();
+        // StringWriter sw = new StringWriter();
 
         Vector3 scale = new Vector3(-1, 1, 1);
         Matrix4x4 scaleMatrix = Matrix4x4.Scale(scale);
@@ -538,25 +604,25 @@ public class GPUSkinningSampler : MonoBehaviour
                     //    Debug.LogFormat("{0}, {1}, {2}, {3}", matrix.m10, matrix.m11, matrix.m12, matrix.m13);
                     //    Debug.LogFormat("{0}, {1}, {2}, {3}", matrix.m20, matrix.m21, matrix.m22, matrix.m23);
                     //}
-                    if(clipIndex < 1 && frameIndex  <= 1 )
-                    {
-                        matrix = matrix.transpose;
-                        string m = $"{matrix.m00}, {matrix.m01}, { matrix.m02}, { matrix.m03}, \n" +
-                                   $"{matrix.m10}, {matrix.m11}, { matrix.m12}, { matrix.m13}, \n" +
-                                   $"{matrix.m20}, {matrix.m21}, { matrix.m22}, { matrix.m23}, \n" +
-                                   $"{matrix.m30}, {matrix.m31}, { matrix.m32}, { matrix.m33}"
-                            ;
-                        //sw.WriteLine(string.Format("ms[{0}] = mat4(\n{1}\n);\n\n", matrixIndex, m));
+                    // if(clipIndex < 1 && frameIndex  <= 1 )
+                    // {
+                    //     matrix = matrix.transpose;
+                    //     string m = $"{matrix.m00}, {matrix.m01}, { matrix.m02}, { matrix.m03}, \n" +
+                    //                $"{matrix.m10}, {matrix.m11}, { matrix.m12}, { matrix.m13}, \n" +
+                    //                $"{matrix.m20}, {matrix.m21}, { matrix.m22}, { matrix.m23}, \n" +
+                    //                $"{matrix.m30}, {matrix.m31}, { matrix.m32}, { matrix.m33}"
+                    //         ;
+                    //     //sw.WriteLine(string.Format("ms[{0}] = mat4(\n{1}\n);\n\n", matrixIndex, m));
 
-                        sw.WriteLine(string.Format("if(boneIndex == {0}){{ return mat4(\n{1}\n);}}\n\n", matrixIndex, m));
-                    }
+                    //     sw.WriteLine(string.Format("if(boneIndex == {0}){{ return mat4(\n{1}\n);}}\n\n", matrixIndex, m));
+                    // }
 
                 }
             }
         }
 
-        string savedPath2 = dir + "/GPUSKinning_mat4_" + animName + "2.txt";
-        File.WriteAllText(savedPath2, sw.ToString());
+        // string savedPath2 = dir + "/GPUSKinning_mat4_" + animName + "2.txt";
+        // File.WriteAllText(savedPath2, sw.ToString());
         //return;
 
         texture.SetPixels(pixels);

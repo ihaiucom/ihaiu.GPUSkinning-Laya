@@ -12,6 +12,7 @@ public class TestTexture : MonoBehaviour
     public int height;
     public bool isRunEditor = true;
     public Vector4 tc;
+    public Vector3[] frame0Points = new Vector3[4];
 
 
     public TextAsset bytesAsset;
@@ -54,18 +55,27 @@ public class TestTexture : MonoBehaviour
     [ContextMenu("To Bytes2")]
     public void ToBytes2()
     {
+        int num = frame0Points.Length * 3;
+        FloatBitUtil.CalculateTextureSize(num, out width, out height);
 
-        Texture2D texture = new Texture2D(2, 2, TextureFormat.RGBA32, false, true);
+        Texture2D texture = new Texture2D(width, height, TextureFormat.RGBA32, false, true);
         texture2 = texture;
         texture.name = "rili";
         Color[] pixels = texture.GetPixels();
         for(int i = 0; i < pixels.Length; i ++)
         {
-            Debug.Log(pixels[i]);
             pixels[i] = new Color(0, 0, 0, 0);
         }
+
+        for(int i = 0 ; i < frame0Points.Length; i ++)
+        {
+            pixels[i * 3 + 0] = frame0Points[i].x.ToColor();
+            pixels[i * 3 + 1] = frame0Points[i].y.ToColor();
+            pixels[i * 3 + 2] = frame0Points[i].z.ToColor();
+        }
+     
         int line = 0;
-        pixels[line + 0] = new Color(tc.x, tc.y, tc.z, tc.w);
+        //pixels[line + 0] = new Color(tc.x, tc.y, tc.z, tc.w);
         //pixels[line + 1] = new Color(1, 0, 0, 1);
         //pixels[line + 2] = new Color(1, 0, 0, 1);
         //pixels[line + 3] = new Color(0, 0, 1, 1);
@@ -104,8 +114,8 @@ public class TestTexture : MonoBehaviour
             fileStream.Dispose();
         }
 
-        width = texture.width;
-        height = texture.height;
+        this.width = texture.width;
+        this.height = texture.height;
     }
 
 

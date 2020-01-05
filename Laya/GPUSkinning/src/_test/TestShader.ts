@@ -38,7 +38,7 @@ export default class TestShader
         window['planemat'] = mat;
         window['plane'] = plane;
 
-        var texture =  await this.LoadAnimTextureAsync("res/gpuskining/rili.bytes", 2, 2);
+        var texture =  await this.LoadAnimTextureAsync("res/gpuskining/rili.bytes", 4, 4);
         mat.albedoTexture = texture;
         plane.meshRenderer.sharedMaterial = mat;
         return;
