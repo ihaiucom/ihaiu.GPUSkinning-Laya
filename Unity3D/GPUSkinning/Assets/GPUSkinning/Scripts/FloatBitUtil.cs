@@ -49,7 +49,7 @@ public static class FloatBitUtil
 
         Vector4Int c = new Vector4Int();
         c.x = Mathf.FloorToInt(numM / 100f * 255);
-        c.y = Mathf.FloorToInt((num1 / 100f * 255);
+        c.y = Mathf.FloorToInt(num1 / 100f * 255);
         c.z = Mathf.FloorToInt(numFloat * 255);
         c.w = flag * 255;
 
