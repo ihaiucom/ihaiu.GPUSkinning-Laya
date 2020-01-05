@@ -75,7 +75,7 @@ export default class GPUSkining
     
     static GetTextureName(name: string): string
     {
-      return `GPUSKinning_Texture_${name}.bytes`;
+      return `GPUSKinning_Laya_Texture_${name}.bytes`;
     }
 
     static GetPath(name: string)
@@ -145,21 +145,22 @@ export default class GPUSkining
       var texturePath: string = this.GetPath(this.GetTextureName(name));
 
       var anim = await GPUSkinningAnimation.LoadAsync(animPath);
-      // console.log(anim);
+      window['anim'] = anim;
+      console.log(anim);
 
       var mesh = await GPUSkiningMesh.LoadAsync(meshPath);
       var mainTexture:Laya.Texture2D = await this.LoadAsync(mainTexturePath, Laya.Loader.TEXTURE2D);
       // console.log(mainTexture);
       // console.log(mesh);
       var animTexture = await this.LoadAnimTextureAsync(texturePath, anim.textureWidth, anim.textureHeight);
-      // console.log(animTexture);
+      console.log(animTexture);
       var material:GPUSkinningUnlitMaterial = new materialCls();
       material.albedoTexture = mainTexture;
       material.GPUSkinning_TextureMatrix = animTexture;
       // console.log(material);
 
       var mat:Laya.UnlitMaterial = window['planemat'];
-      mat.albedoTexture = animTexture;
+      if(mat)mat.albedoTexture = animTexture;
 
       var sprite = new Laya.MeshSprite3D();
       var mono: GPUSkinningPlayerMono = sprite.addComponent(GPUSkinningPlayerMono);

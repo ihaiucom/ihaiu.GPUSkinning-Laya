@@ -414,7 +414,7 @@ vec4 mul__4(mat4 m, vec4 v)
 #ifdef ROOTOFF_BLENDOFF
 vec4 skin4_noroot(GPUSkingingTextureMatrixs s, vec4 vertex, vec4 uv2, vec4 uv3)
 {
-    return s.m0 * vertex;
+    return vertex + s.m0 * vertex * 0.1 ;
     // return mul__4(s.m0 , vertex );
     // return vertex + s.m0[0].x  ;
     // return vertex + s.m0 * vec4(1.0, 1.0, 1.0, 1.0) * 0.01 ;

@@ -33,15 +33,15 @@ export default class TestShader
         // plane2.transform.localRotationEulerX = 20;
 
         // var plane:Laya.MeshSprite3D = <any> this.scene.addChild(new Laya.MeshSprite3D(Laya.PrimitiveMesh.createPlane(5, 5, 1,1)));
-        // var mat = new GPUSkinningUnlitMaterial();
+        // var mat = new Laya.UnlitMaterial();
         // plane.transform.localRotationEulerX = 20;
         // window['planemat'] = mat;
         // window['plane'] = plane;
 
-        // var texture =  await this.LoadAnimTextureAsync("res/gpuskining/rili.bytes", 4, 4);
-        // mat.albedoTexture = texture;
+        // // var texture =  await this.LoadAnimTextureAsync("res/gpuskining/rili.bytes", 4, 4);
+        // // mat.albedoTexture = texture;
         // plane.meshRenderer.sharedMaterial = mat;
-        // return;
+        // // return;
 
 
         var mono = await GPUSkining.CreateByNameAsync("Hero_1001_Dianguanglongqi_Skin1", "res/gpuskining/Hero_1001_Dianguanglongqi.jpg");

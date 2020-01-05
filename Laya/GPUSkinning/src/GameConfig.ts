@@ -4,9 +4,9 @@ import GameUI from "./script/GameUI"
 * 游戏初始化配置;
 */
 export default class GameConfig{
-    static width:number=640;
-    static height:number=1136;
-    static scaleMode:string="fixedwidth";
+    static width:number=1334;
+    static height:number=750;
+    static scaleMode:string= Laya.Stage.SCALE_NOSCALE;
     static screenMode:string="none";
     static alignV:string="top";
     static alignH:string="left";

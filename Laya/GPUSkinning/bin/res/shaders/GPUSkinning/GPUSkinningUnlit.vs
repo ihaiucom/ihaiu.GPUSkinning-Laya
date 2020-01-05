@@ -44,7 +44,9 @@ void main()
 	vec4 position ;
 
 	position = a_Position;
-	// position.x = getColorFloat(a_Texcoord1.x) ;
+	
+    // vec4 c = texture2D(u_GPUSkinning_TextureMatrix, indexToUV(a_Texcoord1.x));
+	// position.x = getColorFloat(a_Texcoord1.x + 0.0) ;
 	// position.y = getColorFloat(a_Texcoord1.x + 1.0);
 	// position.z = getColorFloat(a_Texcoord1.x + 2.0);
 
