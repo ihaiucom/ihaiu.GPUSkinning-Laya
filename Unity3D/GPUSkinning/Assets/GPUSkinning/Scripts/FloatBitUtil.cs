@@ -27,6 +27,7 @@ public static class FloatBitUtil
 
     public static Color ToColor(this float value)
     {
+        value *= 100;
         int flag = value >= 0 ? 2 : 0;
         float num = Mathf.Abs(value);
         int numInt = Mathf.FloorToInt(num);
