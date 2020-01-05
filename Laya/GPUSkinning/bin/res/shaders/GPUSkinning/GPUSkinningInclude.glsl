@@ -216,14 +216,14 @@ vec3 skin_blend(vec4 pos0, vec4 pos1)
 vec4 skin4_noroot(GPUSkingingTextureMatrixs s, vec4 vertex, vec4 uv2, vec4 uv3)
 {
     // return vertex;
-    return s.m0 * vertex;
+    // return s.m0 * vertex;
     // return mul__4(s.m0 , vertex );
     // return vertex + s.m0[0].x  ;
     // return vertex + s.m0 * vec4(1.0, 1.0, 1.0, 1.0) * 0.01 ;
-    //  return s.m0 * vertex * uv2.y 
-    //      + s.m1 * vertex * uv2.w 
-    //      + s.m2 * vertex * uv3.y 
-    //      + s.m3 * vertex * uv3.w ;
+     return s.m0 * vertex * uv2.y 
+         + s.m1 * vertex * uv2.w 
+         + s.m2 * vertex * uv3.y 
+         + s.m3 * vertex * uv3.w ;
     // return vertex;
     // return s.m0 * vertex * uv2.w;
     //        + mul(s.m1, vertex) * uv2.w

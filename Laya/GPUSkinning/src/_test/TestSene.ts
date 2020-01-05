@@ -48,10 +48,10 @@ export class TestScene extends Laya.Scene3D
         camera.addChild(screenLayer);
 
         cameraRotationXNode.transform.localRotationEulerX = -20;
-        camera.transform.localPosition = new Vector3(0, 0, 200);
+        camera.transform.localPosition = new Vector3(0, 0, 10);
 
         camera.clearColor = new Laya.Vector4(0.2, 0.5, 0.8, 1);
-        camera.orthographic = true;
+        // camera.orthographic = true;
         camera.orthographicVerticalSize = 5.2;
         camera.farPlane = 2000;
         

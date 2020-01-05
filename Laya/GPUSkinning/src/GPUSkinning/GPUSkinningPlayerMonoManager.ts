@@ -14,7 +14,7 @@ export default class GPUSkinningPlayerMonoManager
     private items:GPUSkinningPlayerResources[] = [];
 
     /** 注册 */
-    public Register(anim: GPUSkinningAnimation , mesh: Mesh , originalMtrl:Material , textureRawData: Texture2D , player: GPUSkinningPlayerMono  )
+    public  Register(anim: GPUSkinningAnimation , mesh: Mesh , originalMtrl:Material , textureRawData: Texture2D , player: GPUSkinningPlayerMono  )
     {
 
         if (anim == null || originalMtrl == null || textureRawData == null || player == null)

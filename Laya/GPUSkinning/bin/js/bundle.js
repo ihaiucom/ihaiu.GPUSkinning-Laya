@@ -47,9 +47,8 @@
             cameraRotationXNode.addChild(camera);
             camera.addChild(screenLayer);
             cameraRotationXNode.transform.localRotationEulerX = -20;
-            camera.transform.localPosition = new Vector3(0, 0, 200);
+            camera.transform.localPosition = new Vector3(0, 0, 10);
             camera.clearColor = new Laya.Vector4(0.2, 0.5, 0.8, 1);
-            camera.orthographic = true;
             camera.orthographicVerticalSize = 5.2;
             camera.farPlane = 2000;
             this.camera = camera;
@@ -2885,8 +2884,35 @@
                     this.scene.addChild(mono.owner);
                     var sprite = mono.owner;
                     window['sprite'] = sprite;
+                    this.CloneMono(mono);
                 }
             });
+        }
+        CloneMono(mono, nx = 1, ny = 1) {
+            var names = [];
+            for (var i = 0; i < mono.anim.clips.length; i++) {
+                mono.anim.clips[i].wrapMode = GPUSkinningWrapMode.Loop;
+                mono.anim.clips[i].individualDifferenceEnabled = true;
+                names[i] = mono.anim.clips[i].name;
+            }
+            var sprite = mono.owner;
+            for (var y = 0; y < ny; y++) {
+                for (var x = 0; x < nx; x++) {
+                    var c = sprite.clone();
+                    c.transform.localPositionX = x - 5;
+                    c.transform.localPositionZ = y * 2 - 10;
+                    let cm = c.getComponent(GPUSkinningPlayerMono);
+                    cm.SetData(mono.anim, mono.mesh, mono.mtrl, mono.textureRawData);
+                    this.scene.addChild(c);
+                    let i = Random.range(0, mono.anim.clips.length - 1);
+                    i = Math.floor(i);
+                    console.log(cm, i, names[i]);
+                    setTimeout(() => {
+                        if (cm)
+                            cm.Player.Play(names[i]);
+                    }, 100);
+                }
+            }
         }
         LoadAnimTextureAsync(path, width, height) {
             return new Promise((resolve) => {
@@ -3035,14 +3061,14 @@
     }
     GameConfig.width = 1334;
     GameConfig.height = 750;
-    GameConfig.scaleMode = Laya.Stage.SCALE_NOSCALE;
+    GameConfig.scaleMode = Laya.Stage.SCALE_SHOWALL;
     GameConfig.screenMode = "none";
     GameConfig.alignV = "top";
     GameConfig.alignH = "left";
     GameConfig.startScene = "test/TestScene.scene";
     GameConfig.sceneRoot = "";
     GameConfig.debug = false;
-    GameConfig.stat = false;
+    GameConfig.stat = true;
     GameConfig.physicsDebug = false;
     GameConfig.exportSceneToJson = true;
     GameConfig.init();

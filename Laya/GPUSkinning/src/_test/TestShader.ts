@@ -9,6 +9,7 @@ import Material = Laya.Material;
 import Texture2D = Laya.Texture2D;
 import GPUSkining from "../GPUSkinning/GPUSkining";
 import { GPUSkinningUnlitMaterial } from "../GPUSkinning/Material/GPUSkinningUnlitMaterial";
+import { GPUSkinningWrapMode } from "../GPUSkinning/Datas/GPUSkinningWrapMode";
 
 
 export default class TestShader
@@ -52,11 +53,43 @@ export default class TestShader
             var sprite: Laya.MeshSprite3D = <Laya.MeshSprite3D> mono.owner;
             window['sprite'] = sprite;
             // sprite.transform.localRotationEulerX = -90;
+            this.CloneMono(mono);
+
         }
 
-
-
         // await this.TestLoadCube();
+    }
+
+    CloneMono(mono: GPUSkinningPlayerMono, nx = 1, ny = 1)
+    {
+        var names = [];
+        for(var i = 0; i < mono.anim.clips.length; i ++)
+        {
+            mono.anim.clips[i].wrapMode = GPUSkinningWrapMode.Loop;
+            mono.anim.clips[i].individualDifferenceEnabled =true;
+            names[i] = mono.anim.clips[i].name;
+        }
+        var sprite: Laya.MeshSprite3D = <Laya.MeshSprite3D> mono.owner;
+        for(var y = 0; y < ny; y ++)
+        {
+            for(var x = 0; x < nx; x ++)
+            {
+                var c : Laya.MeshSprite3D= <any>sprite.clone();
+                c.transform.localPositionX = x - 5;
+                c.transform.localPositionZ = y * 2 - 10;
+                let cm :GPUSkinningPlayerMono= c.getComponent(GPUSkinningPlayerMono);
+                cm.SetData(mono.anim, mono.mesh, mono.mtrl, mono.textureRawData)
+                this.scene.addChild(c);
+                let i = Random.range(0, mono.anim.clips.length - 1);
+                i = Math.floor(i);
+                console.log(cm, i, names[i]);
+                setTimeout(() => {
+                    
+                    if(cm)cm.Player.Play(names[i]);
+                }, 100);
+
+            }
+        }
     }
 
     
