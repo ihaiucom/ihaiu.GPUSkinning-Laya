@@ -7,7 +7,7 @@
 
 
 uniform sampler2D u_GPUSkinning_TextureMatrix;
-// x=textureWidth, y=textureHeight, z=bones.Length * 3
+// x=textureWidth, y=textureHeight, z=bones.Length * 3 * 4
 uniform vec3 u_GPUSkinning_TextureSize_NumPixelsPerFrame;
 // x=frameIndex, y=playingClip.pixelSegmentation
 uniform vec2 u_GPUSkinning_FrameIndex_PixelSegmentation;
@@ -34,7 +34,19 @@ vec2 indexToUV(float index)
 {
 	float row = floor(index / u_GPUSkinning_TextureSize_NumPixelsPerFrame.x);
 	float col = floor(index - row * u_GPUSkinning_TextureSize_NumPixelsPerFrame.x);
-	return vec2(col / u_GPUSkinning_TextureSize_NumPixelsPerFrame.x, 1.0 - row / u_GPUSkinning_TextureSize_NumPixelsPerFrame.y);
+	return vec2(col / u_GPUSkinning_TextureSize_NumPixelsPerFrame.x, 0.0 - row / u_GPUSkinning_TextureSize_NumPixelsPerFrame.y);
+}
+
+
+float colorToFoat(vec4 c)
+{
+	return (c.x * 10000.0 + c.y * 100.0 + c.z) * (c.w * 10.0 - 1.0) * 0.01;
+}
+
+float getColorFloat(float piexelIndex)
+{
+    vec4 c = texture2D(u_GPUSkinning_TextureMatrix, indexToUV(piexelIndex));
+    return colorToFoat(c);
 }
 
 
@@ -50,30 +62,63 @@ mat4 iMatrix(mat4 m)
     return n;
 }
 
-mat4 getMatrix(float frameStartIndex, int boneIndex)
+
+
+mat4 getMatrix(float frameStartIndex, float boneIndex)
 {
 
-	float matStartIndex = frameStartIndex + boneIndex * 3.0;
-	// // float matStartIndex = boneIndex * 3.0;
-	vec4 row0 = texture2D(u_GPUSkinning_TextureMatrix, indexToUV(matStartIndex));
-	vec4 row1 = texture2D(u_GPUSkinning_TextureMatrix, indexToUV(matStartIndex + 1.0));
-	vec4 row2 = texture2D(u_GPUSkinning_TextureMatrix, indexToUV(matStartIndex + 2.0));
+	// float matStartIndex = frameStartIndex + boneIndex * 3.0 * 4.0;
     
-	// // vec4 row0 = texture2DLodEXT(u_GPUSkinning_TextureMatrix, indexToUV(matStartIndex), 0.0);
-	// // vec4 row1 = texture2DLodEXT(u_GPUSkinning_TextureMatrix, indexToUV(matStartIndex + 1.0), 0.0);
-	// // vec4 row2 = texture2DLodEXT(u_GPUSkinning_TextureMatrix, indexToUV(matStartIndex + 2.0), 0.0);
-    // row0= vec4(1.0, 0.0, 0.0, 0.0);
-    // row1= vec4(0.0, 1.0, 0.0, 0.0);
-    // row2= vec4(0.0, 0.0, 1.0, 0.0);
-	vec4 row3 = vec4(0.0, 0.0, 0.0, 1.0);
+	float matStartIndex = boneIndex * 3.0 * 4.0;
 
-    // // row0 = row0 - vec4(1.0, 1.0, 1.0, 1.0) * 0.5;
-    // // row1 = row1 - vec4(1.0, 1.0, 1.0, 1.0) * 0.5;
-    // // row2 = row2 - vec4(1.0, 1.0, 1.0, 1.0) * 0.5;
+    mat4 mat;
+    vec4 r0;
+    vec4 r1;
+    vec4 r2;
+    vec4 r3;
+
+    r0.x = getColorFloat(matStartIndex + 0.0);
+    r0.y = getColorFloat(matStartIndex + 1.0);
+    r0.z = getColorFloat(matStartIndex + 2.0);
+    r0.w = getColorFloat(matStartIndex + 3.0);
+
+    matStartIndex += 4.0; 
+    r1.x = getColorFloat(matStartIndex + 0.0);
+    r1.y = getColorFloat(matStartIndex + 1.0);
+    r1.z = getColorFloat(matStartIndex + 2.0);
+    r1.w = getColorFloat(matStartIndex + 3.0);
+
 
     
-	mat4 mat = mat4(row0, row1, row2, row3);
-    // // mat = iMatrix(mat);
+    matStartIndex += 4.0; 
+    r2.x = getColorFloat(matStartIndex + 0.0);
+    r2.y = getColorFloat(matStartIndex + 1.0);
+    r2.z = getColorFloat(matStartIndex + 2.0);
+    r2.w = getColorFloat(matStartIndex + 3.0);
+
+
+    r3.x = 0.0;
+    r3.y = 0.0;
+    r3.z = 0.0;
+    r3.z = 1.0;
+
+    mat = mat4(
+        1, 0, 0, 0,
+        0, 1, 0, 0,
+        0, 0, 1, 0,
+        0, 0, 0, 1
+    );
+
+    // mat = mat4(r0, r1, r2, r3);
+    // mat = iMatrix(mat);
+    mat = mat4(
+        r0.x, r1.x, r2.x, r3.x,
+        r0.y, r1.y, r2.y, r3.y,
+        r0.z, r1.z, r2.z, r3.z,
+        r0.w, r1.w, r2.w, r3.w
+        );
+
+
 	return mat;
 }
 
@@ -113,10 +158,10 @@ GPUSkingingTextureMatrixs textureMatrix(vec4 uv2, vec4 uv3)
     GPUSkingingTextureMatrixs s;
     float frameStartIndex = getFrameStartIndex();
     s.frameStartIndex = frameStartIndex;
-    s.m0 = getMatrix(frameStartIndex, int(uv2.x));
-    s.m1 = getMatrix(frameStartIndex, int(uv2.z));
-    s.m2 = getMatrix(frameStartIndex, int(uv3.x));
-    s.m3 = getMatrix(frameStartIndex, int(uv3.z));
+    s.m0 = getMatrix(frameStartIndex, uv2.x);
+    s.m1 = getMatrix(frameStartIndex, uv2.z);
+    s.m2 = getMatrix(frameStartIndex, uv3.x);
+    s.m3 = getMatrix(frameStartIndex, uv3.z);
     return s;
 }
 /*
@@ -397,15 +442,7 @@ vec3 skin_blend(vec4 pos0, vec4 pos1)
 
 
 
-vec4 mul__4(mat4 m, vec4 v)
-{
-	vec4 r;
-	r.x = m[0].x * v.x + m[0].y * v.y + m[0].z * v.z + m[0].w * v.w;
-	r.y = m[1].x * v.x + m[1].y * v.y + m[1].z * v.z + m[1].w * v.w;
-	r.y = m[2].x * v.x + m[2].y * v.y + m[2].z * v.z + m[2].w * v.w;
-	r.w = m[3].x * v.x + m[3].y * v.y + m[3].z * v.z + m[3].w * v.w;
-	return r;
-}
+
 
 
 // SKIN_4 Begin
@@ -414,13 +451,14 @@ vec4 mul__4(mat4 m, vec4 v)
 #ifdef ROOTOFF_BLENDOFF
 vec4 skin4_noroot(GPUSkingingTextureMatrixs s, vec4 vertex, vec4 uv2, vec4 uv3)
 {
-    return mul__4(s.m0 , vertex );
+    return s.m0 * vertex;
+    // return mul__4(s.m0 , vertex );
     // return vertex + s.m0[0].x  ;
     // return vertex + s.m0 * vec4(1.0, 1.0, 1.0, 1.0) * 0.01 ;
-     // return s.m0 * vertex * uv2.y 
-     //     + s.m1 * vertex * uv2.w 
-     //     + s.m2 * vertex * uv3.y 
-      //    + s.m3 * vertex * uv3.w ;
+    //  return s.m0 * vertex * uv2.y 
+    //      + s.m1 * vertex * uv2.w 
+    //      + s.m2 * vertex * uv3.y 
+    //      + s.m3 * vertex * uv3.w ;
     // return vertex;
     // return s.m0 * vertex * uv2.w;
     //        + mul(s.m1, vertex) * uv2.w

@@ -240,7 +240,7 @@ export default class GPUSkinningPlayerResources
             // console.log("textureWidth=", anim.textureWidth, "textureHeight=", anim.textureWidth, "anim.bonesCount * 3=",anim.bonesCount* 3);
         
             mtrl.material._shaderValues.setVector(GPUSkinningPlayerResources.shaderPropID_GPUSkinning_TextureSize_NumPixelsPerFrame, 
-                new Vector4(anim.textureWidth, anim.textureHeight, anim.bonesCount * 3/*treat 3 pixels as a float3x4*/, 0));
+                new Vector4(anim.textureWidth, anim.textureHeight, anim.bonesCount * 3 * 4/*treat 3 pixels as a float3x4*/, 0));
         }
     }
 

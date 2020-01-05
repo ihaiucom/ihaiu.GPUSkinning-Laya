@@ -29,19 +29,19 @@ export default class TestShader
 		// 初始化shader
         await MaterialInstall.install();
         // this.TestPrefab();
-        var plane2:Laya.MeshSprite3D = <any> this.scene.addChild(new Laya.MeshSprite3D(Laya.PrimitiveMesh.createPlane(5, 5, 1,1)));
-        plane2.transform.localRotationEulerX = 20;
+        // var plane2:Laya.MeshSprite3D = <any> this.scene.addChild(new Laya.MeshSprite3D(Laya.PrimitiveMesh.createPlane(5, 5, 1,1)));
+        // plane2.transform.localRotationEulerX = 20;
 
-        var plane:Laya.MeshSprite3D = <any> this.scene.addChild(new Laya.MeshSprite3D(Laya.PrimitiveMesh.createPlane(5, 5, 1,1)));
-        var mat = new GPUSkinningUnlitMaterial();
-        plane.transform.localRotationEulerX = 20;
-        window['planemat'] = mat;
-        window['plane'] = plane;
+        // var plane:Laya.MeshSprite3D = <any> this.scene.addChild(new Laya.MeshSprite3D(Laya.PrimitiveMesh.createPlane(5, 5, 1,1)));
+        // var mat = new GPUSkinningUnlitMaterial();
+        // plane.transform.localRotationEulerX = 20;
+        // window['planemat'] = mat;
+        // window['plane'] = plane;
 
-        var texture =  await this.LoadAnimTextureAsync("res/gpuskining/rili.bytes", 4, 4);
-        mat.albedoTexture = texture;
-        plane.meshRenderer.sharedMaterial = mat;
-        return;
+        // var texture =  await this.LoadAnimTextureAsync("res/gpuskining/rili.bytes", 4, 4);
+        // mat.albedoTexture = texture;
+        // plane.meshRenderer.sharedMaterial = mat;
+        // return;
 
 
         var mono = await GPUSkining.CreateByNameAsync("Hero_1001_Dianguanglongqi_Skin1", "res/gpuskining/Hero_1001_Dianguanglongqi.jpg");

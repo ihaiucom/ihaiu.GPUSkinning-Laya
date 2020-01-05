@@ -903,7 +903,7 @@
                 let anim = this.anim;
                 mtrl.executeOncePerFrame.MarkAsExecuted();
                 mtrl.material._shaderValues.setTexture(GPUSkinningPlayerResources.shaderPropID_GPUSkinning_TextureMatrix, this.texture);
-                mtrl.material._shaderValues.setVector(GPUSkinningPlayerResources.shaderPropID_GPUSkinning_TextureSize_NumPixelsPerFrame, new Vector4$1(anim.textureWidth, anim.textureHeight, anim.bonesCount * 3, 0));
+                mtrl.material._shaderValues.setVector(GPUSkinningPlayerResources.shaderPropID_GPUSkinning_TextureSize_NumPixelsPerFrame, new Vector4$1(anim.textureWidth, anim.textureHeight, anim.bonesCount * 3 * 4, 0));
             }
         }
         UpdatePlayingData(mpb, playingClip, frameIndex, frame, rootMotionEnabled, lastPlayedClip, frameIndex_crossFade, crossFadeTime, crossFadeProgress) {
@@ -2554,7 +2554,7 @@
                     this.alphaTest = false;
                     this.renderQueue = Material.RENDERQUEUE_OPAQUE;
                     this.depthWrite = true;
-                    this.cull = RenderState$1.CULL_BACK;
+                    this.cull = RenderState$1.CULL_NONE;
                     this.blend = RenderState$1.BLEND_DISABLE;
                     this.depthTest = RenderState$1.DEPTHTEST_LESS;
                     break;
@@ -2562,7 +2562,7 @@
                     this.renderQueue = Material.RENDERQUEUE_ALPHATEST;
                     this.alphaTest = true;
                     this.depthWrite = true;
-                    this.cull = RenderState$1.CULL_BACK;
+                    this.cull = RenderState$1.CULL_NONE;
                     this.blend = RenderState$1.BLEND_DISABLE;
                     this.depthTest = RenderState$1.DEPTHTEST_LESS;
                     break;
@@ -2570,7 +2570,7 @@
                     this.renderQueue = Material.RENDERQUEUE_TRANSPARENT;
                     this.alphaTest = false;
                     this.depthWrite = false;
-                    this.cull = RenderState$1.CULL_BACK;
+                    this.cull = RenderState$1.CULL_NONE;
                     this.blend = RenderState$1.BLEND_ENABLE_ALL;
                     this.blendSrc = RenderState$1.BLENDPARAM_SRC_ALPHA;
                     this.blendDst = RenderState$1.BLENDPARAM_ONE_MINUS_SRC_ALPHA;
@@ -2755,7 +2755,7 @@
             return `GPUSKinning_Mesh_${name}.skinlm`;
         }
         static GetTextureName(name) {
-            return `GPUSKinning_Texture_${name}.bytes`;
+            return `GPUSKinning_Laya_Texture_${name}.bytes`;
         }
         static GetPath(name) {
             return this.resRoot + name;
@@ -2797,7 +2797,7 @@
             material.albedoTexture = mainTexture;
             material.GPUSkinning_TextureMatrix = animTexture;
             var mat = window['planemat'];
-            mat.albedoTexture = animTexture;
+            if(mat)mat.albedoTexture = animTexture;
             var sprite = new Laya.MeshSprite3D();
             var mono = sprite.addComponent(GPUSkinningPlayerMono);
             mono.SetData(anim, mesh, material, animTexture);
@@ -2822,14 +2822,15 @@
             var plane2 = this.scene.addChild(new Laya.MeshSprite3D(Laya.PrimitiveMesh.createPlane(5, 5, 1, 1)));
             plane2.transform.localRotationEulerX = 20;
             var plane = this.scene.addChild(new Laya.MeshSprite3D(Laya.PrimitiveMesh.createPlane(5, 5, 1, 1)));
-            var mat = new GPUSkinningUnlitMaterial();
+            var mat = new Laya.UnlitMaterial();
             plane.transform.localRotationEulerX = 20;
             window['planemat'] = mat;
             window['plane'] = plane;
-            var texture = await this.LoadAnimTextureAsync("res/gpuskining/rili.bytes", 4, 4);
-            mat.albedoTexture = texture;
+            // var texture = await this.LoadAnimTextureAsync("res/gpuskining/GPUSKinning_Laya_Texture_Hero_1001_Dianguanglongqi_Skin1.bytes", 1024, 1024);
+            // var texture = await this.LoadAnimTextureAsync("res/gpuskining/rili.bytes", 4, 4);
+            // mat.albedoTexture = texture;
+            // mat.GPUSkinning_TextureMatrix = texture;
             plane.meshRenderer.sharedMaterial = mat;
-            return;
             var mono = await GPUSkining.CreateByNameAsync("Hero_1001_Dianguanglongqi_Skin1", "res/gpuskining/Hero_1001_Dianguanglongqi.jpg");
             if (mono) {
                 this.scene.addChild(mono.owner);
