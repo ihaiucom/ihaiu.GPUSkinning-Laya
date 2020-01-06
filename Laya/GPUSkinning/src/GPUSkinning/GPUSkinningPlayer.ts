@@ -12,10 +12,13 @@ import GPUSkinningFrame from "./Datas/GPUSkinningFrame";
 import MeshRenderer = Laya.MeshRenderer;
 import MeshFilter = Laya.MeshFilter;
 import Vector3 = Laya.Vector3;
+import Vector4 = Laya.Vector4;
 import Mesh = Laya.Mesh;
 import Matrix4x4 = Laya.Matrix4x4;
 import Quaternion = Laya.Quaternion;
 import Transform3D = Laya.Transform3D;
+
+
 import GPUSkinningAnimEvent from "./Datas/GPUSkinningAnimEvent";
 
 /** GPU骨骼动画--组件播放控制器 */
@@ -25,6 +28,7 @@ export default class GPUSkinningPlayer
     private transform: Laya.Transform3D;
     private mr: MeshRenderer;
     private mf: MeshFilter;
+    private spriteShaderData: Laya.ShaderData;
 
     private time: float = 0;
     private timeDiff: float = 0;
@@ -217,6 +221,7 @@ export default class GPUSkinningPlayer
     }
 
 
+    __frameIndex:int = 0;
     /** 获取当前帧 */
     private GetFrameIndex(): int
     {
@@ -340,7 +345,7 @@ export default class GPUSkinningPlayer
     }
 
 
-
+    static _ShaderUID = 0;
     constructor(go: Laya.MeshSprite3D, res: GPUSkinningPlayerResources)
     {
         this.go = go;
@@ -349,6 +354,8 @@ export default class GPUSkinningPlayer
 
         this.mr = go.meshRenderer;
         this.mf = go.meshFilter;
+        this.spriteShaderData = go.meshRenderer._shaderValues;
+        go.meshRenderer['__id']  = this.spriteShaderData['__id'] = GPUSkinningPlayer._ShaderUID ++;
 
         let mtrl: GPUSkinningMaterial = this.GetCurrentMaterial();
         this.mr.sharedMaterial = mtrl == null ? null : mtrl.material;
@@ -601,11 +608,21 @@ export default class GPUSkinningPlayer
 
     }
 
+    
+    
+    onRenderUpdate(context: Laya.RenderContext3D, transform: Laya.Transform3D, render:Laya.MeshRenderer)
+    {
+        console.log(render['__id'], "onRenderUpdate");
+        render._shaderValues.setVector( GPUSkinningPlayerResources.shaderPorpID_GPUSkinning_FrameIndex_PixelSegmentation, new Vector4(this.__frameIndex, this.playingClip.pixelSegmentation, 0, 0));
+
+    }
+
 
     private UpdateMaterial(deltaTime: float , currMtrl: GPUSkinningMaterial )
     {
         let res = this.res;
         let frameIndex = this.GetFrameIndex();
+        this.__frameIndex = frameIndex;
         if(this.lastPlayingClip == this.playingClip && this.lastPlayingFrameIndex == frameIndex)
         {
             res.Update(deltaTime, currMtrl);
@@ -636,7 +653,7 @@ export default class GPUSkinningPlayer
         {
             res.Update(deltaTime, currMtrl);
             res.UpdatePlayingData(
-                mpb, playingClip, frameIndex, frame, playingClip.rootMotionEnabled && this.rootMotionEnabled,
+                mpb, this.spriteShaderData, playingClip, frameIndex, frame, playingClip.rootMotionEnabled && this.rootMotionEnabled,
                 lastPlayedClip, this.GetCrossFadeFrameIndex(), this.crossFadeTime, this.crossFadeProgress
             );
 

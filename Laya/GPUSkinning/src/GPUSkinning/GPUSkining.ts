@@ -165,9 +165,9 @@ export default class GPUSkining
       var sprite = new Laya.MeshSprite3D();
       var mono: GPUSkinningPlayerMono = sprite.addComponent(GPUSkinningPlayerMono);
       mono.SetData(anim, mesh, material, animTexture);
-      window['mono'] = mono;
+      // window['mono'] = mono;
       console.log(mono);
-      mono.Player.Play("IDLE");
+      // mono.Player.Play("IDLE");
 
       return mono;
     }

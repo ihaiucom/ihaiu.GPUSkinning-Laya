@@ -8162,6 +8162,7 @@ declare module laya.d3.core.render {
 	class BaseRender extends laya.events.EventDispatcher implements laya.resource.ISingletonElement,laya.d3.core.scene.IOctreeObject  {
 		_supportOctree:boolean;
 
+		_shaderValues: Laya.ShaderData;
 		/**
 		 * 排序矫正值。
 		 */
@@ -46031,7 +46032,8 @@ declare module Laya {
 	 * <code>MeshSprite3D</code> 类用于创建网格。
 	 */
 
-	class MeshSprite3D extends laya.d3.core.MeshSprite3D {}
+	class MeshSprite3D extends laya.d3.core.MeshSprite3D {
+	}
 
 	class MeshSprite3DShaderDeclaration extends laya.d3.core.MeshSprite3DShaderDeclaration {}
 

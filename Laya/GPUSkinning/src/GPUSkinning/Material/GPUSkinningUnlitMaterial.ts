@@ -61,10 +61,11 @@ export class GPUSkinningUnlitMaterial extends GPUSkinningBaseMaterial
         {
 			'u_GPUSkinning_TextureMatrix': Shader3D.PERIOD_MATERIAL,
 			'u_GPUSkinning_TextureSize_NumPixelsPerFrame': Shader3D.PERIOD_MATERIAL,
-			'u_GPUSkinning_FrameIndex_PixelSegmentation': Shader3D.PERIOD_MATERIAL,
-			'u_GPUSkinning_FrameIndex_PixelSegmentation_Blend_CrossFade': Shader3D.PERIOD_MATERIAL,
+
 			'u_GPUSkinning_RootMotion': Shader3D.PERIOD_MATERIAL,
 			'u_GPUSkinning_RootMotion_CrossFade': Shader3D.PERIOD_MATERIAL,
+			'u_GPUSkinning_FrameIndex_PixelSegmentation': Shader3D.PERIOD_SPRITE,
+			'u_GPUSkinning_FrameIndex_PixelSegmentation_Blend_CrossFade': Shader3D.PERIOD_SPRITE,
 			
 			'u_AlbedoTexture': Shader3D.PERIOD_MATERIAL,
 			'u_AlbedoColor': Shader3D.PERIOD_MATERIAL,

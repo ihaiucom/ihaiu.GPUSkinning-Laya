@@ -23,9 +23,8 @@
       cameraRotationXNode.addChild(camera);
       camera.addChild(screenLayer);
       cameraRotationXNode.transform.localRotationEulerX = -20;
-      camera.transform.localPosition = new Vector3(0, 0, 200);
+      camera.transform.localPosition = new Vector3(0, 0, 10);
       camera.clearColor = new Laya.Vector4(0.2, 0.5, 0.8, 1);
-      camera.orthographic = true;
       camera.orthographicVerticalSize = 5.2;
       camera.farPlane = 2000;
       this.camera = camera;
@@ -903,11 +902,11 @@
         let anim = this.anim;
         mtrl.executeOncePerFrame.MarkAsExecuted();
         mtrl.material._shaderValues.setTexture(GPUSkinningPlayerResources.shaderPropID_GPUSkinning_TextureMatrix, this.texture);
-        mtrl.material._shaderValues.setVector(GPUSkinningPlayerResources.shaderPropID_GPUSkinning_TextureSize_NumPixelsPerFrame, new Vector4$1(anim.textureWidth, anim.textureHeight, anim.bonesCount * 3, 0));
+        mtrl.material._shaderValues.setVector(GPUSkinningPlayerResources.shaderPropID_GPUSkinning_TextureSize_NumPixelsPerFrame, new Vector4$1(anim.textureWidth, anim.textureHeight, anim.bonesCount * 3 * 4, 0));
       }
     }
-    UpdatePlayingData(mpb, playingClip, frameIndex, frame, rootMotionEnabled, lastPlayedClip, frameIndex_crossFade, crossFadeTime, crossFadeProgress) {
-      mpb.setVector(GPUSkinningPlayerResources.shaderPorpID_GPUSkinning_FrameIndex_PixelSegmentation, new Vector4$1(frameIndex, playingClip.pixelSegmentation, 0, 0));
+    UpdatePlayingData(mpb, spriteShaderData, playingClip, frameIndex, frame, rootMotionEnabled, lastPlayedClip, frameIndex_crossFade, crossFadeTime, crossFadeProgress) {
+      spriteShaderData.setVector(GPUSkinningPlayerResources.shaderPorpID_GPUSkinning_FrameIndex_PixelSegmentation, new Vector4$1(frameIndex, playingClip.pixelSegmentation, 0, 0));
       if (rootMotionEnabled) {
         let rootMotionInv = frame.RootMotionInv(this.anim.rootBoneIndex);
         mpb.setMatrix4x4(GPUSkinningPlayerResources.shaderPropID_GPUSkinning_RootMotion, rootMotionInv);
@@ -916,7 +915,7 @@
         if (lastPlayedClip.rootMotionEnabled) {
           mpb.setMatrix4x4(GPUSkinningPlayerResources.shaderPropID_GPUSkinning_RootMotion_CrossFade, lastPlayedClip.frames[frameIndex_crossFade].RootMotionInv(this.anim.rootBoneIndex));
         }
-        mpb.setVector(GPUSkinningPlayerResources.shaderPorpID_GPUSkinning_FrameIndex_PixelSegmentation_Blend_CrossFade, new Vector4$1(frameIndex_crossFade, lastPlayedClip.pixelSegmentation, this.CrossFadeBlendFactor(crossFadeProgress, crossFadeTime)));
+        spriteShaderData.setVector(GPUSkinningPlayerResources.shaderPorpID_GPUSkinning_FrameIndex_PixelSegmentation_Blend_CrossFade, new Vector4$1(frameIndex_crossFade, lastPlayedClip.pixelSegmentation, this.CrossFadeBlendFactor(crossFadeProgress, crossFadeTime)));
       }
     }
     CrossFadeBlendFactor(crossFadeProgress, crossFadeTime) {
@@ -1092,6 +1091,7 @@
       this.res = res;
       this.mr = go.meshRenderer;
       this.mf = go.meshFilter;
+      this.spriteShaderData = go.meshRenderer._shaderValues;
       let mtrl = this.GetCurrentMaterial();
       this.mr.sharedMaterial = mtrl == null ? null : mtrl.material;
       this.mf.sharedMesh = res.mesh;
@@ -1449,7 +1449,7 @@
       if (this.Visible ||
         this.CullingMode == GPUSKinningCullingMode.AlwaysAnimate) {
         res.Update(deltaTime, currMtrl);
-        res.UpdatePlayingData(mpb, playingClip, frameIndex, frame, playingClip.rootMotionEnabled && this.rootMotionEnabled, lastPlayedClip, this.GetCrossFadeFrameIndex(), this.crossFadeTime, this.crossFadeProgress);
+        res.UpdatePlayingData(mpb, this.spriteShaderData, playingClip, frameIndex, frame, playingClip.rootMotionEnabled && this.rootMotionEnabled, lastPlayedClip, this.GetCrossFadeFrameIndex(), this.crossFadeTime, this.crossFadeProgress);
         this.UpdateJoints(frame);
       }
       if (playingClip.rootMotionEnabled && this.rootMotionEnabled && frameIndex != this.rootMotionFrameIndex) {
@@ -1535,7 +1535,7 @@
     }
     onUpdate() {
       if (this.player != null) {
-        this.player.Update(Laya.timer.delta / 1000 * 0.5);
+        this.player.Update(Laya.timer.delta / 1000);
       }
     }
     onDestroy() {
@@ -2341,10 +2341,10 @@
         {
           'u_GPUSkinning_TextureMatrix': Shader3D$4.PERIOD_MATERIAL,
           'u_GPUSkinning_TextureSize_NumPixelsPerFrame': Shader3D$4.PERIOD_MATERIAL,
-          'u_GPUSkinning_FrameIndex_PixelSegmentation': Shader3D$4.PERIOD_MATERIAL,
-          'u_GPUSkinning_FrameIndex_PixelSegmentation_Blend_CrossFade': Shader3D$4.PERIOD_MATERIAL,
           'u_GPUSkinning_RootMotion': Shader3D$4.PERIOD_MATERIAL,
           'u_GPUSkinning_RootMotion_CrossFade': Shader3D$4.PERIOD_MATERIAL,
+          'u_GPUSkinning_FrameIndex_PixelSegmentation': Shader3D$4.PERIOD_SPRITE,
+          'u_GPUSkinning_FrameIndex_PixelSegmentation_Blend_CrossFade': Shader3D$4.PERIOD_SPRITE,
           'u_AlbedoTexture': Shader3D$4.PERIOD_MATERIAL,
           'u_AlbedoColor': Shader3D$4.PERIOD_MATERIAL,
           'u_TilingOffset': Shader3D$4.PERIOD_MATERIAL,
@@ -2755,7 +2755,7 @@
       return `GPUSKinning_Mesh_${name}.skinlm`;
     }
     static GetTextureName(name) {
-      return `GPUSKinning_Texture_${name}.bytes`;
+      return `GPUSKinning_Laya_Texture_${name}.bytes`;
     }
     static GetPath(name) {
       return this.resRoot + name;
@@ -2765,6 +2765,9 @@
         Laya.loader.load(path, Laya.Handler.create(this, (arrayBuffer) => {
           var i8 = new Uint8Array(arrayBuffer);
           var texture = new Laya.Texture2D(width, height, Laya.TextureFormat.R8G8B8A8, false, true);
+          texture.wrapModeU = Laya.BaseTexture.WARPMODE_CLAMP;
+          texture.wrapModeV = Laya.BaseTexture.WARPMODE_CLAMP;
+          texture.filterMode = Laya.BaseTexture.FILTERMODE_POINT;
           texture.setPixels(i8);
           window['animBuffer'] = arrayBuffer;
           window['animTexture'] = texture;
@@ -2787,18 +2790,23 @@
       var meshPath = this.GetPath(this.GetMeshName(name));
       var texturePath = this.GetPath(this.GetTextureName(name));
       var anim = await GPUSkinningAnimation.LoadAsync(animPath);
+      window['anim'] = anim;
+      console.log(anim);
       var mesh = await GPUSkiningMesh.LoadAsync(meshPath);
       var mainTexture = await this.LoadAsync(mainTexturePath, Laya.Loader.TEXTURE2D);
       var animTexture = await this.LoadAnimTextureAsync(texturePath, anim.textureWidth, anim.textureHeight);
+      console.log(animTexture);
       var material = new materialCls();
       material.albedoTexture = mainTexture;
       material.GPUSkinning_TextureMatrix = animTexture;
+      var mat = window['planemat'];
+      if (mat)
+        mat.albedoTexture = animTexture;
       var sprite = new Laya.MeshSprite3D();
       var mono = sprite.addComponent(GPUSkinningPlayerMono);
       mono.SetData(anim, mesh, material, animTexture);
       window['mono'] = mono;
       console.log(mono);
-      mono.Player.Play("IDLE");
       return mono;
     }
   }
@@ -2819,7 +2827,45 @@
         this.scene.addChild(mono.owner);
         var sprite = mono.owner;
         window['sprite'] = sprite;
+        this.CloneMono(mono);
       }
+    }
+    CloneMono(mono, nx = 10, ny = 10) {
+      var names = [];
+      for (var i = 0; i < mono.anim.clips.length; i++) {
+        mono.anim.clips[i].wrapMode = GPUSkinningWrapMode.Loop;
+        mono.anim.clips[i].individualDifferenceEnabled = true;
+        names[i] = mono.anim.clips[i].name;
+      }
+      var sprite = mono.owner;
+      for (var y = 0; y < ny; y++) {
+        for (var x = 0; x < nx; x++) {
+          var c = sprite.clone();
+          c.transform.localPositionX = x - 5;
+          c.transform.localPositionZ = y * 2 - 10;
+          let cm = c.getComponent(GPUSkinningPlayerMono);
+          cm.SetData(mono.anim, mono.mesh, mono.mtrl, mono.textureRawData);
+          this.scene.addChild(c);
+          let i = Random.range(0, mono.anim.clips.length - 1);
+          i = Math.floor(i);
+          cm.Player.Play(names[i]);
+        }
+      }
+    }
+    LoadAnimTextureAsync(path, width, height) {
+      return new Promise((resolve) => {
+        Laya.loader.load(path, Laya.Handler.create(this, (arrayBuffer) => {
+          var i8 = new Uint8Array(arrayBuffer);
+          var texture = new Laya.Texture2D(width, height, Laya.TextureFormat.R8G8B8A8, false, true);
+          texture.wrapModeU = Laya.BaseTexture.WARPMODE_CLAMP;
+          texture.wrapModeV = Laya.BaseTexture.WARPMODE_CLAMP;
+          texture.filterMode = Laya.BaseTexture.FILTERMODE_POINT;
+          texture.setPixels(i8);
+          window['animBuffer2'] = arrayBuffer;
+          window['animTexture2'] = texture;
+          resolve(texture);
+        }), null, Laya.Loader.BUFFER);
+      });
     }
     TestGPUSkining() {
       var anim, mesh, mtrl, textureRawData;
@@ -2947,7 +2993,7 @@
   }
   GameConfig.width = 1334;
   GameConfig.height = 750;
-  GameConfig.scaleMode = Laya.Stage.SCALE_FIXED_AUTO;
+  GameConfig.scaleMode = Laya.Stage.SCALE_SHOWALL;
   GameConfig.screenMode = "none";
   GameConfig.alignV = "top";
   GameConfig.alignH = "left";
@@ -2957,7 +3003,6 @@
   GameConfig.stat = true;
   GameConfig.physicsDebug = false;
   GameConfig.exportSceneToJson = true;
-  GameConfig.useWebGL2 = true;
   GameConfig.init();
 
   class TestMain {

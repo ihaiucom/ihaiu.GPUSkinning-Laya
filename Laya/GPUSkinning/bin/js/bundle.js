@@ -1,30 +1,6 @@
 (function () {
     'use strict';
 
-    /*! *****************************************************************************
-    Copyright (c) Microsoft Corporation. All rights reserved.
-    Licensed under the Apache License, Version 2.0 (the "License"); you may not use
-    this file except in compliance with the License. You may obtain a copy of the
-    License at http://www.apache.org/licenses/LICENSE-2.0
-
-    THIS CODE IS PROVIDED ON AN *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-    KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY IMPLIED
-    WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-    MERCHANTABLITY OR NON-INFRINGEMENT.
-
-    See the Apache Version 2.0 License for specific language governing permissions
-    and limitations under the License.
-    ***************************************************************************** */
-
-    function __awaiter(thisArg, _arguments, P, generator) {
-        return new (P || (P = Promise))(function (resolve, reject) {
-            function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-            function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-            function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
-            step((generator = generator.apply(thisArg, _arguments || [])).next());
-        });
-    }
-
     var Vector3 = Laya.Vector3;
     class TestScene extends Laya.Scene3D {
         static create() {
@@ -84,25 +60,19 @@
         static getShaderPS(filename) {
             return this.SHADER_PATH_ROOT + filename + ".fs";
         }
-        static loadShaderVSAsync(filename) {
-            return __awaiter(this, void 0, void 0, function* () {
-                let code = yield this.loadAsync(this.getShaderVS(filename), Laya.Loader.TEXT);
-                return code.replace(/\r/g, "");
-            });
+        static async loadShaderVSAsync(filename) {
+            let code = await this.loadAsync(this.getShaderVS(filename), Laya.Loader.TEXT);
+            return code.replace(/\r/g, "");
         }
-        static loadShaderPSAsync(filename) {
-            return __awaiter(this, void 0, void 0, function* () {
-                let code = yield this.loadAsync(this.getShaderPS(filename), Laya.Loader.TEXT);
-                return code.replace(/\r/g, "");
-            });
+        static async loadShaderPSAsync(filename) {
+            let code = await this.loadAsync(this.getShaderPS(filename), Laya.Loader.TEXT);
+            return code.replace(/\r/g, "");
         }
-        static loadAsync(path, type) {
-            return __awaiter(this, void 0, void 0, function* () {
-                return new Promise((resolve) => {
-                    Laya.loader.load(path, Laya.Handler.create(null, (res) => {
-                        resolve(res);
-                    }), null, type);
-                });
+        static async loadAsync(path, type) {
+            return new Promise((resolve) => {
+                Laya.loader.load(path, Laya.Handler.create(null, (res) => {
+                    resolve(res);
+                }), null, type);
             });
         }
     }
@@ -137,105 +107,101 @@
             this._enableLighting = true;
             this.renderMode = Cartoon2Material.RENDERMODE_OPAQUE;
         }
-        static install() {
-            return __awaiter(this, void 0, void 0, function* () {
-                this.__initDefine__();
-                yield this.initShader();
-                this.defaultMaterial = new Cartoon2Material();
-                this.defaultMaterial.enableLighting = true;
-                this.defaultMaterial.lock = true;
-            });
+        static async install() {
+            this.__initDefine__();
+            await this.initShader();
+            this.defaultMaterial = new Cartoon2Material();
+            this.defaultMaterial.enableLighting = true;
+            this.defaultMaterial.lock = true;
         }
-        static initShader() {
-            return __awaiter(this, void 0, void 0, function* () {
-                var outlineVS = yield this.loadShaderVSAsync("Cartoon2OutlineShader");
-                var outlinePS = yield this.loadShaderPSAsync("Cartoon2OutlineShader");
-                var vs = yield this.loadShaderVSAsync(this.shaderName);
-                var ps = yield this.loadShaderPSAsync(this.shaderName);
-                var attributeMap;
-                var uniformMap;
-                var stateMap;
-                var shader;
-                var subShader;
-                attributeMap =
-                    {
-                        'a_Position': VertexMesh.MESH_POSITION0,
-                        'a_Color': VertexMesh.MESH_COLOR0,
-                        'a_Normal': VertexMesh.MESH_NORMAL0,
-                        'a_Texcoord0': VertexMesh.MESH_TEXTURECOORDINATE0,
-                        'a_Texcoord1': VertexMesh.MESH_TEXTURECOORDINATE1,
-                        'a_BoneWeights': VertexMesh.MESH_BLENDWEIGHT0,
-                        'a_BoneIndices': VertexMesh.MESH_BLENDINDICES0,
-                        'a_Tangent0': VertexMesh.MESH_TANGENT0,
-                        'a_MvpMatrix': VertexMesh.MESH_MVPMATRIX_ROW0,
-                        'a_WorldMat': VertexMesh.MESH_WORLDMATRIX_ROW0
-                    };
-                uniformMap =
-                    {
-                        'u_Bones': Shader3D.PERIOD_CUSTOM,
-                        'u_DiffuseTexture': Shader3D.PERIOD_MATERIAL,
-                        'u_SpecularTexture': Shader3D.PERIOD_MATERIAL,
-                        'u_NormalTexture': Shader3D.PERIOD_MATERIAL,
-                        'u_AlphaTestValue': Shader3D.PERIOD_MATERIAL,
-                        'u_DiffuseColor': Shader3D.PERIOD_MATERIAL,
-                        'u_ShadowColor': Shader3D.PERIOD_MATERIAL,
-                        'u_MaterialSpecular': Shader3D.PERIOD_MATERIAL,
-                        'u_Shininess': Shader3D.PERIOD_MATERIAL,
-                        'u_ColorRange': Shader3D.PERIOD_MATERIAL,
-                        'u_ColorDeep': Shader3D.PERIOD_MATERIAL,
-                        'u_OutlineWidth': Shader3D.PERIOD_MATERIAL,
-                        'u_TilingOffset': Shader3D.PERIOD_MATERIAL,
-                        'u_WorldMat': Shader3D.PERIOD_SPRITE,
-                        'u_MvpMatrix': Shader3D.PERIOD_SPRITE,
-                        'u_LightmapScaleOffset': Shader3D.PERIOD_SPRITE,
-                        'u_LightMap': Shader3D.PERIOD_SPRITE,
-                        'u_CameraPos': Shader3D.PERIOD_CAMERA,
-                        'u_Viewport': Shader3D.PERIOD_CAMERA,
-                        'u_ProjectionParams': Shader3D.PERIOD_CAMERA,
-                        'u_View': Shader3D.PERIOD_CAMERA,
-                        'u_ReflectTexture': Shader3D.PERIOD_SCENE,
-                        'u_ReflectIntensity': Shader3D.PERIOD_SCENE,
-                        'u_FogStart': Shader3D.PERIOD_SCENE,
-                        'u_FogRange': Shader3D.PERIOD_SCENE,
-                        'u_FogColor': Shader3D.PERIOD_SCENE,
-                        'u_DirationLightCount': Shader3D.PERIOD_SCENE,
-                        'u_LightBuffer': Shader3D.PERIOD_SCENE,
-                        'u_LightClusterBuffer': Shader3D.PERIOD_SCENE,
-                        'u_AmbientColor': Shader3D.PERIOD_SCENE,
-                        'u_shadowMap1': Shader3D.PERIOD_SCENE,
-                        'u_shadowMap2': Shader3D.PERIOD_SCENE,
-                        'u_shadowMap3': Shader3D.PERIOD_SCENE,
-                        'u_shadowPSSMDistance': Shader3D.PERIOD_SCENE,
-                        'u_lightShadowVP': Shader3D.PERIOD_SCENE,
-                        'u_shadowPCFoffset': Shader3D.PERIOD_SCENE,
-                        'u_DirectionLight.color': Shader3D.PERIOD_SCENE,
-                        'u_DirectionLight.direction': Shader3D.PERIOD_SCENE,
-                        'u_PointLight.position': Shader3D.PERIOD_SCENE,
-                        'u_PointLight.range': Shader3D.PERIOD_SCENE,
-                        'u_PointLight.color': Shader3D.PERIOD_SCENE,
-                        'u_SpotLight.position': Shader3D.PERIOD_SCENE,
-                        'u_SpotLight.direction': Shader3D.PERIOD_SCENE,
-                        'u_SpotLight.range': Shader3D.PERIOD_SCENE,
-                        'u_SpotLight.spot': Shader3D.PERIOD_SCENE,
-                        'u_SpotLight.color': Shader3D.PERIOD_SCENE
-                    };
-                stateMap =
-                    {
-                        's_Cull': Shader3D.RENDER_STATE_CULL,
-                        's_Blend': Shader3D.RENDER_STATE_BLEND,
-                        's_BlendSrc': Shader3D.RENDER_STATE_BLEND_SRC,
-                        's_BlendDst': Shader3D.RENDER_STATE_BLEND_DST,
-                        's_DepthTest': Shader3D.RENDER_STATE_DEPTH_TEST,
-                        's_DepthWrite': Shader3D.RENDER_STATE_DEPTH_WRITE
-                    };
-                shader = Shader3D.add(this.shaderName, null, null, true);
-                subShader = new SubShader(attributeMap, uniformMap);
-                shader.addSubShader(subShader);
-                var outlinePass = subShader.addShaderPass(outlineVS, outlinePS);
-                outlinePass.renderState.cull = Laya.RenderState.CULL_FRONT;
-                var mainPass = subShader.addShaderPass(vs, ps, stateMap);
-                mainPass.renderState.cull = Laya.RenderState.CULL_NONE;
-            });
+        static async initShader() {
+            var outlineVS = await this.loadShaderVSAsync("Cartoon2OutlineShader");
+            var outlinePS = await this.loadShaderPSAsync("Cartoon2OutlineShader");
+            var vs = await this.loadShaderVSAsync(this.shaderName);
+            var ps = await this.loadShaderPSAsync(this.shaderName);
+            var attributeMap;
+            var uniformMap;
+            var stateMap;
+            var shader;
+            var subShader;
+            attributeMap =
+                {
+                    'a_Position': VertexMesh.MESH_POSITION0,
+                    'a_Color': VertexMesh.MESH_COLOR0,
+                    'a_Normal': VertexMesh.MESH_NORMAL0,
+                    'a_Texcoord0': VertexMesh.MESH_TEXTURECOORDINATE0,
+                    'a_Texcoord1': VertexMesh.MESH_TEXTURECOORDINATE1,
+                    'a_BoneWeights': VertexMesh.MESH_BLENDWEIGHT0,
+                    'a_BoneIndices': VertexMesh.MESH_BLENDINDICES0,
+                    'a_Tangent0': VertexMesh.MESH_TANGENT0,
+                    'a_MvpMatrix': VertexMesh.MESH_MVPMATRIX_ROW0,
+                    'a_WorldMat': VertexMesh.MESH_WORLDMATRIX_ROW0
+                };
+            uniformMap =
+                {
+                    'u_Bones': Shader3D.PERIOD_CUSTOM,
+                    'u_DiffuseTexture': Shader3D.PERIOD_MATERIAL,
+                    'u_SpecularTexture': Shader3D.PERIOD_MATERIAL,
+                    'u_NormalTexture': Shader3D.PERIOD_MATERIAL,
+                    'u_AlphaTestValue': Shader3D.PERIOD_MATERIAL,
+                    'u_DiffuseColor': Shader3D.PERIOD_MATERIAL,
+                    'u_ShadowColor': Shader3D.PERIOD_MATERIAL,
+                    'u_MaterialSpecular': Shader3D.PERIOD_MATERIAL,
+                    'u_Shininess': Shader3D.PERIOD_MATERIAL,
+                    'u_ColorRange': Shader3D.PERIOD_MATERIAL,
+                    'u_ColorDeep': Shader3D.PERIOD_MATERIAL,
+                    'u_OutlineWidth': Shader3D.PERIOD_MATERIAL,
+                    'u_TilingOffset': Shader3D.PERIOD_MATERIAL,
+                    'u_WorldMat': Shader3D.PERIOD_SPRITE,
+                    'u_MvpMatrix': Shader3D.PERIOD_SPRITE,
+                    'u_LightmapScaleOffset': Shader3D.PERIOD_SPRITE,
+                    'u_LightMap': Shader3D.PERIOD_SPRITE,
+                    'u_CameraPos': Shader3D.PERIOD_CAMERA,
+                    'u_Viewport': Shader3D.PERIOD_CAMERA,
+                    'u_ProjectionParams': Shader3D.PERIOD_CAMERA,
+                    'u_View': Shader3D.PERIOD_CAMERA,
+                    'u_ReflectTexture': Shader3D.PERIOD_SCENE,
+                    'u_ReflectIntensity': Shader3D.PERIOD_SCENE,
+                    'u_FogStart': Shader3D.PERIOD_SCENE,
+                    'u_FogRange': Shader3D.PERIOD_SCENE,
+                    'u_FogColor': Shader3D.PERIOD_SCENE,
+                    'u_DirationLightCount': Shader3D.PERIOD_SCENE,
+                    'u_LightBuffer': Shader3D.PERIOD_SCENE,
+                    'u_LightClusterBuffer': Shader3D.PERIOD_SCENE,
+                    'u_AmbientColor': Shader3D.PERIOD_SCENE,
+                    'u_shadowMap1': Shader3D.PERIOD_SCENE,
+                    'u_shadowMap2': Shader3D.PERIOD_SCENE,
+                    'u_shadowMap3': Shader3D.PERIOD_SCENE,
+                    'u_shadowPSSMDistance': Shader3D.PERIOD_SCENE,
+                    'u_lightShadowVP': Shader3D.PERIOD_SCENE,
+                    'u_shadowPCFoffset': Shader3D.PERIOD_SCENE,
+                    'u_DirectionLight.color': Shader3D.PERIOD_SCENE,
+                    'u_DirectionLight.direction': Shader3D.PERIOD_SCENE,
+                    'u_PointLight.position': Shader3D.PERIOD_SCENE,
+                    'u_PointLight.range': Shader3D.PERIOD_SCENE,
+                    'u_PointLight.color': Shader3D.PERIOD_SCENE,
+                    'u_SpotLight.position': Shader3D.PERIOD_SCENE,
+                    'u_SpotLight.direction': Shader3D.PERIOD_SCENE,
+                    'u_SpotLight.range': Shader3D.PERIOD_SCENE,
+                    'u_SpotLight.spot': Shader3D.PERIOD_SCENE,
+                    'u_SpotLight.color': Shader3D.PERIOD_SCENE
+                };
+            stateMap =
+                {
+                    's_Cull': Shader3D.RENDER_STATE_CULL,
+                    's_Blend': Shader3D.RENDER_STATE_BLEND,
+                    's_BlendSrc': Shader3D.RENDER_STATE_BLEND_SRC,
+                    's_BlendDst': Shader3D.RENDER_STATE_BLEND_DST,
+                    's_DepthTest': Shader3D.RENDER_STATE_DEPTH_TEST,
+                    's_DepthWrite': Shader3D.RENDER_STATE_DEPTH_WRITE
+                };
+            shader = Shader3D.add(this.shaderName, null, null, true);
+            subShader = new SubShader(attributeMap, uniformMap);
+            shader.addSubShader(subShader);
+            var outlinePass = subShader.addShaderPass(outlineVS, outlinePS);
+            outlinePass.renderState.cull = Laya.RenderState.CULL_FRONT;
+            var mainPass = subShader.addShaderPass(vs, ps, stateMap);
+            mainPass.renderState.cull = Laya.RenderState.CULL_NONE;
         }
         static __initDefine__() {
             this.SHADERDEFINE_DIFFUSEMAP = Shader3D.getDefineByName("DIFFUSEMAP");
@@ -657,14 +623,10 @@
 
     var Shader3D$1 = Laya.Shader3D;
     class MaterialInstall {
-        static install() {
-            return __awaiter(this, void 0, void 0, function* () {
-                yield Cartoon2Material.install();
-            });
+        static async install() {
+            await Cartoon2Material.install();
         }
-        static initShader() {
-            return __awaiter(this, void 0, void 0, function* () {
-            });
+        static async initShader() {
         }
         static exportShaderVariantCollection() {
             let shaderObj = {};
@@ -943,8 +905,9 @@
                 mtrl.material._shaderValues.setVector(GPUSkinningPlayerResources.shaderPropID_GPUSkinning_TextureSize_NumPixelsPerFrame, new Vector4$1(anim.textureWidth, anim.textureHeight, anim.bonesCount * 3 * 4, 0));
             }
         }
-        UpdatePlayingData(mpb, playingClip, frameIndex, frame, rootMotionEnabled, lastPlayedClip, frameIndex_crossFade, crossFadeTime, crossFadeProgress) {
-            mpb.setVector(GPUSkinningPlayerResources.shaderPorpID_GPUSkinning_FrameIndex_PixelSegmentation, new Vector4$1(frameIndex, playingClip.pixelSegmentation, 0, 0));
+        UpdatePlayingData(mpb, spriteShaderData, playingClip, frameIndex, frame, rootMotionEnabled, lastPlayedClip, frameIndex_crossFade, crossFadeTime, crossFadeProgress) {
+            console.log(spriteShaderData["__id"], playingClip.name, "frameIndex=", frameIndex, "pixelSegmentation", playingClip.pixelSegmentation);
+            spriteShaderData.setVector(GPUSkinningPlayerResources.shaderPorpID_GPUSkinning_FrameIndex_PixelSegmentation, new Vector4$1(frameIndex, playingClip.pixelSegmentation, 0, 0));
             if (rootMotionEnabled) {
                 let rootMotionInv = frame.RootMotionInv(this.anim.rootBoneIndex);
                 mpb.setMatrix4x4(GPUSkinningPlayerResources.shaderPropID_GPUSkinning_RootMotion, rootMotionInv);
@@ -953,7 +916,7 @@
                 if (lastPlayedClip.rootMotionEnabled) {
                     mpb.setMatrix4x4(GPUSkinningPlayerResources.shaderPropID_GPUSkinning_RootMotion_CrossFade, lastPlayedClip.frames[frameIndex_crossFade].RootMotionInv(this.anim.rootBoneIndex));
                 }
-                mpb.setVector(GPUSkinningPlayerResources.shaderPorpID_GPUSkinning_FrameIndex_PixelSegmentation_Blend_CrossFade, new Vector4$1(frameIndex_crossFade, lastPlayedClip.pixelSegmentation, this.CrossFadeBlendFactor(crossFadeProgress, crossFadeTime)));
+                spriteShaderData.setVector(GPUSkinningPlayerResources.shaderPorpID_GPUSkinning_FrameIndex_PixelSegmentation_Blend_CrossFade, new Vector4$1(frameIndex_crossFade, lastPlayedClip.pixelSegmentation, this.CrossFadeBlendFactor(crossFadeProgress, crossFadeTime)));
             }
         }
         CrossFadeBlendFactor(crossFadeProgress, crossFadeTime) {
@@ -1102,6 +1065,7 @@
     })(GPUSkinningWrapMode || (GPUSkinningWrapMode = {}));
 
     var Vector3$2 = Laya.Vector3;
+    var Vector4$2 = Laya.Vector4;
     var Matrix4x4 = Laya.Matrix4x4;
     var Quaternion = Laya.Quaternion;
     class GPUSkinningPlayer {
@@ -1124,11 +1088,14 @@
             this.lodEnabled = false;
             this.isPlaying = false;
             this.joints = null;
+            this.__frameIndex = 0;
             this.go = go;
             this.transform = go.transform;
             this.res = res;
             this.mr = go.meshRenderer;
             this.mf = go.meshFilter;
+            this.spriteShaderData = go.meshRenderer._shaderValues;
+            go.meshRenderer['__id'] = this.spriteShaderData['__id'] = GPUSkinningPlayer._ShaderUID++;
             let mtrl = this.GetCurrentMaterial();
             this.mr.sharedMaterial = mtrl == null ? null : mtrl.material;
             this.mf.sharedMesh = res.mesh;
@@ -1462,9 +1429,14 @@
             this.crossFadeProgress += timeDelta;
             this.lastPlayedTime += timeDelta;
         }
+        onRenderUpdate(context, transform, render) {
+            console.log(render['__id'], "onRenderUpdate");
+            render._shaderValues.setVector(GPUSkinningPlayerResources.shaderPorpID_GPUSkinning_FrameIndex_PixelSegmentation, new Vector4$2(this.__frameIndex, this.playingClip.pixelSegmentation, 0, 0));
+        }
         UpdateMaterial(deltaTime, currMtrl) {
             let res = this.res;
             let frameIndex = this.GetFrameIndex();
+            this.__frameIndex = frameIndex;
             if (this.lastPlayingClip == this.playingClip && this.lastPlayingFrameIndex == frameIndex) {
                 res.Update(deltaTime, currMtrl);
                 return;
@@ -1486,7 +1458,7 @@
             if (this.Visible ||
                 this.CullingMode == GPUSKinningCullingMode.AlwaysAnimate) {
                 res.Update(deltaTime, currMtrl);
-                res.UpdatePlayingData(mpb, playingClip, frameIndex, frame, playingClip.rootMotionEnabled && this.rootMotionEnabled, lastPlayedClip, this.GetCrossFadeFrameIndex(), this.crossFadeTime, this.crossFadeProgress);
+                res.UpdatePlayingData(mpb, this.spriteShaderData, playingClip, frameIndex, frame, playingClip.rootMotionEnabled && this.rootMotionEnabled, lastPlayedClip, this.GetCrossFadeFrameIndex(), this.crossFadeTime, this.crossFadeProgress);
                 this.UpdateJoints(frame);
             }
             if (playingClip.rootMotionEnabled && this.rootMotionEnabled && frameIndex != this.rootMotionFrameIndex) {
@@ -1555,6 +1527,7 @@
             }
         }
     }
+    GPUSkinningPlayer._ShaderUID = 0;
 
     class GPUSkinningPlayerMono extends Laya.Script3D {
         constructor() {
@@ -1574,6 +1547,8 @@
             if (this.player != null) {
                 this.player.Update(Laya.timer.delta / 1000);
             }
+        }
+        onPreRender() {
         }
         onDestroy() {
             this.anim = null;
@@ -1597,6 +1572,7 @@
             if (this.player != null) {
                 return;
             }
+            this.initRender(this.gameObject.meshRenderer);
             let anim = this.anim;
             let mesh = this.mesh;
             let mtrl = this.mtrl;
@@ -1612,6 +1588,25 @@
                     player.Play(anim.clips[Mathf.clamp(this.defaultPlayingClipIndex, 0, anim.clips.length)].name);
                 }
             }
+        }
+        initRender(renderer) {
+            var r = renderer;
+            if (!r._renderUpdate__MeshRenderer__Source) {
+                r._renderUpdate__MeshRenderer__Source = r._renderUpdate;
+            }
+            r._renderUpdate = this._renderUpdate;
+            r.onRenderUpdate = this.onRenderUpdate.bind(this);
+        }
+        onRenderUpdate(context, transform, render) {
+            if (this.player != null) {
+                this.player.onRenderUpdate(context, transform, render);
+            }
+        }
+        _renderUpdate(context, transform) {
+            this.onRenderUpdate(context, transform, this);
+            this._renderUpdate__MeshRenderer__Source(context, transform);
+        }
+        _renderUpdate__MeshRenderer__Source(context, transform) {
         }
     }
     GPUSkinningPlayerMono.playerManager = new GPUSkinningPlayerMonoManager();
@@ -2267,12 +2262,10 @@
             obj.FromBytes(arrayBuffer);
             return obj;
         }
-        static LoadAsync(path) {
-            return __awaiter(this, void 0, void 0, function* () {
-                return new Promise((resolve) => {
-                    this.Load(path, (anim) => {
-                        resolve(anim);
-                    });
+        static async LoadAsync(path) {
+            return new Promise((resolve) => {
+                this.Load(path, (anim) => {
+                    resolve(anim);
                 });
             });
         }
@@ -2297,31 +2290,23 @@
         static getShaderGLSL(filename) {
             return this.SHADER_PATH_ROOT + filename + ".glsl";
         }
-        static loadShaderGlslAsync(filename) {
-            return __awaiter(this, void 0, void 0, function* () {
-                let code = yield this.loadAsync(this.getShaderGLSL(filename), Laya.Loader.TEXT);
-                return code.replace(/\r/g, "");
-            });
+        static async loadShaderGlslAsync(filename) {
+            let code = await this.loadAsync(this.getShaderGLSL(filename), Laya.Loader.TEXT);
+            return code.replace(/\r/g, "");
         }
-        static loadShaderVSAsync(filename) {
-            return __awaiter(this, void 0, void 0, function* () {
-                let code = yield this.loadAsync(this.getShaderVS(filename), Laya.Loader.TEXT);
-                return code.replace(/\r/g, "");
-            });
+        static async loadShaderVSAsync(filename) {
+            let code = await this.loadAsync(this.getShaderVS(filename), Laya.Loader.TEXT);
+            return code.replace(/\r/g, "");
         }
-        static loadShaderPSAsync(filename) {
-            return __awaiter(this, void 0, void 0, function* () {
-                let code = yield this.loadAsync(this.getShaderPS(filename), Laya.Loader.TEXT);
-                return code.replace(/\r/g, "");
-            });
+        static async loadShaderPSAsync(filename) {
+            let code = await this.loadAsync(this.getShaderPS(filename), Laya.Loader.TEXT);
+            return code.replace(/\r/g, "");
         }
-        static loadAsync(path, type) {
-            return __awaiter(this, void 0, void 0, function* () {
-                return new Promise((resolve) => {
-                    Laya.loader.load(path, Laya.Handler.create(null, (res) => {
-                        resolve(res);
-                    }), null, type);
-                });
+        static async loadAsync(path, type) {
+            return new Promise((resolve) => {
+                Laya.loader.load(path, Laya.Handler.create(null, (res) => {
+                    resolve(res);
+                }), null, type);
             });
         }
         static __initDefine__() {
@@ -2344,80 +2329,76 @@
     var Shader3D$4 = Laya.Shader3D;
     var SubShader$1 = Laya.SubShader;
     var VertexMesh$2 = Laya.VertexMesh;
-    var Vector4$2 = Laya.Vector4;
+    var Vector4$3 = Laya.Vector4;
     var RenderState$1 = Laya.RenderState;
     var Material = Laya.Material;
     class GPUSkinningUnlitMaterial extends GPUSkinningBaseMaterial {
         constructor() {
             super();
-            this._albedoColor = new Vector4$2(1.0, 1.0, 1.0, 1.0);
+            this._albedoColor = new Vector4$3(1.0, 1.0, 1.0, 1.0);
             this._albedoIntensity = 1.0;
             this._enableVertexColor = false;
             this.setShaderName(GPUSkinningUnlitMaterial.shaderName);
-            this._shaderValues.setVector(GPUSkinningUnlitMaterial.ALBEDOCOLOR, new Vector4$2(1.0, 1.0, 1.0, 1.0));
+            this._shaderValues.setVector(GPUSkinningUnlitMaterial.ALBEDOCOLOR, new Vector4$3(1.0, 1.0, 1.0, 1.0));
             this.renderMode = GPUSkinningUnlitMaterial.RENDERMODE_OPAQUE;
         }
-        static install() {
-            return __awaiter(this, void 0, void 0, function* () {
-                if (this._isInstalled) {
-                    return;
-                }
-                this._isInstalled = true;
-                GPUSkinningUnlitMaterial.__initDefine__();
-                yield GPUSkinningUnlitMaterial.initShader();
-                GPUSkinningUnlitMaterial.defaultMaterial = new GPUSkinningUnlitMaterial();
-                GPUSkinningUnlitMaterial.defaultMaterial.lock = true;
-            });
+        static async install() {
+            if (this._isInstalled) {
+                return;
+            }
+            this._isInstalled = true;
+            GPUSkinningUnlitMaterial.__initDefine__();
+            await GPUSkinningUnlitMaterial.initShader();
+            GPUSkinningUnlitMaterial.defaultMaterial = new GPUSkinningUnlitMaterial();
+            GPUSkinningUnlitMaterial.defaultMaterial.lock = true;
         }
-        static initShader() {
-            return __awaiter(this, void 0, void 0, function* () {
-                var vs = yield GPUSkinningUnlitMaterial.loadShaderVSAsync(GPUSkinningUnlitMaterial.shaderName);
-                var ps = yield GPUSkinningUnlitMaterial.loadShaderPSAsync(GPUSkinningUnlitMaterial.shaderName);
-                var attributeMap;
-                var uniformMap;
-                var stateMap;
-                var shader;
-                var subShader;
-                attributeMap =
-                    {
-                        'a_Position': VertexMesh$2.MESH_POSITION0,
-                        'a_Color': VertexMesh$2.MESH_COLOR0,
-                        'a_Texcoord0': VertexMesh$2.MESH_TEXTURECOORDINATE0,
-                        'a_Texcoord1': VertexMesh$2.MESH_TEXTURECOORDINATE1,
-                        'a_Texcoord2': GPUSkiningVertexMesh.MESH_TEXTURECOORDINATE2,
-                        'a_MvpMatrix': VertexMesh$2.MESH_MVPMATRIX_ROW0
-                    };
-                uniformMap =
-                    {
-                        'u_GPUSkinning_TextureMatrix': Shader3D$4.PERIOD_MATERIAL,
-                        'u_GPUSkinning_TextureSize_NumPixelsPerFrame': Shader3D$4.PERIOD_MATERIAL,
-                        'u_GPUSkinning_FrameIndex_PixelSegmentation': Shader3D$4.PERIOD_MATERIAL,
-                        'u_GPUSkinning_FrameIndex_PixelSegmentation_Blend_CrossFade': Shader3D$4.PERIOD_MATERIAL,
-                        'u_GPUSkinning_RootMotion': Shader3D$4.PERIOD_MATERIAL,
-                        'u_GPUSkinning_RootMotion_CrossFade': Shader3D$4.PERIOD_MATERIAL,
-                        'u_AlbedoTexture': Shader3D$4.PERIOD_MATERIAL,
-                        'u_AlbedoColor': Shader3D$4.PERIOD_MATERIAL,
-                        'u_TilingOffset': Shader3D$4.PERIOD_MATERIAL,
-                        'u_AlphaTestValue': Shader3D$4.PERIOD_MATERIAL,
-                        'u_MvpMatrix': Shader3D$4.PERIOD_SPRITE,
-                        'u_FogStart': Shader3D$4.PERIOD_SCENE,
-                        'u_FogRange': Shader3D$4.PERIOD_SCENE,
-                        'u_FogColor': Shader3D$4.PERIOD_SCENE
-                    };
-                stateMap =
-                    {
-                        's_Cull': Shader3D$4.RENDER_STATE_CULL,
-                        's_Blend': Shader3D$4.RENDER_STATE_BLEND,
-                        's_BlendSrc': Shader3D$4.RENDER_STATE_BLEND_SRC,
-                        's_BlendDst': Shader3D$4.RENDER_STATE_BLEND_DST,
-                        's_DepthTest': Shader3D$4.RENDER_STATE_DEPTH_TEST,
-                        's_DepthWrite': Shader3D$4.RENDER_STATE_DEPTH_WRITE
-                    };
-                shader = Shader3D$4.add(GPUSkinningUnlitMaterial.shaderName, null, null, true);
-                subShader = new SubShader$1(attributeMap, uniformMap);
-                shader.addSubShader(subShader);
-                var mainPass = subShader.addShaderPass(vs, ps, stateMap);
-            });
+        static async initShader() {
+            var vs = await GPUSkinningUnlitMaterial.loadShaderVSAsync(GPUSkinningUnlitMaterial.shaderName);
+            var ps = await GPUSkinningUnlitMaterial.loadShaderPSAsync(GPUSkinningUnlitMaterial.shaderName);
+            var attributeMap;
+            var uniformMap;
+            var stateMap;
+            var shader;
+            var subShader;
+            attributeMap =
+                {
+                    'a_Position': VertexMesh$2.MESH_POSITION0,
+                    'a_Color': VertexMesh$2.MESH_COLOR0,
+                    'a_Texcoord0': VertexMesh$2.MESH_TEXTURECOORDINATE0,
+                    'a_Texcoord1': VertexMesh$2.MESH_TEXTURECOORDINATE1,
+                    'a_Texcoord2': GPUSkiningVertexMesh.MESH_TEXTURECOORDINATE2,
+                    'a_MvpMatrix': VertexMesh$2.MESH_MVPMATRIX_ROW0
+                };
+            uniformMap =
+                {
+                    'u_GPUSkinning_TextureMatrix': Shader3D$4.PERIOD_MATERIAL,
+                    'u_GPUSkinning_TextureSize_NumPixelsPerFrame': Shader3D$4.PERIOD_MATERIAL,
+                    'u_GPUSkinning_RootMotion': Shader3D$4.PERIOD_MATERIAL,
+                    'u_GPUSkinning_RootMotion_CrossFade': Shader3D$4.PERIOD_MATERIAL,
+                    'u_GPUSkinning_FrameIndex_PixelSegmentation': Shader3D$4.PERIOD_SPRITE,
+                    'u_GPUSkinning_FrameIndex_PixelSegmentation_Blend_CrossFade': Shader3D$4.PERIOD_SPRITE,
+                    'u_AlbedoTexture': Shader3D$4.PERIOD_MATERIAL,
+                    'u_AlbedoColor': Shader3D$4.PERIOD_MATERIAL,
+                    'u_TilingOffset': Shader3D$4.PERIOD_MATERIAL,
+                    'u_AlphaTestValue': Shader3D$4.PERIOD_MATERIAL,
+                    'u_MvpMatrix': Shader3D$4.PERIOD_SPRITE,
+                    'u_FogStart': Shader3D$4.PERIOD_SCENE,
+                    'u_FogRange': Shader3D$4.PERIOD_SCENE,
+                    'u_FogColor': Shader3D$4.PERIOD_SCENE
+                };
+            stateMap =
+                {
+                    's_Cull': Shader3D$4.RENDER_STATE_CULL,
+                    's_Blend': Shader3D$4.RENDER_STATE_BLEND,
+                    's_BlendSrc': Shader3D$4.RENDER_STATE_BLEND_SRC,
+                    's_BlendDst': Shader3D$4.RENDER_STATE_BLEND_DST,
+                    's_DepthTest': Shader3D$4.RENDER_STATE_DEPTH_TEST,
+                    's_DepthWrite': Shader3D$4.RENDER_STATE_DEPTH_WRITE
+                };
+            shader = Shader3D$4.add(GPUSkinningUnlitMaterial.shaderName, null, null, true);
+            subShader = new SubShader$1(attributeMap, uniformMap);
+            shader.addSubShader(subShader);
+            var mainPass = subShader.addShaderPass(vs, ps, stateMap);
         }
         static __initDefine__() {
             GPUSkinningUnlitMaterial.SHADERDEFINE_ALBEDOTEXTURE = Shader3D$4.getDefineByName("ALBEDOTEXTURE");
@@ -2458,7 +2439,7 @@
         set _AlbedoIntensity(value) {
             if (this._albedoIntensity !== value) {
                 var finalAlbedo = this._shaderValues.getVector(GPUSkinningUnlitMaterial.ALBEDOCOLOR);
-                Vector4$2.scale(this._albedoColor, value, finalAlbedo);
+                Vector4$3.scale(this._albedoColor, value, finalAlbedo);
                 this._albedoIntensity = value;
                 this._shaderValues.setVector(GPUSkinningUnlitMaterial.ALBEDOCOLOR, finalAlbedo);
             }
@@ -2530,7 +2511,7 @@
         }
         set albedoColor(value) {
             var finalAlbedo = this._shaderValues.getVector(GPUSkinningUnlitMaterial.ALBEDOCOLOR);
-            Vector4$2.scale(value, this._albedoIntensity, finalAlbedo);
+            Vector4$3.scale(value, this._albedoIntensity, finalAlbedo);
             this._albedoColor = value;
             this._shaderValues.setVector(GPUSkinningUnlitMaterial.ALBEDOCOLOR, finalAlbedo);
         }
@@ -2776,21 +2757,19 @@
     var Event = Laya.Event;
     var Shader3D$5 = Laya.Shader3D;
     class GPUSkining {
-        static InitAsync() {
-            return __awaiter(this, void 0, void 0, function* () {
-                var GPUSkinningIncludegGLSL = yield GPUSkinningBaseMaterial.loadShaderGlslAsync("GPUSkinningInclude");
-                Shader3D$5.addInclude("GPUSkinningInclude.glsl", GPUSkinningIncludegGLSL);
-                GPUSkinningBaseMaterial.__initDefine__();
-                yield GPUSkinningUnlitMaterial.install();
-                LayaExtends_Node.Init();
-                LayaExtends_Texture2D.Init();
-                Laya3D_Extend.Init();
-                Laya3D.SKING_MESH = "SKING_MESH";
-                var createMap = LoaderManager.createMap;
-                createMap["skinlm"] = [Laya3D.SKING_MESH, GPUSkiningMesh._parse];
-                var parserMap = Loader.parserMap;
-                parserMap[Laya3D.SKING_MESH] = this._loadMesh;
-            });
+        static async InitAsync() {
+            var GPUSkinningIncludegGLSL = await GPUSkinningBaseMaterial.loadShaderGlslAsync("GPUSkinningInclude");
+            Shader3D$5.addInclude("GPUSkinningInclude.glsl", GPUSkinningIncludegGLSL);
+            GPUSkinningBaseMaterial.__initDefine__();
+            await GPUSkinningUnlitMaterial.install();
+            LayaExtends_Node.Init();
+            LayaExtends_Texture2D.Init();
+            Laya3D_Extend.Init();
+            Laya3D.SKING_MESH = "SKING_MESH";
+            var createMap = LoaderManager.createMap;
+            createMap["skinlm"] = [Laya3D.SKING_MESH, GPUSkiningMesh._parse];
+            var parserMap = Loader.parserMap;
+            parserMap[Laya3D.SKING_MESH] = this._loadMesh;
         }
         static _loadMesh(loader) {
             loader.on(Event.LOADED, null, this._onMeshLmLoaded, [loader]);
@@ -2835,35 +2814,31 @@
                 }), null, type);
             });
         }
-        static CreateByNameAsync(name, mainTexturePath, materialCls) {
-            return __awaiter(this, void 0, void 0, function* () {
-                if (!materialCls) {
-                    materialCls = GPUSkinningUnlitMaterial;
-                }
-                var animPath = this.GetPath(this.GetAnimName(name));
-                var meshPath = this.GetPath(this.GetMeshName(name));
-                var texturePath = this.GetPath(this.GetTextureName(name));
-                var anim = yield GPUSkinningAnimation.LoadAsync(animPath);
-                window['anim'] = anim;
-                console.log(anim);
-                var mesh = yield GPUSkiningMesh.LoadAsync(meshPath);
-                var mainTexture = yield this.LoadAsync(mainTexturePath, Laya.Loader.TEXTURE2D);
-                var animTexture = yield this.LoadAnimTextureAsync(texturePath, anim.textureWidth, anim.textureHeight);
-                console.log(animTexture);
-                var material = new materialCls();
-                material.albedoTexture = mainTexture;
-                material.GPUSkinning_TextureMatrix = animTexture;
-                var mat = window['planemat'];
-                if (mat)
-                    mat.albedoTexture = animTexture;
-                var sprite = new Laya.MeshSprite3D();
-                var mono = sprite.addComponent(GPUSkinningPlayerMono);
-                mono.SetData(anim, mesh, material, animTexture);
-                window['mono'] = mono;
-                console.log(mono);
-                mono.Player.Play("IDLE");
-                return mono;
-            });
+        static async CreateByNameAsync(name, mainTexturePath, materialCls) {
+            if (!materialCls) {
+                materialCls = GPUSkinningUnlitMaterial;
+            }
+            var animPath = this.GetPath(this.GetAnimName(name));
+            var meshPath = this.GetPath(this.GetMeshName(name));
+            var texturePath = this.GetPath(this.GetTextureName(name));
+            var anim = await GPUSkinningAnimation.LoadAsync(animPath);
+            window['anim'] = anim;
+            console.log(anim);
+            var mesh = await GPUSkiningMesh.LoadAsync(meshPath);
+            var mainTexture = await this.LoadAsync(mainTexturePath, Laya.Loader.TEXTURE2D);
+            var animTexture = await this.LoadAnimTextureAsync(texturePath, anim.textureWidth, anim.textureHeight);
+            console.log(animTexture);
+            var material = new materialCls();
+            material.albedoTexture = mainTexture;
+            material.GPUSkinning_TextureMatrix = animTexture;
+            var mat = window['planemat'];
+            if (mat)
+                mat.albedoTexture = animTexture;
+            var sprite = new Laya.MeshSprite3D();
+            var mono = sprite.addComponent(GPUSkinningPlayerMono);
+            mono.SetData(anim, mesh, material, animTexture);
+            console.log(mono);
+            return mono;
         }
     }
     GPUSkining.EXT_SKING_MESH = "skinlm";
@@ -2875,20 +2850,35 @@
             Laya.stage.addChild(this.scene);
             this.InitAsync();
         }
-        InitAsync() {
-            return __awaiter(this, void 0, void 0, function* () {
-                yield GPUSkining.InitAsync();
-                yield MaterialInstall.install();
-                var mono = yield GPUSkining.CreateByNameAsync("Hero_1001_Dianguanglongqi_Skin1", "res/gpuskining/Hero_1001_Dianguanglongqi.jpg");
-                if (mono) {
-                    this.scene.addChild(mono.owner);
-                    var sprite = mono.owner;
-                    window['sprite'] = sprite;
-                    this.CloneMono(mono);
+        async InitAsync() {
+            await GPUSkining.InitAsync();
+            await MaterialInstall.install();
+            var mono = await GPUSkining.CreateByNameAsync("Hero_1001_Dianguanglongqi_Skin1", "res/gpuskining/Hero_1001_Dianguanglongqi.jpg");
+            if (mono) {
+                for (var i = 0; i < mono.anim.clips.length; i++) {
+                    mono.anim.clips[i].wrapMode = GPUSkinningWrapMode.Loop;
+                    mono.anim.clips[i].individualDifferenceEnabled = true;
                 }
-            });
+                this.scene.addChild(mono.owner);
+                var sprite = mono.owner;
+                window['sprite'] = sprite;
+                window['mono'] = mono;
+            }
+            var mono = await GPUSkining.CreateByNameAsync("Hero_1001_Dianguanglongqi_Skin1", "res/gpuskining/Hero_1001_Dianguanglongqi.jpg");
+            if (mono) {
+                for (var i = 0; i < mono.anim.clips.length; i++) {
+                    mono.anim.clips[i].wrapMode = GPUSkinningWrapMode.Loop;
+                    mono.anim.clips[i].individualDifferenceEnabled = true;
+                }
+                this.scene.addChild(mono.owner);
+                var sprite = mono.owner;
+                sprite.transform.localPositionX = 2;
+                mono.Player.Play("IDLE");
+                window['sprite2'] = sprite;
+                window['mono2'] = mono;
+            }
         }
-        CloneMono(mono, nx = 1, ny = 1) {
+        CloneMono(mono, nx = 10, ny = 10) {
             var names = [];
             for (var i = 0; i < mono.anim.clips.length; i++) {
                 mono.anim.clips[i].wrapMode = GPUSkinningWrapMode.Loop;
@@ -2906,11 +2896,7 @@
                     this.scene.addChild(c);
                     let i = Random.range(0, mono.anim.clips.length - 1);
                     i = Math.floor(i);
-                    console.log(cm, i, names[i]);
-                    setTimeout(() => {
-                        if (cm)
-                            cm.Player.Play(names[i]);
-                    }, 100);
+                    cm.Player.Play(names[i]);
                 }
             }
         }
@@ -2944,42 +2930,38 @@
             meshRenderer.material = material;
             this.scene.addChild(box);
         }
-        TestLoadCube() {
-            return __awaiter(this, void 0, void 0, function* () {
-                let prefabName = "Cube";
-                let path = this.GetPathByResId(prefabName);
-                let res = yield this.Load3DAsync(path);
-                res.transform.localRotationEulerX = -90;
-                this.scene.addChild(res);
-                res.transform.position = new Laya.Vector3(0, 0, 0);
-                window['res'] = res;
-            });
+        async TestLoadCube() {
+            let prefabName = "Cube";
+            let path = this.GetPathByResId(prefabName);
+            let res = await this.Load3DAsync(path);
+            res.transform.localRotationEulerX = -90;
+            this.scene.addChild(res);
+            res.transform.position = new Laya.Vector3(0, 0, 0);
+            window['res'] = res;
         }
         GetPathByResId(resId) {
             return TestShader.Res3DRoot + resId + ".lh";
         }
-        loadPrefab() {
-            return __awaiter(this, void 0, void 0, function* () {
-                yield MaterialInstall.install();
-                let prefabName = "Hero_1001_Dianguanglongqi_Skin1";
-                let path = this.GetPathByResId(prefabName);
-                let res = yield this.Load3DAsync(path);
-                let node1 = this.createRole(res);
-                let node2 = this.createRole(res);
-                node2.transform.localPositionX = 2;
-                node2.transform.localScaleX = -1;
-                var modelNode1 = node1.getChildByName("model");
-                var modelNode2 = node2.getChildByName("model");
-                let animator1 = modelNode1.getComponent(Laya.Animator);
-                let animator2 = modelNode2.getComponent(Laya.Animator);
-                Laya.timer.loop(3000, this, () => {
-                    animator1.play(Math.random() > 0.5 ? "RUN" : "IDLE");
-                    modelNode1.transform.localScaleX *= -1;
-                });
-                Laya.timer.loop(4000, this, () => {
-                    modelNode2.transform.localScaleX *= -1;
-                    animator2.play(Math.random() > 0.5 ? "RUN" : "IDLE");
-                });
+        async loadPrefab() {
+            await MaterialInstall.install();
+            let prefabName = "Hero_1001_Dianguanglongqi_Skin1";
+            let path = this.GetPathByResId(prefabName);
+            let res = await this.Load3DAsync(path);
+            let node1 = this.createRole(res);
+            let node2 = this.createRole(res);
+            node2.transform.localPositionX = 2;
+            node2.transform.localScaleX = -1;
+            var modelNode1 = node1.getChildByName("model");
+            var modelNode2 = node2.getChildByName("model");
+            let animator1 = modelNode1.getComponent(Laya.Animator);
+            let animator2 = modelNode2.getComponent(Laya.Animator);
+            Laya.timer.loop(3000, this, () => {
+                animator1.play(Math.random() > 0.5 ? "RUN" : "IDLE");
+                modelNode1.transform.localScaleX *= -1;
+            });
+            Laya.timer.loop(4000, this, () => {
+                modelNode2.transform.localScaleX *= -1;
+                animator2.play(Math.random() > 0.5 ? "RUN" : "IDLE");
             });
         }
         createRole(res) {
@@ -3002,13 +2984,11 @@
             animator.play("IDLE");
             return node;
         }
-        Load3DAsync(path) {
-            return __awaiter(this, void 0, void 0, function* () {
-                return new Promise((resolve) => {
-                    Laya.loader.create(path, Laya.Handler.create(null, (res) => {
-                        resolve(res);
-                    }));
-                });
+        async Load3DAsync(path) {
+            return new Promise((resolve) => {
+                Laya.loader.create(path, Laya.Handler.create(null, (res) => {
+                    resolve(res);
+                }));
             });
         }
     }

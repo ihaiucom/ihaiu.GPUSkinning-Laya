@@ -48,19 +48,51 @@ export default class TestShader
         var mono = await GPUSkining.CreateByNameAsync("Hero_1001_Dianguanglongqi_Skin1", "res/gpuskining/Hero_1001_Dianguanglongqi.jpg");
         if(mono)
         {
+            
+        for(var i = 0; i < mono.anim.clips.length; i ++)
+        {
+            mono.anim.clips[i].wrapMode = GPUSkinningWrapMode.Loop;
+            mono.anim.clips[i].individualDifferenceEnabled =true;
+        }
             this.scene.addChild(mono.owner);
 
             var sprite: Laya.MeshSprite3D = <Laya.MeshSprite3D> mono.owner;
             window['sprite'] = sprite;
+            window['mono'] = mono;
             // sprite.transform.localRotationEulerX = -90;
-            this.CloneMono(mono);
+            // this.CloneMono(mono);
+
+        }
+
+
+        var mono = await GPUSkining.CreateByNameAsync("Hero_1001_Dianguanglongqi_Skin1", "res/gpuskining/Hero_1001_Dianguanglongqi.jpg");
+        if(mono)
+        {
+            
+        for(var i = 0; i < mono.anim.clips.length; i ++)
+        {
+            mono.anim.clips[i].wrapMode = GPUSkinningWrapMode.Loop;
+            mono.anim.clips[i].individualDifferenceEnabled =true;
+        }
+
+            this.scene.addChild(mono.owner);
+
+            var sprite: Laya.MeshSprite3D = <Laya.MeshSprite3D> mono.owner;
+            sprite.transform.localPositionX = 2;
+            mono.Player.Play("IDLE");
+
+
+            window['sprite2'] = sprite;
+            window['mono2'] = mono;
+            // sprite.transform.localRotationEulerX = -90;
+            // this.CloneMono(mono);
 
         }
 
         // await this.TestLoadCube();
     }
 
-    CloneMono(mono: GPUSkinningPlayerMono, nx = 1, ny = 1)
+    CloneMono(mono: GPUSkinningPlayerMono, nx = 10, ny = 10)
     {
         var names = [];
         for(var i = 0; i < mono.anim.clips.length; i ++)
@@ -82,11 +114,12 @@ export default class TestShader
                 this.scene.addChild(c);
                 let i = Random.range(0, mono.anim.clips.length - 1);
                 i = Math.floor(i);
-                console.log(cm, i, names[i]);
-                setTimeout(() => {
+                cm.Player.Play(names[i]);
+
+                // setTimeout(() => {
                     
-                    if(cm)cm.Player.Play(names[i]);
-                }, 100);
+                //     if(cm)cm.Player.Play(names[i]);
+                // }, 100);
 
             }
         }
