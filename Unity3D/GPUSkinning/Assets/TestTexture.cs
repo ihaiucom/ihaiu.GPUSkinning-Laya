@@ -32,7 +32,39 @@ public class TestTexture : MonoBehaviour
     void Update()
     {
         if (isRunEditor)
-            ToBytes2();
+            ToBytes3();
+    }
+
+
+    [ContextMenu("To Bytes2")]
+    public void ToBytes3()
+    {
+        var stream = new MemoryStream();
+        var b = new BinaryWriter(stream);
+        for(int i = 0; i < frame0Points.Length; i ++)
+        {
+            Vector3 pos = frame0Points[i];
+            b.Write((float)pos.x);
+            b.Write((float)pos.y);
+            b.Write((float)pos.z);
+            b.Write((float)1);
+
+        }
+        stream.Flush();
+
+        bytes = stream.ToArray();
+        Debug.Log("stream.Length=" + stream.Length + ", bytes.Length=" + bytes.Length);
+
+
+        string savedPath = "Assets/rili.bytes";
+        using (FileStream fileStream = new FileStream(savedPath, FileMode.Create))
+        {
+            fileStream.Write(bytes, 0, bytes.Length);
+            fileStream.Flush();
+            fileStream.Close();
+            fileStream.Dispose();
+        }
+
     }
 
     [ContextMenu("To Bytes")]

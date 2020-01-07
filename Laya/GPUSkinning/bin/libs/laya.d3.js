@@ -14066,7 +14066,7 @@
 	                }
 	                var uploadSprite3D = (shaderIns._uploadRender !== this.render || shaderIns._uploadRenderType !== this.renderType) || switchUpdateMark;
 	                if (uploadSprite3D || switchShader) {
-						console.log(this.render['__id'] , this.render._shaderValues);
+						// console.log(this.render['__id'] , this.render._shaderValues);
 	                    shaderIns.uploadUniforms(shaderIns._spriteUniformParamsMap, this.render._shaderValues, uploadSprite3D);
 	                    shaderIns._uploadRender = this.render;
 	                    shaderIns._uploadRenderType = this.renderType;

@@ -105,7 +105,7 @@ export default class GPUSkinningPlayerMono extends Laya.Script3D
         {
             return;
         }
-        this.initRender(this.gameObject.meshRenderer);
+        // this.initRender(this.gameObject.meshRenderer);
 
         
         let anim = this.anim;

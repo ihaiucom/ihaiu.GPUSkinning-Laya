@@ -25,6 +25,7 @@
       cameraRotationXNode.transform.localRotationEulerX = -20;
       camera.transform.localPosition = new Vector3(0, 0, 10);
       camera.clearColor = new Laya.Vector4(0.2, 0.5, 0.8, 1);
+      camera.orthographic = true;
       camera.orthographicVerticalSize = 5.2;
       camera.farPlane = 2000;
       this.camera = camera;
@@ -906,6 +907,7 @@
       }
     }
     UpdatePlayingData(mpb, spriteShaderData, playingClip, frameIndex, frame, rootMotionEnabled, lastPlayedClip, frameIndex_crossFade, crossFadeTime, crossFadeProgress) {
+      console.log(spriteShaderData["__id"], playingClip.name, "frameIndex=", frameIndex, "pixelSegmentation", playingClip.pixelSegmentation);
       spriteShaderData.setVector(GPUSkinningPlayerResources.shaderPorpID_GPUSkinning_FrameIndex_PixelSegmentation, new Vector4$1(frameIndex, playingClip.pixelSegmentation, 0, 0));
       if (rootMotionEnabled) {
         let rootMotionInv = frame.RootMotionInv(this.anim.rootBoneIndex);
@@ -952,6 +954,24 @@
         material._shaderValues.addDefine(SKILL_N);
         this.EnableKeywords(i, materialItem);
       }
+    }
+    CloneMaterial(originalMaterial, skinningQuality) {
+      let material = originalMaterial.clone();
+      let SKILL_N;
+      switch (skinningQuality) {
+        case GPUSkinningQuality.Bone1:
+          SKILL_N = GPUSkinningPlayerResources.ShaderDefine_SKIN_1;
+          break;
+        case GPUSkinningQuality.Bone2:
+          SKILL_N = GPUSkinningPlayerResources.ShaderDefine_SKIN_2;
+          break;
+        case GPUSkinningQuality.Bone4:
+          SKILL_N = GPUSkinningPlayerResources.ShaderDefine_SKIN_4;
+          break;
+      }
+      material._shaderValues.addDefine(SKILL_N);
+      material._shaderValues.addDefine(GPUSkinningPlayerResources.keywordDefines[3]);
+      return material;
     }
     EnableKeywords(ki, mtrl) {
       for (let i = 0; i < this.mtrls.length; ++i) {
@@ -1064,6 +1084,7 @@
   })(GPUSkinningWrapMode || (GPUSkinningWrapMode = {}));
 
   var Vector3$2 = Laya.Vector3;
+  var Vector4$2 = Laya.Vector4;
   var Matrix4x4 = Laya.Matrix4x4;
   var Quaternion = Laya.Quaternion;
   class GPUSkinningPlayer {
@@ -1086,13 +1107,21 @@
       this.lodEnabled = false;
       this.isPlaying = false;
       this.joints = null;
+      this.__frameIndex = 0;
+      this.testI = 0;
       this.go = go;
       this.transform = go.transform;
       this.res = res;
       this.mr = go.meshRenderer;
       this.mf = go.meshFilter;
       this.spriteShaderData = go.meshRenderer._shaderValues;
+      go.meshRenderer['__id'] = this.spriteShaderData['__id'] = GPUSkinningPlayer._ShaderUID++;
       let mtrl = this.GetCurrentMaterial();
+      this.mtrl = mtrl;
+      var mtrl2 = new GPUSkinningMaterial();
+      mtrl2.material = res.CloneMaterial(mtrl.material, res.anim.skinQuality);
+      mtrl = mtrl2;
+      this.mtrl = mtrl2;
       this.mr.sharedMaterial = mtrl == null ? null : mtrl.material;
       this.mf.sharedMesh = res.mesh;
       this.ConstructJoints();
@@ -1393,13 +1422,7 @@
       if (!this.isPlaying || this.playingClip == null) {
         return;
       }
-      let currMtrl = this.GetCurrentMaterial();
-      if (currMtrl == null) {
-        return;
-      }
-      if (this.mr.sharedMaterial != currMtrl.material) {
-        this.mr.sharedMaterial = currMtrl.material;
-      }
+      let currMtrl = this.mtrl;
       let playingClip = this.playingClip;
       switch (playingClip.wrapMode) {
         case GPUSkinningWrapMode.Loop:
@@ -1425,9 +1448,14 @@
       this.crossFadeProgress += timeDelta;
       this.lastPlayedTime += timeDelta;
     }
+    onRenderUpdate(context, transform, render) {
+      console.log(render['__id'], "onRenderUpdate");
+      render._shaderValues.setVector(GPUSkinningPlayerResources.shaderPorpID_GPUSkinning_FrameIndex_PixelSegmentation, new Vector4$2(this.__frameIndex, this.playingClip.pixelSegmentation, 0, 0));
+    }
     UpdateMaterial(deltaTime, currMtrl) {
       let res = this.res;
       let frameIndex = this.GetFrameIndex();
+      this.__frameIndex = frameIndex;
       if (this.lastPlayingClip == this.playingClip && this.lastPlayingFrameIndex == frameIndex) {
         res.Update(deltaTime, currMtrl);
         return;
@@ -1518,6 +1546,7 @@
       }
     }
   }
+  GPUSkinningPlayer._ShaderUID = 0;
 
   class GPUSkinningPlayerMono extends Laya.Script3D {
     constructor() {
@@ -1537,6 +1566,8 @@
       if (this.player != null) {
         this.player.Update(Laya.timer.delta / 1000);
       }
+    }
+    onPreRender() {
     }
     onDestroy() {
       this.anim = null;
@@ -1575,6 +1606,25 @@
           player.Play(anim.clips[Mathf.clamp(this.defaultPlayingClipIndex, 0, anim.clips.length)].name);
         }
       }
+    }
+    initRender(renderer) {
+      var r = renderer;
+      if (!r._renderUpdate__MeshRenderer__Source) {
+        r._renderUpdate__MeshRenderer__Source = r._renderUpdate;
+      }
+      r._renderUpdate = this._renderUpdate;
+      r.onRenderUpdate = this.onRenderUpdate.bind(this);
+    }
+    onRenderUpdate(context, transform, render) {
+      if (this.player != null) {
+        this.player.onRenderUpdate(context, transform, render);
+      }
+    }
+    _renderUpdate(context, transform) {
+      this.onRenderUpdate(context, transform, this);
+      this._renderUpdate__MeshRenderer__Source(context, transform);
+    }
+    _renderUpdate__MeshRenderer__Source(context, transform) {
     }
   }
   GPUSkinningPlayerMono.playerManager = new GPUSkinningPlayerMonoManager();
@@ -2178,6 +2228,7 @@
       this.textureWidth = b.readUint32();
       this.textureHeight = b.readUint32();
       this.sphereRadius = b.readFloat32();
+      this.bonesCount = b.readUint32();
       this.bounds = ByteReadUtil.ReadBounds(b);
       var clipCount = b.readUint32();
       var boneCount = b.readUint32();
@@ -2297,17 +2348,17 @@
   var Shader3D$4 = Laya.Shader3D;
   var SubShader$1 = Laya.SubShader;
   var VertexMesh$2 = Laya.VertexMesh;
-  var Vector4$2 = Laya.Vector4;
+  var Vector4$3 = Laya.Vector4;
   var RenderState$1 = Laya.RenderState;
   var Material = Laya.Material;
   class GPUSkinningUnlitMaterial extends GPUSkinningBaseMaterial {
     constructor() {
       super();
-      this._albedoColor = new Vector4$2(1.0, 1.0, 1.0, 1.0);
+      this._albedoColor = new Vector4$3(1.0, 1.0, 1.0, 1.0);
       this._albedoIntensity = 1.0;
       this._enableVertexColor = false;
       this.setShaderName(GPUSkinningUnlitMaterial.shaderName);
-      this._shaderValues.setVector(GPUSkinningUnlitMaterial.ALBEDOCOLOR, new Vector4$2(1.0, 1.0, 1.0, 1.0));
+      this._shaderValues.setVector(GPUSkinningUnlitMaterial.ALBEDOCOLOR, new Vector4$3(1.0, 1.0, 1.0, 1.0));
       this.renderMode = GPUSkinningUnlitMaterial.RENDERMODE_OPAQUE;
     }
     static async install() {
@@ -2407,7 +2458,7 @@
     set _AlbedoIntensity(value) {
       if (this._albedoIntensity !== value) {
         var finalAlbedo = this._shaderValues.getVector(GPUSkinningUnlitMaterial.ALBEDOCOLOR);
-        Vector4$2.scale(this._albedoColor, value, finalAlbedo);
+        Vector4$3.scale(this._albedoColor, value, finalAlbedo);
         this._albedoIntensity = value;
         this._shaderValues.setVector(GPUSkinningUnlitMaterial.ALBEDOCOLOR, finalAlbedo);
       }
@@ -2479,7 +2530,7 @@
     }
     set albedoColor(value) {
       var finalAlbedo = this._shaderValues.getVector(GPUSkinningUnlitMaterial.ALBEDOCOLOR);
-      Vector4$2.scale(value, this._albedoIntensity, finalAlbedo);
+      Vector4$3.scale(value, this._albedoIntensity, finalAlbedo);
       this._albedoColor = value;
       this._shaderValues.setVector(GPUSkinningUnlitMaterial.ALBEDOCOLOR, finalAlbedo);
     }
@@ -2554,7 +2605,7 @@
           this.alphaTest = false;
           this.renderQueue = Material.RENDERQUEUE_OPAQUE;
           this.depthWrite = true;
-          this.cull = RenderState$1.CULL_FRONT;
+          this.cull = RenderState$1.CULL_BACK;
           this.blend = RenderState$1.BLEND_DISABLE;
           this.depthTest = RenderState$1.DEPTHTEST_LESS;
           break;
@@ -2562,7 +2613,7 @@
           this.renderQueue = Material.RENDERQUEUE_ALPHATEST;
           this.alphaTest = true;
           this.depthWrite = true;
-          this.cull = RenderState$1.CULL_FRONT;
+          this.cull = RenderState$1.CULL_BACK;
           this.blend = RenderState$1.BLEND_DISABLE;
           this.depthTest = RenderState$1.DEPTHTEST_LESS;
           break;
@@ -2570,7 +2621,7 @@
           this.renderQueue = Material.RENDERQUEUE_TRANSPARENT;
           this.alphaTest = false;
           this.depthWrite = false;
-          this.cull = RenderState$1.CULL_FRONT;
+          this.cull = RenderState$1.CULL_BACK;
           this.blend = RenderState$1.BLEND_ENABLE_ALL;
           this.blendSrc = RenderState$1.BLENDPARAM_SRC_ALPHA;
           this.blendDst = RenderState$1.BLENDPARAM_ONE_MINUS_SRC_ALPHA;
@@ -2799,13 +2850,9 @@
       var material = new materialCls();
       material.albedoTexture = mainTexture;
       material.GPUSkinning_TextureMatrix = animTexture;
-      var mat = window['planemat'];
-      if (mat)
-        mat.albedoTexture = animTexture;
       var sprite = new Laya.MeshSprite3D();
       var mono = sprite.addComponent(GPUSkinningPlayerMono);
       mono.SetData(anim, mesh, material, animTexture);
-      window['mono'] = mono;
       console.log(mono);
       return mono;
     }
@@ -2822,15 +2869,46 @@
     async InitAsync() {
       await GPUSkining.InitAsync();
       await MaterialInstall.install();
-      var mono = await GPUSkining.CreateByNameAsync("Hero_1001_Dianguanglongqi_Skin1", "res/gpuskining/Hero_1001_Dianguanglongqi.jpg");
+      var plane2 = this.scene.addChild(new Laya.MeshSprite3D(Laya.PrimitiveMesh.createPlane(5, 5, 1, 1)));
+      plane2.transform.localRotationEulerX = 20;
+      var plane = this.scene.addChild(new Laya.MeshSprite3D(Laya.PrimitiveMesh.createPlane(5, 5, 1, 1)));
+      var mat = new GPUSkinningUnlitMaterial();
+      plane.transform.localRotationEulerX = 20;
+      window['planemat'] = mat;
+      window['plane'] = plane;
+      var texture = await this.LoadAnimTextureAsync("res/gpuskining/rili.bytes", 2, 2);
+      mat.albedoTexture = texture;
+      mat.GPUSkinning_TextureMatrix = texture;
+      plane.meshRenderer.sharedMaterial = mat;
+      return;
+      var mono = await GPUSkining.CreateByNameAsync("MutantAnim2", "res/gpuskining/enemy_mutant_d.jpg");
       if (mono) {
+        mono.Player.Play("IDLE");
+        for (var i = 0; i < mono.anim.clips.length; i++) {
+          mono.anim.clips[i].wrapMode = GPUSkinningWrapMode.Loop;
+          mono.anim.clips[i].individualDifferenceEnabled = true;
+        }
         this.scene.addChild(mono.owner);
         var sprite = mono.owner;
         window['sprite'] = sprite;
-        this.CloneMono(mono);
+        window['mono'] = mono;
+      }
+      return;
+      var mono = await GPUSkining.CreateByNameAsync("Hero_1001_Dianguanglongqi_Skin1", "res/gpuskining/Hero_1001_Dianguanglongqi.jpg");
+      if (mono) {
+        for (var i = 0; i < mono.anim.clips.length; i++) {
+          mono.anim.clips[i].wrapMode = GPUSkinningWrapMode.Loop;
+          mono.anim.clips[i].individualDifferenceEnabled = true;
+        }
+        this.scene.addChild(mono.owner);
+        var sprite = mono.owner;
+        sprite.transform.localPositionX = 2;
+        mono.Player.Play("IDLE");
+        window['sprite2'] = sprite;
+        window['mono2'] = mono;
       }
     }
-    CloneMono(mono, nx = 10, ny = 10) {
+    CloneMono(mono, nx = 10, ny = 20) {
       var names = [];
       for (var i = 0; i < mono.anim.clips.length; i++) {
         mono.anim.clips[i].wrapMode = GPUSkinningWrapMode.Loop;
@@ -2841,8 +2919,8 @@
       for (var y = 0; y < ny; y++) {
         for (var x = 0; x < nx; x++) {
           var c = sprite.clone();
-          c.transform.localPositionX = x - 5;
-          c.transform.localPositionZ = y * 2 - 10;
+          c.transform.localPositionX = x - 2;
+          c.transform.localPositionZ = -y * 2 + 5;
           let cm = c.getComponent(GPUSkinningPlayerMono);
           cm.SetData(mono.anim, mono.mesh, mono.mtrl, mono.textureRawData);
           this.scene.addChild(c);
@@ -2852,15 +2930,35 @@
         }
       }
     }
+    GetAnimTextureAsync() {
+      var pixelsF32 = new Float32Array(2 * 2 * 4);
+      window['pixelsF32'] = pixelsF32;
+      var i = 0;
+      pixelsF32[i + 0] = 1.0;
+      pixelsF32[i + 1] = 0.5;
+      pixelsF32[i + 2] = 100;
+      pixelsF32[i + 3] = 1.0;
+      var texture = new Laya.Texture2D(2, 2, Laya.TextureFormat.R32G32B32A32, false, false);
+      texture.wrapModeU = Laya.BaseTexture.WARPMODE_CLAMP;
+      texture.wrapModeV = Laya.BaseTexture.WARPMODE_CLAMP;
+      texture.filterMode = Laya.BaseTexture.FILTERMODE_POINT;
+      texture.anisoLevel = 0;
+      texture.lock = true;
+      texture.setSubPixels(0, 0, 2, 2, pixelsF32, 0);
+      return texture;
+    }
     LoadAnimTextureAsync(path, width, height) {
       return new Promise((resolve) => {
         Laya.loader.load(path, Laya.Handler.create(this, (arrayBuffer) => {
-          var i8 = new Uint8Array(arrayBuffer);
-          var texture = new Laya.Texture2D(width, height, Laya.TextureFormat.R8G8B8A8, false, true);
+          var f32 = new Float32Array(arrayBuffer);
+          window['f32'] = f32;
+          var texture = new Laya.Texture2D(width, height, Laya.TextureFormat.R32G32B32A32, false, true);
           texture.wrapModeU = Laya.BaseTexture.WARPMODE_CLAMP;
           texture.wrapModeV = Laya.BaseTexture.WARPMODE_CLAMP;
           texture.filterMode = Laya.BaseTexture.FILTERMODE_POINT;
-          texture.setPixels(i8);
+          texture.anisoLevel = 0;
+          texture.lock = true;
+          texture.setSubPixels(0, 0, 2, 2, f32, 0);
           window['animBuffer2'] = arrayBuffer;
           window['animTexture2'] = texture;
           resolve(texture);

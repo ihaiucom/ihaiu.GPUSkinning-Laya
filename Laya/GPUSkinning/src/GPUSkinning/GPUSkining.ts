@@ -91,29 +91,18 @@ export default class GPUSkining
 		{
 			Laya.loader.load(path, Laya.Handler.create(this, (arrayBuffer:ArrayBuffer)=>
 			{
-        var i8 = new Uint8Array(arrayBuffer);
-        // var texture: Laya.Texture2D = new Laya.Texture2D(width, height, Laya.TextureFormat.R8G8B8A8, false, true);
-        // texture.setPixels(i8);
-        // var i16 = new Uint16Array(arrayBuffer);
-        // var count = arrayBuffer.byteLength / 2;
-        // var f32 = new Float32Array(count);
-        // // var reader = new Laya.Byte(arrayBuffer);
-        // for(var i = 0; i < i16.length; i++)
-        // {
-        //   // f32[i] =  HalfFloatUtils.convertToNumber(reader.getUint16());
-        //   i16[i] = 1;
-        // }
         
-
-        // var gl = Laya.LayaGL.instance;
-        // var ext = gl.getExtension('OES_texture_float');
-        // gl.getExtension('EXT_shader_texture_lod');
-        var texture: Laya.Texture2D = new Laya.Texture2D(width, height, Laya.TextureFormat.R8G8B8A8, false, true);
+        var f32 = new Float32Array(arrayBuffer);
+        var texture: Laya.Texture2D = new Laya.Texture2D(width, height, Laya.TextureFormat.R32G32B32A32, false, true);
         texture.wrapModeU = Laya.BaseTexture.WARPMODE_CLAMP;
         texture.wrapModeV = Laya.BaseTexture.WARPMODE_CLAMP;
         texture.filterMode = Laya.BaseTexture.FILTERMODE_POINT;
-        texture.setPixels(<any>i8);
+        texture.anisoLevel = 0;
+        texture.lock = true;
+        texture.setSubPixels(0, 0, width, height, f32, 0)
         
+        
+        window['animF32'] = f32;
         window['animBuffer'] = arrayBuffer;
         window['animTexture'] = texture;
         resolve(texture);

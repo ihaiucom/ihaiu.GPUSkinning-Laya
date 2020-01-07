@@ -47,7 +47,12 @@ vec2 indexToUV(float index)
 
 float colorToFoat(vec4 c)
 {
-	return (c.x * 10000.0 + c.y * 100.0 + c.z) * (c.w * 10.0 - 1.0) * 0.01;
+	return (c.x * 10000.0 + c.y * 100.0 + c.z) * (c.w * 10.0 - 1.0);
+}
+
+float colorToFoat2(vec4 c)
+{
+	return (c.x * 100.0 + c.y  + c.z * 0.01) * (c.w * 10.0 - 1.0) ;
 }
 
 float getColorFloat(float piexelIndex)
@@ -72,6 +77,33 @@ mat4 iMatrix(mat4 m)
 
 
 mat4 getMatrix(float frameStartIndex, float boneIndex)
+{
+
+	float matStartIndex = frameStartIndex + boneIndex * 3.0;
+    
+    // boneIndex = 1.0;
+	// float matStartIndex = boneIndex * 3.0 * 4.0;
+
+    mat4 mat;
+    vec4 r0 = texture2D(u_GPUSkinning_TextureMatrix, indexToUV(matStartIndex + 0.0));
+    vec4 r1 = texture2D(u_GPUSkinning_TextureMatrix, indexToUV(matStartIndex + 1.0));
+    vec4 r2 = texture2D(u_GPUSkinning_TextureMatrix, indexToUV(matStartIndex + 2.0));
+    vec4 r3 = vec4(0.0, 0.0, 0.0, 1.0);
+
+
+    mat = mat4(
+        r0.x, r1.x, r2.x, r3.x,
+        r0.y, r1.y, r2.y, r3.y,
+        r0.z, r1.z, r2.z, r3.z,
+        r0.w, r1.w, r2.w, r3.w
+        );
+
+
+	return mat;
+}
+
+
+mat4 getMatrix2(float frameStartIndex, float boneIndex)
 {
 
 	float matStartIndex = frameStartIndex + boneIndex * 3.0 * 4.0;
@@ -143,7 +175,6 @@ mat4 getMatrix(float frameStartIndex, float boneIndex)
 
 	return mat;
 }
-
 
 float getFrameStartIndex()
 {

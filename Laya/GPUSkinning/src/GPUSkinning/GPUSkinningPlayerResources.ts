@@ -240,7 +240,7 @@ export default class GPUSkinningPlayerResources
             // console.log("textureWidth=", anim.textureWidth, "textureHeight=", anim.textureWidth, "anim.bonesCount * 3=",anim.bonesCount* 3);
         
             mtrl.material._shaderValues.setVector(GPUSkinningPlayerResources.shaderPropID_GPUSkinning_TextureSize_NumPixelsPerFrame, 
-                new Vector4(anim.textureWidth, anim.textureHeight, anim.bonesCount * 3 * 4/*treat 3 pixels as a float3x4*/, 0));
+                new Vector4(anim.textureWidth, anim.textureHeight, anim.bonesCount * 3 /*treat 3 pixels as a float3x4*/, 0));
         }
     }
 
@@ -250,7 +250,7 @@ export default class GPUSkinningPlayerResources
     public UpdatePlayingData( mpb: Laya.ShaderData , spriteShaderData: Laya.ShaderData, playingClip: GPUSkinningClip , frameIndex: int , frame: GPUSkinningFrame , rootMotionEnabled: boolean ,
         lastPlayedClip: GPUSkinningClip , frameIndex_crossFade: int , crossFadeTime: float , crossFadeProgress: float )
     {
-        console.log(spriteShaderData["__id"], playingClip.name,"frameIndex=", frameIndex, "pixelSegmentation", playingClip.pixelSegmentation);
+        // console.log(spriteShaderData["__id"], playingClip.name,"frameIndex=", frameIndex, "pixelSegmentation", playingClip.pixelSegmentation);
         spriteShaderData.setVector( GPUSkinningPlayerResources.shaderPorpID_GPUSkinning_FrameIndex_PixelSegmentation, new Vector4(frameIndex, playingClip.pixelSegmentation, 0, 0));
 
         if (rootMotionEnabled)
@@ -332,6 +332,30 @@ export default class GPUSkinningPlayerResources
             this.EnableKeywords(i, materialItem);
 
         }
+    }
+
+    CloneMaterial(originalMaterial:Material, skinningQuality: GPUSkinningQuality)
+    {
+        let material =  <Material> originalMaterial.clone();
+        
+        let SKILL_N:ShaderDefine;
+        switch(skinningQuality)
+        {
+            case GPUSkinningQuality.Bone1:
+                SKILL_N =  GPUSkinningPlayerResources.ShaderDefine_SKIN_1;
+                break;
+            case GPUSkinningQuality.Bone2:
+                SKILL_N =  GPUSkinningPlayerResources.ShaderDefine_SKIN_2;
+                break;
+            case GPUSkinningQuality.Bone4:
+                SKILL_N =  GPUSkinningPlayerResources.ShaderDefine_SKIN_4;
+                break;
+        }
+
+        
+        material._shaderValues.addDefine(SKILL_N);
+        material._shaderValues.addDefine(GPUSkinningPlayerResources.keywordDefines[3]);
+        return material;
     }
 
     private EnableKeywords(ki: int , mtrl: GPUSkinningMaterial )

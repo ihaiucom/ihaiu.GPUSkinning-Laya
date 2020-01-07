@@ -1,9 +1,4 @@
-
-#ifdef GL_FRAGMENT_PRECISION_HIGH
-	precision highp float;
-#else
-	precision mediump float;
-#endif
+precision highp float;
 
 #include "Lighting.glsl";
 #include "GPUSkinningInclude.glsl";
@@ -52,6 +47,9 @@ void main()
 
 	position= skin4(a_Position, a_Texcoord1, a_Texcoord2);
 
+    // vec4 c = texture2D(u_GPUSkinning_TextureMatrix, a_Texcoord0);
+	// position.x = c.x;
+	// position.y = c.y;
 	
     
     // 模型坐标 转 屏幕裁剪坐标

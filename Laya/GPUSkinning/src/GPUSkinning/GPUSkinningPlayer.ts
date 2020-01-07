@@ -344,6 +344,7 @@ export default class GPUSkinningPlayer
         }
     }
 
+    mtrl: GPUSkinningMaterial;
 
     static _ShaderUID = 0;
     constructor(go: Laya.MeshSprite3D, res: GPUSkinningPlayerResources)
@@ -358,6 +359,11 @@ export default class GPUSkinningPlayer
         go.meshRenderer['__id']  = this.spriteShaderData['__id'] = GPUSkinningPlayer._ShaderUID ++;
 
         let mtrl: GPUSkinningMaterial = this.GetCurrentMaterial();
+        this.mtrl = mtrl;
+        var mtrl2 = new GPUSkinningMaterial();
+        mtrl2.material =  res.CloneMaterial(mtrl.material, res.anim.skinQuality)
+        mtrl = mtrl2;
+        this.mtrl = mtrl2;
         this.mr.sharedMaterial = mtrl == null ? null : mtrl.material;
         this.mf.sharedMesh = res.mesh;
 
@@ -554,6 +560,8 @@ export default class GPUSkinningPlayer
         }
     }
 
+    testI = 0;
+
     /** 刷新入口 每帧调用 */
     public Update(timeDelta: float)
     {
@@ -561,17 +569,26 @@ export default class GPUSkinningPlayer
         {
             return;
         }
+        // this.testI ++;
+        // if(this.testI >= Random.range(100, 500))
+        // {
+        //     this.testI = 0;
+        //     var i = Random.range(0, this.res.anim.clips.length);
+        //     i = Math.floor(i);
+        //     this.Play(this.res.anim.clips[i].name);
+        // }
 
-        let currMtrl = this.GetCurrentMaterial();
-        if(currMtrl == null)
-        {
-            return;
-        }
+        let currMtrl = this.mtrl;
+        // let currMtrl = this.GetCurrentMaterial();
+        // if(currMtrl == null)
+        // {
+        //     return;
+        // }
 
-        if(this.mr.sharedMaterial != currMtrl.material)
-        {
-            this.mr.sharedMaterial = currMtrl.material;
-        }
+        // if(this.mr.sharedMaterial != currMtrl.material)
+        // {
+        //     this.mr.sharedMaterial = currMtrl.material;
+        // }
 
         let playingClip = this.playingClip;
 

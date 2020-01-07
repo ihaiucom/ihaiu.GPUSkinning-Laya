@@ -134,6 +134,7 @@ public class GPUSkinningAnimation : ScriptableObject
         b.Write((uint)textureWidth);
         b.Write((uint)textureHeight);
         b.Write((float)sphereRadius);
+        b.Write((uint)bones.Length);
         b.WriteBounds(bounds);
 
 

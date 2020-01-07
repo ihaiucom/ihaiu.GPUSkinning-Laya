@@ -1,8 +1,4 @@
-#ifdef GL_FRAGMENT_PRECISION_HIGH
-	precision highp float;
-#else
-	precision mediump float;
-#endif
+precision highp float;
 
 uniform sampler2D u_GPUSkinning_TextureMatrix;
 
@@ -42,7 +38,8 @@ void main()
 	// vec4 row0 = texture2D(u_GPUSkinning_TextureMatrix, indexToUV(matStartIndex));
 	// color = row0;
 	//  color = texture2D(u_GPUSkinning_TextureMatrix, v_Texcoord0);
-	//color = texture2D(u_GPUSkinning_TextureMatrix, v_Texcoord0) ;
+	// color = texture2D(u_GPUSkinning_TextureMatrix, v_Texcoord0) ;
+	// color.a = 1.0;
 	//color = texture2D(u_GPUSkinning_TextureMatrix, v_Texcoord0)  ;
 	// + vec4(1.0, 1.0, 1.0, 1.0) * 0.5;
 	// color = texture2DGradEXT(u_GPUSkinning_TextureMatrix, mod(v_Texcoord0, vec2(0.1, 0.5)), 
