@@ -60,10 +60,12 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Assets\GPUSkinning\Editor\GPUSkinningMeshExport\GPUSkinningAnimExport.cs" />
-    <Compile Include="Assets\GPUSkinning\Editor\GPUSkinningMeshExport\GPUSkinningExportMenu.cs" />
-    <Compile Include="Assets\GPUSkinning\Editor\GPUSkinningMeshExport\GPUSkinningMeshExport.cs" />
-    <Compile Include="Assets\GPUSkinning\Editor\GPUSkinningMeshExport\LayaMeshExport.cs" />
+    <Compile Include="Assets\GPUSkinning\Editor\GPUSkinningExport\GPUSkinningAnimExport.cs" />
+    <Compile Include="Assets\GPUSkinning\Editor\GPUSkinningExport\GPUSkinningExport.cs" />
+    <Compile Include="Assets\GPUSkinning\Editor\GPUSkinningExport\GPUSkinningExportMenu.cs" />
+    <Compile Include="Assets\GPUSkinning\Editor\GPUSkinningExport\GPUSkinningMeshExport.cs" />
+    <Compile Include="Assets\GPUSkinning\Editor\GPUSkinningExport\GPUSkinningSetPrefab.cs" />
+    <Compile Include="Assets\GPUSkinning\Editor\GPUSkinningExport\LayaMeshExport.cs" />
     <Compile Include="Assets\GPUSkinning\Editor\GPUSkinningPlayerMonoEditor.cs" />
     <Compile Include="Assets\GPUSkinning\Editor\GPUSkinningSamplerEditor.cs" />
     <Compile Include="Assets\GPUSkinning\Editor\GPUSkinningStandardShaderGUI.cs" />

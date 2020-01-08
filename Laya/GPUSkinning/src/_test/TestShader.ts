@@ -30,26 +30,65 @@ export default class TestShader
 		// 初始化shader
         await MaterialInstall.install();
         // this.TestPrefab();
-        var plane2:Laya.MeshSprite3D = <any> this.scene.addChild(new Laya.MeshSprite3D(Laya.PrimitiveMesh.createPlane(5, 5, 1,1)));
-        plane2.transform.localRotationEulerX = 20;
+        // var plane2:Laya.MeshSprite3D = <any> this.scene.addChild(new Laya.MeshSprite3D(Laya.PrimitiveMesh.createPlane(5, 5, 1,1)));
+        // plane2.transform.localRotationEulerX = 20;
 
-        var plane:Laya.MeshSprite3D = <any> this.scene.addChild(new Laya.MeshSprite3D(Laya.PrimitiveMesh.createPlane(5, 5, 1,1)));
-        var mat = new Laya.UnlitMaterial();
-        plane.transform.localRotationEulerX = 20;
-        window['planemat'] = mat;
-        window['plane'] = plane;
+        // var plane:Laya.MeshSprite3D = <any> this.scene.addChild(new Laya.MeshSprite3D(Laya.PrimitiveMesh.createPlane(5, 5, 1,1)));
+        // var mat = new Laya.UnlitMaterial();
+        // plane.transform.localRotationEulerX = 20;
+        // window['planemat'] = mat;
+        // window['plane'] = plane;
 
-        // var texture =  await this.LoadAnimTextureAsync("res/gpuskining/rili.bytes", 2, 2);
-        // var texture =  await this.LoadAnimTextureAsync("res/gpuskining/GPUSKinning_Laya_Texture_MutantAnim2.bytes", 128, 64);
-        // var texture =  this.GetAnimTextureAsync();
-        // mat.albedoTexture = texture;
-        // mat.GPUSkinning_TextureMatrix = texture;
-        plane.meshRenderer.sharedMaterial = mat;
+        // // var texture =  await this.LoadAnimTextureAsync("res/gpuskining/rili.bytes", 2, 2);
+        // // var texture =  await this.LoadAnimTextureAsync("res/gpuskining/GPUSKinning_Laya_Texture_MutantAnim2.bytes", 128, 64);
+        // // var texture =  this.GetAnimTextureAsync();
+        // // mat.albedoTexture = texture;
+        // // mat.GPUSkinning_TextureMatrix = texture;
+        // plane.meshRenderer.sharedMaterial = mat;
+
+        var nameList = [
+            "Hero_1001_Dianguanglongqi_Skin1",
+            "Hero_1002_Fengyunzhanji_Skin1",
+            "Hero_1004_Dongzhuo_Skin1",
+            "Monster_2002_shuangdaobing_Skin1",
+            "Monster_2003_langyabing_Skin1",
+            "Monster_2005_gongjianshou_Skin1",
+            "Monster_2011_Fujiang_Skin1",
+            "Monster_2012_Laohu_Skin1",
+            "Monster_2013_Guo_Skin1",
+            "Monster_4002_Baifuzhang_Skin1",
+            "Monster_5002_Huaxiong_Skin1",
+            "Monster_5003_Leique_Skin1",
+        ];
+
+        for(var j = 0; j < nameList.length; j ++)
+        {
+            var mono = await GPUSkining.CreateByNameAsync(nameList[j]);
+            mono.Player.isRandomPlayClip = true;
+            
+            for(var i = 0; i < mono.anim.clips.length; i ++)
+            {
+                mono.anim.clips[i].wrapMode = GPUSkinningWrapMode.Loop;
+                mono.anim.clips[i].individualDifferenceEnabled =true;
+            }
+
+            this.scene.addChild(mono.owner);
+            var sprite: Laya.MeshSprite3D = <Laya.MeshSprite3D> mono.owner;
+
+            var y = Math.floor(j / 5);
+            var x = j - y * 5 - 2.5;
+            sprite.transform.localPositionX = x * 1.5;
+            sprite.transform.localPositionZ = -y * 2;
+            break;
+        }
+        return;
         
 
 
-        // var mono = await GPUSkining.CreateByNameAsync("MutantAnim2", "res/gpuskining/enemy_mutant_d.jpg");
+        var mono = await GPUSkining.CreateByNameAsync("MutantAnim2", "res/gpuskining/enemy_mutant_d.jpg");
         
+        this.scene.addChild(mono.owner);
+
         var mono = await GPUSkining.CreateByNameAsync("Hero_1001_Dianguanglongqi_Skin1", "res/gpuskining/Hero_1001_Dianguanglongqi.jpg");
         if(mono)
         {
@@ -114,8 +153,8 @@ export default class TestShader
             for(var x = 0; x < nx; x ++)
             {
                 var c : Laya.MeshSprite3D= <any>sprite.clone();
-                // c.transform.localPositionX = x - 5;
-                c.transform.localPositionX = x - 2;
+                c.transform.localPositionX = x - 5;
+                // c.transform.localPositionX = x - 2;
                 c.transform.localPositionZ = -y * 2 + 5;
                 let cm :GPUSkinningPlayerMono= c.getComponent(GPUSkinningPlayerMono);
                 cm.SetData(mono.anim, mono.mesh, mono.mtrl, mono.textureRawData)

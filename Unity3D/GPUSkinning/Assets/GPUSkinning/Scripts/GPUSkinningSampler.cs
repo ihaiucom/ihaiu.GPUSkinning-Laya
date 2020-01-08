@@ -65,6 +65,10 @@ public class GPUSkinningSampler : MonoBehaviour
 
     [HideInInspector]
     [SerializeField]
+    public TextAsset textureLaya = null;
+
+    [HideInInspector]
+    [SerializeField]
 	public GPUSkinningQuality skinQuality = GPUSkinningQuality.Bone2;
 
     [HideInInspector]
@@ -509,7 +513,7 @@ public class GPUSkinningSampler : MonoBehaviour
     {
 
 
-        Debug.Log("textureWidth=" + gpuSkinningAnim.textureWidth + ",  gpuSkinningAnim=" + gpuSkinningAnim.textureHeight + ", bitLength=" + (gpuSkinningAnim.textureWidth * gpuSkinningAnim.textureHeight * 4 * 4));
+        //Debug.Log("textureWidth=" + gpuSkinningAnim.textureWidth + ",  gpuSkinningAnim=" + gpuSkinningAnim.textureHeight + ", bitLength=" + (gpuSkinningAnim.textureWidth * gpuSkinningAnim.textureHeight * 4 * 4));
         MemoryStream memoryStream = new MemoryStream(gpuSkinningAnim.textureWidth * gpuSkinningAnim.textureHeight /* xyzw */* 4 * /* bit */4);
         memoryStream.Position = 0;
         BinaryWriter b = new BinaryWriter(memoryStream);
@@ -550,7 +554,7 @@ public class GPUSkinningSampler : MonoBehaviour
         }
 
         byte[] bytes = memoryStream.GetBuffer();
-        Debug.Log("memoryStream.Length=" + memoryStream.Length + ",  bytes.Length=" + bytes.Length + ",  memoryStream.Position=" + memoryStream.Position);
+        //Debug.Log("memoryStream.Length=" + memoryStream.Length + ",  bytes.Length=" + bytes.Length + ",  memoryStream.Position=" + memoryStream.Position);
 
 
         string savedPath = dir + "/GPUSKinning_Laya_Texture_" + animName + ".bytes";
@@ -560,6 +564,12 @@ public class GPUSkinningSampler : MonoBehaviour
             fileStream.Flush();
             fileStream.Close();
             fileStream.Dispose();
+
+
+            var assetPath = savedPath.Replace('\\', '/');
+            assetPath = "Assets" + assetPath.Substring(Application.dataPath.Length);
+
+            this.textureLaya = AssetDatabase.LoadAssetAtPath<TextAsset>(savedPath);
         }
 
     }
@@ -862,6 +872,7 @@ public class GPUSkinningSampler : MonoBehaviour
         }
 	}
 
+    public string exportDir = null;
 	private void Update()
 	{
 		if(!isSampling)
@@ -880,14 +891,23 @@ public class GPUSkinningSampler : MonoBehaviour
             }
 
             string savePath = null;
-            if (anim == null)
+            if(string.IsNullOrEmpty(exportDir))
             {
-                savePath = EditorUtility.SaveFolderPanel("GPUSkinning Sampler Save", GetUserPreferDir(), animName);
+
+                if (anim == null)
+                {
+                    savePath = EditorUtility.SaveFolderPanel("GPUSkinning Sampler Save", GetUserPreferDir(), animName);
+                }
+                else
+                {
+                    string animPath = AssetDatabase.GetAssetPath(anim);
+                    savePath = new FileInfo(animPath).Directory.FullName.Replace('\\', '/');
+                }
             }
             else
             {
-                string animPath = AssetDatabase.GetAssetPath(anim);
-                savePath = new FileInfo(animPath).Directory.FullName.Replace('\\', '/');
+                exportDir = exportDir.Replace('\\', '/');
+                savePath = exportDir;
             }
 
 			if(!string.IsNullOrEmpty(savePath))
@@ -1134,6 +1154,76 @@ public class GPUSkinningSampler : MonoBehaviour
     public static void DeleteTempData(string key)
     {
         PlayerPrefs.DeleteKey(key);
+    }
+
+
+    [ContextMenu("SetAnimatorList")]
+    public void SetAnimatorList(string name = null)
+    {
+        Animator animator = GetComponent<Animator>();
+        RuntimeAnimatorController controller = animator.runtimeAnimatorController;
+        if(controller == null)
+        {
+            Debug.LogError("不存在动画控制器");
+            return;
+        }
+
+        if(string.IsNullOrEmpty(name))
+        {
+            if (transform.parent != null)
+            {
+                animName = transform.parent.gameObject.name;
+            }
+            else
+            {
+                animName = controller.name;
+                animName = animName.Replace("_anim", "");
+            }
+        }
+        else
+        {
+            animName = name;
+        }
+        
+
+
+
+
+        AnimationClip[] animationClips = controller.animationClips;
+
+        int count = animationClips.Length;
+        //Debug.Log("count=" + count);
+        animClips = new AnimationClip[count];
+        fpsList = new int[count];
+        wrapModes = new GPUSkinningWrapMode[count];
+        rootMotionEnabled = new bool[count];
+        individualDifferenceEnabled = new bool[count];
+
+        if(rootBoneTransform == null)
+        {
+            for(int i = 0; i < transform.childCount; i ++)
+            {
+                Transform child = transform.GetChild(i);
+                if(child.childCount > 0)
+                {
+                    rootBoneTransform = child;
+                }
+            }
+        }
+
+        for (int i = 0; i < count; i ++)
+        {
+            AnimationClip clip = animationClips[i];
+            animClips[i] = animationClips[i];
+            fpsList[i] = 0;
+            rootMotionEnabled[i] = false;
+            individualDifferenceEnabled[i] = true;
+            wrapModes[i] = clip.isLooping ? GPUSkinningWrapMode.Loop : GPUSkinningWrapMode.Once ;
+            //Debug.Log(i + ", " + clip.name + ", isLooping=" + clip.isLooping + ", wrapMode=" + clip.wrapMode);
+        }
+
+
+
     }
 #endif
 }

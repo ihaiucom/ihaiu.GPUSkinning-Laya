@@ -1,0 +1,31 @@
+import GPUSkinningAnimation from "./Datas/GPUSkinningAnimation";
+import { GPUSKinningCullingMode } from "./GPUSKinningCullingMode";
+import GPUSkinningPlayerMonoManager from "./GPUSkinningPlayerMonoManager";
+import GPUSkinningPlayer from "./GPUSkinningPlayer";
+import Mesh = Laya.Mesh;
+import Material = Laya.Material;
+import Texture2D = Laya.Texture2D;
+export default class GPUSkinningPlayerMono extends Laya.Script3D {
+    anim: GPUSkinningAnimation;
+    mesh: Mesh;
+    mtrl: Material;
+    textureRawData: Texture2D;
+    defaultPlayingClipIndex: int;
+    rootMotionEnabled: boolean;
+    lodEnabled: boolean;
+    cullingMode: GPUSKinningCullingMode;
+    static playerManager: GPUSkinningPlayerMonoManager;
+    private player;
+    readonly Player: GPUSkinningPlayer;
+    gameObject: Laya.MeshSprite3D;
+    onStart(): void;
+    onUpdate(): void;
+    onPreRender(): void;
+    onDestroy(): void;
+    SetData(anim: GPUSkinningAnimation, mesh: Mesh, mtrl: Material, textureRawData: Texture2D): void;
+    Init(): void;
+    private initRender;
+    onRenderUpdate(context: Laya.RenderContext3D, transform: Laya.Transform3D, render: Laya.MeshRenderer): void;
+    _renderUpdate(context: Laya.RenderContext3D, transform: Laya.Transform3D): void;
+    _renderUpdate__MeshRenderer__Source(context: Laya.RenderContext3D, transform: Laya.Transform3D): void;
+}

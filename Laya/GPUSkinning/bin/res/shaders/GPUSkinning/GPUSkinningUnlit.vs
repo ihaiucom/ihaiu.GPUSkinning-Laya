@@ -50,6 +50,17 @@ void main()
     // vec4 c = texture2D(u_GPUSkinning_TextureMatrix, a_Texcoord0);
 	// position.x = c.x;
 	// position.y = c.y;
+
+
+	mat4 mm = mat4(
+		-1.0, 0.0, 0.0, 0.0,
+		0.0, 1.0, 0.0, 0.0,
+		0.0, 0.0, 1.0, 0.0,
+		0.0, 0.0, 0.0, 1.0
+
+	);
+
+	position = mm * position;
 	
     
     // 模型坐标 转 屏幕裁剪坐标
