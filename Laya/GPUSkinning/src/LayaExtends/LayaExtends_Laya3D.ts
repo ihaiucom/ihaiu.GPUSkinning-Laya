@@ -2,15 +2,15 @@
 import LoaderManager = Laya.LoaderManager;
 import Loader = Laya.Loader;
 import Event = Laya.Event;
-import GPUSkining from "../GPUSkining";
+import GPUSkining from "../GPUSkinning/GPUSkining";
 
-export default class Laya3D_Extend
+export default class LayaExtends_Laya3D
 {
     static Init()
     {
         var _Laya3D:any = Laya3D;
         _Laya3D._onMeshLmLoaded__src = _Laya3D._onMeshLmLoaded;
-        _Laya3D._onMeshLmLoaded = this._onMeshLmLoaded;
+        _Laya3D._onMeshLmLoaded = LayaExtends_Laya3D._onMeshLmLoaded;
     }
     
     private static _onMeshLmLoaded__src(loader: Loader, lmData: ArrayBuffer): void 
@@ -26,7 +26,7 @@ export default class Laya3D_Extend
         }
         else
         {
-            this._onMeshLmLoaded__src(loader, lmData);
+            (<any>Laya3D)._onMeshLmLoaded__src(loader, lmData);
         }
         
 	}

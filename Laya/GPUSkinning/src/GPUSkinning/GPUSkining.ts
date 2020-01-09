@@ -5,7 +5,6 @@ import Loader = Laya.Loader;
 import Event = Laya.Event;
 import Shader3D = Laya.Shader3D;
 import HalfFloatUtils = Laya.HalfFloatUtils;
-import Laya3D_Extend from "./Mesh/Laya3D_Extend";
 import GPUSkinningAnimation from "./Datas/GPUSkinningAnimation";
 import GPUSkinningPlayerMono from "./GPUSkinningPlayerMono";
 import { GPUSkinningBaseMaterial } from "./Material/GPUSkinningBaseMaterial";
@@ -19,6 +18,7 @@ import GPUSkinningPlayerJoint from "./GPUSkinningPlayerJoint";
 import { GPUSkiningLoadModelV05 } from "./Mesh/GPUSkiningLoadModelV05";
 import GPUSkiningVertexMesh from "./Mesh/GPUSkiningVertexMesh";
 import GPUSkinningClip from "./Datas/GPUSkinningClip";
+import LayaExtends_Laya3D from "../LayaExtends/LayaExtends_Laya3D";
 export default class GPUSkining
 {
     static EXT_SKING_MESH = "skinlm";
@@ -51,7 +51,7 @@ export default class GPUSkining
 
       LayaExtends_Node.Init();
       LayaExtends_Texture2D.Init();
-      Laya3D_Extend.Init();
+      LayaExtends_Laya3D.Init();
 
       Laya3D.SKING_MESH = "SKING_MESH";
 
@@ -190,3 +190,4 @@ export default class GPUSkining
 
 
 }
+window['GPUSkining'] = GPUSkining;
