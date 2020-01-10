@@ -42,6 +42,7 @@ export default class GPUSkinningPlayer
     private res: GPUSkinningPlayerResources = null;
     private rootMotionFrameIndex:int = -1;
 
+    public speed: float = 1;
     /** 动画事件 */
     sAnimEvent:Typed2Signal<GPUSkinningPlayer, int> = new Typed2Signal<GPUSkinningPlayer, int>();
 
@@ -464,7 +465,7 @@ export default class GPUSkinningPlayer
     }
 
     /** 播放 */
-    public Play(clipName:string)
+    public Play(clipName:string, nomrmalizeTime : number = 0)
     {
         let clips: GPUSkinningClip[] = this.res.anim.clips;
         let numClips = clips == null ? 0 : clips.length;
@@ -480,7 +481,7 @@ export default class GPUSkinningPlayer
                     || (playingClip != null && !this.isPlaying)
                 )
                 {
-                    this.SetNewPlayingClip(item);
+                    this.SetNewPlayingClip(item, nomrmalizeTime);
                 }
                 return;
             }
@@ -488,11 +489,14 @@ export default class GPUSkinningPlayer
     }
 
     /** 播放动作融合 */
-    public CrossFade(clipName: string, fadeLength: float)
+    public CrossFade(clipName: string, fadeLength: float, nomrmalizeTime: number = 0)
     {
+        this.Play(clipName, nomrmalizeTime);
+        return;
+
         if(this.playingClip == null)
         {
-            this.Play(clipName);
+            this.Play(clipName, nomrmalizeTime);
         }
         else
         {
@@ -508,9 +512,9 @@ export default class GPUSkinningPlayer
 
                     if(playingClip != item)
                     {
-                        this.crossFadeProgress = 0;
+                        this.crossFadeProgress = nomrmalizeTime;
                         this.crossFadeTime = fadeLength;
-                        this.SetNewPlayingClip(item);
+                        this.SetNewPlayingClip(item, nomrmalizeTime);
                         return;
                     }
 
@@ -519,7 +523,7 @@ export default class GPUSkinningPlayer
                         || (playingClip != null && !this.isPlaying)
                     )
                     {
-                        this.SetNewPlayingClip(item);
+                        this.SetNewPlayingClip(item, nomrmalizeTime);
                         return;
                     }
                 }
@@ -532,7 +536,7 @@ export default class GPUSkinningPlayer
 
 
     /** 设置新播放的剪辑 */
-    private SetNewPlayingClip(clip: GPUSkinningClip)
+    private SetNewPlayingClip(clip: GPUSkinningClip, nomrmalizeTime: number = 0)
     {
         this.lastPlayedClip = this.playingClip;
         this.lastPlayedTime = this.GetCurrentTime();
@@ -540,7 +544,7 @@ export default class GPUSkinningPlayer
         this.isPlaying = true;
         this.playingClip = clip;
         this.rootMotionFrameIndex = -1;
-        this.time = 0;
+        this.time = nomrmalizeTime * clip.length;
         this.timeDiff = Random.range(0, clip.length);
     }
 
@@ -570,6 +574,8 @@ export default class GPUSkinningPlayer
         {
             return;
         }
+        timeDelta *= this.speed;
+
         if(this.isRandomPlayClip)
         {
             this.randomPlayClipI ++;

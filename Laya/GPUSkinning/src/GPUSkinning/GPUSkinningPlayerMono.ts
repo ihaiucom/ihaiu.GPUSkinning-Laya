@@ -46,6 +46,15 @@ export default class GPUSkinningPlayerMono extends Laya.Script3D
     }
 
     gameObject: Laya.MeshSprite3D;
+
+    _cloneTo(dest: GPUSkinningPlayerMono): void 
+    {
+        dest.anim = this.anim;
+        dest.mesh = this.mesh;
+        dest.mtrl = this.mtrl;
+        dest.textureRawData = this.textureRawData;
+        dest.Init();
+	}
     
 
     onStart():void

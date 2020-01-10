@@ -182,7 +182,7 @@ export default class GPUSkining
       var mono: GPUSkinningPlayerMono = sprite.addComponent(GPUSkinningPlayerMono);
       mono.SetData(anim, mesh, material, animTexture);
       // window['mono'] = mono;
-      console.log(mono);
+      // console.log(mono);
       // mono.Player.Play("IDLE");
 
       return mono;

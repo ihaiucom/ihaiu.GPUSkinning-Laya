@@ -1100,6 +1100,7 @@ var laya = (function () {
 	        this.playingClip = null;
 	        this.res = null;
 	        this.rootMotionFrameIndex = -1;
+	        this.speed = 1;
 	        this.sAnimEvent = new Typed2Signal();
 	        this.rootMotionEnabled = false;
 	        this.cullingMode = GPUSKinningCullingMode.CullUpdateTransforms;
@@ -1360,7 +1361,7 @@ var laya = (function () {
 	            }
 	        }
 	    }
-	    Play(clipName) {
+	    Play(clipName, nomrmalizeTime = 0) {
 	        let clips = this.res.anim.clips;
 	        let numClips = clips == null ? 0 : clips.length;
 	        let playingClip = this.playingClip;
@@ -1370,15 +1371,17 @@ var laya = (function () {
 	                if (playingClip != item
 	                    || (playingClip != null && playingClip.wrapMode == GPUSkinningWrapMode.Once && this.IsTimeAtTheEndOfLoop)
 	                    || (playingClip != null && !this.isPlaying)) {
-	                    this.SetNewPlayingClip(item);
+	                    this.SetNewPlayingClip(item, nomrmalizeTime);
 	                }
 	                return;
 	            }
 	        }
 	    }
-	    CrossFade(clipName, fadeLength) {
+	    CrossFade(clipName, fadeLength, nomrmalizeTime = 0) {
+	        this.Play(clipName, nomrmalizeTime);
+	        return;
 	        if (this.playingClip == null) {
-	            this.Play(clipName);
+	            this.Play(clipName, nomrmalizeTime);
 	        }
 	        else {
 	            let playingClip = this.playingClip;
@@ -1388,27 +1391,27 @@ var laya = (function () {
 	                if (clips[i].name == clipName) {
 	                    let item = clips[i];
 	                    if (playingClip != item) {
-	                        this.crossFadeProgress = 0;
+	                        this.crossFadeProgress = nomrmalizeTime;
 	                        this.crossFadeTime = fadeLength;
-	                        this.SetNewPlayingClip(item);
+	                        this.SetNewPlayingClip(item, nomrmalizeTime);
 	                        return;
 	                    }
 	                    if ((playingClip != null && playingClip.wrapMode == GPUSkinningWrapMode.Once && this.IsTimeAtTheEndOfLoop)
 	                        || (playingClip != null && !this.isPlaying)) {
-	                        this.SetNewPlayingClip(item);
+	                        this.SetNewPlayingClip(item, nomrmalizeTime);
 	                        return;
 	                    }
 	                }
 	            }
 	        }
 	    }
-	    SetNewPlayingClip(clip) {
+	    SetNewPlayingClip(clip, nomrmalizeTime = 0) {
 	        this.lastPlayedClip = this.playingClip;
 	        this.lastPlayedTime = this.GetCurrentTime();
 	        this.isPlaying = true;
 	        this.playingClip = clip;
 	        this.rootMotionFrameIndex = -1;
-	        this.time = 0;
+	        this.time = nomrmalizeTime * clip.length;
 	        this.timeDiff = Random.range(0, clip.length);
 	    }
 	    Stop() {
@@ -1423,6 +1426,7 @@ var laya = (function () {
 	        if (!this.isPlaying || this.playingClip == null) {
 	            return;
 	        }
+	        timeDelta *= this.speed;
 	        if (this.isRandomPlayClip) {
 	            this.randomPlayClipI++;
 	            if (this.randomPlayClipI >= Random.range(100, 500)) {
@@ -1568,6 +1572,13 @@ var laya = (function () {
 	    }
 	    get Player() {
 	        return this.player;
+	    }
+	    _cloneTo(dest) {
+	        dest.anim = this.anim;
+	        dest.mesh = this.mesh;
+	        dest.mtrl = this.mtrl;
+	        dest.textureRawData = this.textureRawData;
+	        dest.Init();
 	    }
 	    onStart() {
 	        this.Init();
@@ -2210,7 +2221,6 @@ var laya = (function () {
 	        var sprite = new Laya.MeshSprite3D();
 	        var mono = sprite.addComponent(GPUSkinningPlayerMono);
 	        mono.SetData(anim, mesh, material, animTexture);
-	        console.log(mono);
 	        return mono;
 	    }
 	}
@@ -2335,7 +2345,6 @@ var laya = (function () {
 	        var sprite = new Laya.MeshSprite3D();
 	        var mono = sprite.addComponent(GPUSkinningPlayerMono);
 	        mono.SetData(anim, mesh, material, animTexture);
-	        console.log(mono);
 	        return mono;
 	    }
 	}

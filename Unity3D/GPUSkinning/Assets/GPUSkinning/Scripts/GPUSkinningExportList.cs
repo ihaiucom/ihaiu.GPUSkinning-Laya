@@ -76,7 +76,22 @@ public class GPUSkinningExportList : MonoBehaviour
         }
 
 
-        if(!currentSampler.isSampling)
+        if (!currentSampler.isSampling && currentSampler.IsSamplingProgress())
+        {
+            if (++currentSampler.samplingClipIndex < currentSampler.animClips.Length)
+            {
+                currentSampler.StartSample();
+            }
+            else
+            {
+                currentSampler.EndSample();
+            }
+            return;
+        }
+
+
+
+        if (!currentSampler.isSampling && !currentSampler.IsSamplingProgress())
         {
             GPUSkinningSampler sampler  = currentPrefab.GetComponent<GPUSkinningSampler>();
             sampler.anim = currentSampler.anim;

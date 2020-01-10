@@ -872,7 +872,8 @@ public class GPUSkinningSampler : MonoBehaviour
         }
 	}
 
-    public string exportDir = null;
+    public string exportDir = "Assets/GameResources/GPUSkinning";
+    //public string exportDir = null;
 	private void Update()
 	{
 		if(!isSampling)
@@ -882,6 +883,7 @@ public class GPUSkinningSampler : MonoBehaviour
 
         int totalFrams = (int)(gpuSkinningClip.length * gpuSkinningClip.fps);
 		samplingTotalFrams = totalFrams;
+
 
         if (samplingFrameIndex >= totalFrams)
         {
@@ -993,16 +995,9 @@ public class GPUSkinningSampler : MonoBehaviour
             Transform boneTransform = bones[i].transform;
             GPUSkinningBone currentBone = GetBoneByTransform(boneTransform);
             frame.matrices[i] = currentBone.bindpose;
-            //frame.matrices[i] = Matrix4x4.identity;
             do
             {
-                //Vector3 pos = currentBone.transform.localPosition;
-                //pos.x *= -1;
-                //Vector3 localEulerAngles = currentBone.transform.localEulerAngles;
-                //localEulerAngles.y *= -1;
-                //localEulerAngles.z *= -1;
-                //Quaternion localRotation = Quaternion.Euler(localEulerAngles);
-                //Matrix4x4 mat = Matrix4x4.TRS(pos, localRotation, currentBone.transform.localScale);
+               
                 Matrix4x4 mat = Matrix4x4.TRS(currentBone.transform.localPosition, currentBone.transform.localRotation, currentBone.transform.localScale);
                 frame.matrices[i] = mat * frame.matrices[i];
                 if (currentBone.parentBoneIndex == -1)

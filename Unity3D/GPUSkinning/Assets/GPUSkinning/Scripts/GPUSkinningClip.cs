@@ -22,7 +22,7 @@ public class GPUSkinningClip
 
     public bool individualDifferenceEnabled = false;
 
-    public GPUSkinningAnimEvent[] events = null;
+    public GPUSkinningAnimEvent[] events = new GPUSkinningAnimEvent[0];
 
 
     public static GPUSkinningClip CreateFromBytes(byte[] bytes)
