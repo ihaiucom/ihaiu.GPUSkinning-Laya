@@ -9164,6 +9164,33 @@ declare module laya.d3.core.scene {
 
 declare module laya.d3.core.scene {
 	class Scene3DShaderDeclaration  {
+		
+	/**@internal */
+	static SHADERDEFINE_FOG: Laya.ShaderDefine;
+	/**@internal */
+	static SHADERDEFINE_DIRECTIONLIGHT: Laya.ShaderDefine;
+	/**@internal */
+	static SHADERDEFINE_POINTLIGHT: Laya.ShaderDefine;
+	/**@internal */
+	static SHADERDEFINE_SPOTLIGHT: Laya.ShaderDefine;
+	/**@internal */
+	static SHADERDEFINE_CAST_SHADOW: Laya.ShaderDefine;
+	/**@internal */
+	static SHADERDEFINE_SHADOW_PSSM1: Laya.ShaderDefine;
+	/**@internal */
+	static SHADERDEFINE_SHADOW_PSSM2: Laya.ShaderDefine;
+	/**@internal */
+	static SHADERDEFINE_SHADOW_PSSM3: Laya.ShaderDefine;
+	/**@internal */
+	static SHADERDEFINE_SHADOW_PCF_NO: Laya.ShaderDefine;
+	/**@internal */
+	static SHADERDEFINE_SHADOW_PCF1: Laya.ShaderDefine;
+	/**@internal */
+	static SHADERDEFINE_SHADOW_PCF2: Laya.ShaderDefine;
+	/**@internal */
+	static SHADERDEFINE_SHADOW_PCF3: Laya.ShaderDefine;
+	/**@internal */
+	static SHADERDEFINE_REFLECTMAP: Laya.ShaderDefine;
 	}
 
 }

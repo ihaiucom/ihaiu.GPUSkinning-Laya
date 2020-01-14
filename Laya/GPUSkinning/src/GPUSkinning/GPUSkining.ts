@@ -19,6 +19,7 @@ import { GPUSkiningLoadModelV05 } from "./Mesh/GPUSkiningLoadModelV05";
 import GPUSkiningVertexMesh from "./Mesh/GPUSkiningVertexMesh";
 import GPUSkinningClip from "./Datas/GPUSkinningClip";
 import LayaExtends_Laya3D from "../LayaExtends/LayaExtends_Laya3D";
+import { GPUSkinningCartoonMaterial } from "./Material/GPUSkinningCartoonMaterial";
 export default class GPUSkining
 {
     static EXT_SKING_MESH = "skinlm";
@@ -44,9 +45,12 @@ export default class GPUSkining
       var GPUSkinningIncludegGLSL: string = await GPUSkinningBaseMaterial.loadShaderGlslAsync("GPUSkinningInclude");
       Shader3D.addInclude("GPUSkinningInclude.glsl", GPUSkinningIncludegGLSL);
 
+      // var GPUSkinningIncludegGLSL: string = await GPUSkinningBaseMaterial.loadShaderGlslAsync("GPUSkinningInclude4");
+      // Shader3D.addInclude("GPUSkinningInclude4.glsl", GPUSkinningIncludegGLSL);
+
       GPUSkinningBaseMaterial.__initDefine__();
       await GPUSkinningUnlitMaterial.install();
-      
+      await GPUSkinningCartoonMaterial.install();
 
 
       LayaExtends_Node.Init();
@@ -149,7 +153,7 @@ export default class GPUSkining
     {
       if(!materialCls)
       {
-        materialCls = GPUSkinningUnlitMaterial;
+        materialCls = GPUSkinningCartoonMaterial;
       }
       var animPath: string = this.GetPath(this.GetAnimName(name));
       var meshPath: string = this.GetPath(this.GetMeshName(name));

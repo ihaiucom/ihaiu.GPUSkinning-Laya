@@ -41,6 +41,7 @@ export default class GPUSkinningClip
         var b:Byte = new Byte(data);
         b.pos = 0;
         this.name = b.readUTFString();
+        // this.name = this.name.toLowerCase();
         this.length = b.readFloat32();
         this.fps = b.readUint32();
         this.wrapMode = b.readInt32();

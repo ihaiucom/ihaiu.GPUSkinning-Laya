@@ -27,6 +27,8 @@ public class GPUSkinningAnimation : ScriptableObject
 
     public float sphereRadius = 1.0f;
 
+    public GPUSkinningQuality skinQuality;
+
 
     public static GPUSkinningAnimation CreateFromBytes(byte[] bytes)
     {
@@ -47,6 +49,7 @@ public class GPUSkinningAnimation : ScriptableObject
         textureWidth = (int) b.ReadUInt32();
         textureHeight = (int) b.ReadUInt32();
         sphereRadius = b.ReadSingle();
+        skinQuality = (GPUSkinningQuality)b.ReadInt32();
         bounds = b.ReadBounds();
 
         // 剪辑列表 数量
@@ -134,6 +137,7 @@ public class GPUSkinningAnimation : ScriptableObject
         b.Write((uint)textureWidth);
         b.Write((uint)textureHeight);
         b.Write((float)sphereRadius);
+        b.Write((int)skinQuality);
         b.Write((uint)bones.Length);
         b.WriteBounds(bounds);
 

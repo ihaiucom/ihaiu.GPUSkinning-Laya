@@ -36,28 +36,12 @@ varying vec4 v_Color;
 //  主函数
 void main() 
 {
-	vec4 position ;
-
-	position = a_Position;
-	
-    // vec4 c = texture2D(u_GPUSkinning_TextureMatrix, indexToUV(a_Texcoord1.x));
-	// position.x = getColorFloat(a_Texcoord1.x + 0.0) ;
-	// position.y = getColorFloat(a_Texcoord1.x + 1.0);
-	// position.z = getColorFloat(a_Texcoord1.x + 2.0);
-
-	position= skin4(a_Position, a_Texcoord1, a_Texcoord2);
-
-    // vec4 c = texture2D(u_GPUSkinning_TextureMatrix, a_Texcoord0);
-	// position.x = c.x;
-	// position.y = c.y;
-
-
+	vec4 position = skin(a_Position, a_Texcoord1, a_Texcoord2);
 	mat4 mm = mat4(
 		-1.0, 0.0, 0.0, 0.0,
 		0.0, 1.0, 0.0, 0.0,
 		0.0, 0.0, 1.0, 0.0,
 		0.0, 0.0, 0.0, 1.0
-
 	);
 
 	position = mm * position;

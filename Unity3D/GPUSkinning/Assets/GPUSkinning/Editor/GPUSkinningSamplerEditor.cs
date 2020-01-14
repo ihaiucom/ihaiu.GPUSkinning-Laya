@@ -179,11 +179,13 @@ public class GPUSkinningSamplerEditor : Editor
     private SerializedProperty fpsList_array_size_sp = null;
     private SerializedProperty rootMotionEnabled_array_size_sp = null;
     private SerializedProperty individualDifferenceEnabled_array_size_sp = null;
+    private SerializedProperty nameList_array_size_sp = null;
     private List<SerializedProperty> animClips_item_sp = null;
     private List<SerializedProperty> wrapModes_item_sp = null;
     private List<SerializedProperty> fpsList_item_sp = null;
     private List<SerializedProperty> rootMotionEnabled_item_sp = null;
     private List<SerializedProperty> individualDifferenceEnabled_item_sp = null;
+    private List<SerializedProperty> nameList_item_sp = null;
     private int animClips_count = 0;
     private void OnGUI_AnimClips(GPUSkinningSampler sampler)
     {
@@ -194,11 +196,13 @@ public class GPUSkinningSamplerEditor : Editor
             fpsList_item_sp.Clear();
             rootMotionEnabled_item_sp.Clear();
             individualDifferenceEnabled_item_sp.Clear();
+            nameList_item_sp.Clear();
 
             wrapModes_array_size_sp.intValue = animClips_array_size_sp.intValue;
             fpsList_array_size_sp.intValue = animClips_array_size_sp.intValue;
             rootMotionEnabled_array_size_sp.intValue = animClips_array_size_sp.intValue;
             individualDifferenceEnabled_array_size_sp.intValue = animClips_array_size_sp.intValue;
+            nameList_array_size_sp.intValue = animClips_array_size_sp.intValue;
 
             for (int i = 0; i < animClips_array_size_sp.intValue; i++)
             {
@@ -207,6 +211,7 @@ public class GPUSkinningSamplerEditor : Editor
                 fpsList_item_sp.Add(serializedObject.FindProperty(string.Format("fpsList.Array.data[{0}]", i)));
                 rootMotionEnabled_item_sp.Add(serializedObject.FindProperty(string.Format("rootMotionEnabled.Array.data[{0}]", i)));
                 individualDifferenceEnabled_item_sp.Add(serializedObject.FindProperty(string.Format("individualDifferenceEnabled.Array.data[{0}]", i)));
+                nameList_item_sp.Add(serializedObject.FindProperty(string.Format("animClipNames.Array.data[{0}]", i)));
             }
 
             animClips_count = animClips_item_sp.Count;
@@ -217,13 +222,15 @@ public class GPUSkinningSamplerEditor : Editor
         if (fpsList_array_size_sp == null) fpsList_array_size_sp = serializedObject.FindProperty("fpsList.Array.size");
         if (rootMotionEnabled_array_size_sp == null) rootMotionEnabled_array_size_sp = serializedObject.FindProperty("rootMotionEnabled.Array.size");
         if (individualDifferenceEnabled_array_size_sp == null) individualDifferenceEnabled_array_size_sp = serializedObject.FindProperty("individualDifferenceEnabled.Array.size");
-        if(animClips_item_sp == null)
+        if (nameList_array_size_sp == null) nameList_array_size_sp = serializedObject.FindProperty("animClipNames.Array.size");
+        if (animClips_item_sp == null)
         {
             animClips_item_sp = new List<SerializedProperty>();
             wrapModes_item_sp = new List<SerializedProperty>();
             fpsList_item_sp = new List<SerializedProperty>();
             rootMotionEnabled_item_sp = new List<SerializedProperty>();
             individualDifferenceEnabled_item_sp = new List<SerializedProperty>();
+            nameList_item_sp = new List<SerializedProperty>();
             ResetItemSp();
         }
 
@@ -242,6 +249,7 @@ public class GPUSkinningSamplerEditor : Editor
             int no3 = fpsList_array_size_sp.intValue;
             int no4 = rootMotionEnabled_array_size_sp.intValue;
             int no5 = individualDifferenceEnabled_array_size_sp.intValue;
+            int no6 = nameList_array_size_sp.intValue;
 
             EditorGUILayout.BeginHorizontal();
             {
@@ -267,6 +275,10 @@ public class GPUSkinningSamplerEditor : Editor
                     if (animClips_count != no5)
                     {
                         individualDifferenceEnabled_array_size_sp.intValue = animClips_count;
+                    }
+                    if (animClips_count != no6)
+                    {
+                        nameList_array_size_sp.intValue = animClips_count;
                         ResetItemSp();
                     }
                     return;
@@ -283,7 +295,7 @@ public class GPUSkinningSamplerEditor : Editor
 
             EditorGUILayout.BeginHorizontal();
             {
-                for (int j = -1; j < 5; ++j)
+                for (int j = -1; j < 6; ++j)
                 {
                     EditorGUILayout.BeginVertical();
                     {
@@ -305,13 +317,17 @@ public class GPUSkinningSamplerEditor : Editor
                             {
                                 GUILayout.Label("Anim Clip");
                             }
-                            if(j == 3)
+                            if (j == 3)
                             {
                                 GUILayout.Label("Root Motion");
                             }
                             if(j == 4)
                             {
                                 GUILayout.Label("Individual Difference");
+                            }
+                            if (j == 5)
+                            {
+                                GUILayout.Label("Clip Name");
                             }
                         }
                         EditorGUILayout.EndHorizontal();
@@ -322,6 +338,7 @@ public class GPUSkinningSamplerEditor : Editor
                             var prop3 = fpsList_item_sp[i];
                             var prop4 = rootMotionEnabled_item_sp[i];
                             var prop5 = individualDifferenceEnabled_item_sp[i];
+                            var prop6 = nameList_item_sp[i];
                             if (prop != null)
                             {
                                 if(j == -1)
@@ -364,6 +381,12 @@ public class GPUSkinningSamplerEditor : Editor
                                     GUI.enabled = true && guiEnabled;
                                     GUILayout.FlexibleSpace();
                                     EditorGUILayout.EndHorizontal();
+                                }
+
+                                if (j == 5)
+                                {
+                                    EditorGUILayout.PropertyField(prop6, new GUIContent());
+                                    prop6.stringValue = prop6.stringValue;
                                 }
                             }
                         }

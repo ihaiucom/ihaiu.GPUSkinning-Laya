@@ -467,6 +467,7 @@ export default class GPUSkinningPlayer
     /** 播放 */
     public Play(clipName:string, nomrmalizeTime : number = 0)
     {
+        // clipName = clipName.toUpperCase();
         let clips: GPUSkinningClip[] = this.res.anim.clips;
         let numClips = clips == null ? 0 : clips.length;
 

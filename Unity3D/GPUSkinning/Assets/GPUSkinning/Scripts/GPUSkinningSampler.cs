@@ -5,12 +5,65 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 #if UNITY_EDITOR
 using UnityEditor;
+using UnityEditor.Animations;
 #endif
 
 [ExecuteInEditMode]
 public class GPUSkinningSampler : MonoBehaviour 
 {
 #if UNITY_EDITOR
+
+    //public Dictionary<string, string> animClipNameDict= null;
+    //public Dictionary<string, string> AnimClipNameDict
+    //{
+    //    get
+    //    {
+    //        if(animClipNameDict == null)
+    //        {
+    //            string[] list = new string[] {
+    //            "Air_Throw_01",
+    //            "ATTACK_01",
+    //            "ATTACK_02",
+    //            "ATTACK_03",
+    //            "ATTACK_04",
+    //            "Block",
+    //            "CHANGE",
+    //            "Dash_Attack",
+    //            "DEAD",
+    //            "DODGE",
+    //            "Get_up",
+    //            "GROUND_BEHIT_01",
+    //            "GROUND_BEHIT_02",
+    //            "Idle",
+    //            "JUMP",
+    //            "Jump_Attack",
+    //            "LEAVE",
+    //            "LOSE",
+    //            "PICK_UP",
+    //            "Run",
+    //            "SKILL_02",
+    //            "SKILL_03",
+    //            "Skill_ult",
+    //            "SKIN",
+    //            "STUN",
+    //            "WIN",
+    //            "Skill_05",
+    //            "SKILL_01",
+    //            "Skill_04"
+    //            };
+    //            animClipNameDict = new Dictionary<string, string>();
+    //            animClipNameDict.Add("Air_Throw_01".ToLower(), "Air_Throw_01");
+    //            animClipNameDict.Add("ATTACK_01".ToLower(), "Attack_01");
+    //            animClipNameDict.Add("ATTACK_01".ToLower(), "Attack_01");
+
+
+
+
+    //        }
+    //        return animClipNameDict;
+    //    }
+    //}
+
     [HideInInspector]
     [SerializeField]
 	public string animName = null;
@@ -22,6 +75,8 @@ public class GPUSkinningSampler : MonoBehaviour
     [HideInInspector]
     [SerializeField]
     public AnimationClip[] animClips = null;
+    [SerializeField]
+    public string[] animClipNames;
 
     [HideInInspector]
     [SerializeField]
@@ -184,6 +239,20 @@ public class GPUSkinningSampler : MonoBehaviour
 			return;
 		}
 
+        string animClipName = animClip.name;
+        if(animClipNames != null)
+        {
+            animClipName = animClipNames[samplingClipIndex];
+        }
+        
+
+        //string animClipNameKey = animClip.name.ToLower();
+        //if(AnimClipNameDict.ContainsKey(animClipNameKey))
+        //{
+        //    animClipName = AnimClipNameDict[animClipNameKey];
+        //}
+
+
         int numFrames = (int)(GetClipFPS(animClip, samplingClipIndex) * animClip.length);
         if(numFrames == 0)
         {
@@ -214,8 +283,9 @@ public class GPUSkinningSampler : MonoBehaviour
 
 		gpuSkinningAnimation = anim == null ? ScriptableObject.CreateInstance<GPUSkinningAnimation>() : anim;
 		gpuSkinningAnimation.name = animName;
+        gpuSkinningAnimation.skinQuality = skinQuality;
 
-        if(anim == null)
+        if (anim == null)
         {
             gpuSkinningAnimation.guid = System.Guid.NewGuid().ToString();
         }
@@ -240,7 +310,7 @@ public class GPUSkinningSampler : MonoBehaviour
         }
 
         gpuSkinningClip = new GPUSkinningClip();
-        gpuSkinningClip.name = animClip.name;
+        gpuSkinningClip.name = animClipName;
         gpuSkinningClip.fps = GetClipFPS(animClip, samplingClipIndex);
         gpuSkinningClip.length = animClip.length;
         gpuSkinningClip.wrapMode = wrapModes[samplingClipIndex];
@@ -533,6 +603,8 @@ public class GPUSkinningSampler : MonoBehaviour
                 for (int matrixIndex = 0; matrixIndex < numMatrices; ++matrixIndex)
                 {
                     Matrix4x4 matrix = matrices[matrixIndex];
+
+
                     b.Write((float)matrix.m00);
                     b.Write((float)matrix.m01);
                     b.Write((float)matrix.m02);
@@ -1179,12 +1251,54 @@ public class GPUSkinningSampler : MonoBehaviour
         {
             animName = name;
         }
-        
 
 
+        if (rootBoneTransform == null)
+        {
+            for (int i = 0; i < transform.childCount; i++)
+            {
+                Transform child = transform.GetChild(i);
+                if (child.childCount > 0)
+                {
+                    rootBoneTransform = child;
+                }
+            }
+        }
 
+        AnimationClip[] animationClips = null;
 
-        AnimationClip[] animationClips = controller.animationClips;
+        string controllerPath = UnityEditor.AssetDatabase.GetAssetPath(controller);
+        Debug.Log("controllerPath=" + controllerPath);
+        AnimatorController animatorController = UnityEditor.AssetDatabase.LoadAssetAtPath<AnimatorController>(controllerPath);
+        if(animatorController != null)
+        {
+            AnimatorControllerLayer animatorControllerLayer = animatorController.layers[0];
+            AnimatorStateMachine stateMachine = animatorControllerLayer.stateMachine;
+            List<ChildAnimatorState> stateList = new List<ChildAnimatorState>();
+            for (int i = 0; i < stateMachine.states.Length; i ++)
+            {
+                ChildAnimatorState item = stateMachine.states[i];
+                if (item.state.motion is AnimationClip)
+                {
+                    stateList.Add(item);
+                }
+            }
+
+            animationClips = new AnimationClip[stateList.Count];
+            animClipNames = new string[stateList.Count];
+            for(int i = 0; i < stateList.Count; i ++)
+            {
+                ChildAnimatorState item = stateList[i];
+                animationClips[i] = (AnimationClip) item.state.motion;
+                animClipNames[i] = item.state.name;
+            }
+
+        }
+        else
+        {
+            animationClips = controller.animationClips;
+        }
+
 
         int count = animationClips.Length;
         //Debug.Log("count=" + count);
@@ -1194,28 +1308,22 @@ public class GPUSkinningSampler : MonoBehaviour
         rootMotionEnabled = new bool[count];
         individualDifferenceEnabled = new bool[count];
 
-        if(rootBoneTransform == null)
-        {
-            for(int i = 0; i < transform.childCount; i ++)
-            {
-                Transform child = transform.GetChild(i);
-                if(child.childCount > 0)
-                {
-                    rootBoneTransform = child;
-                }
-            }
-        }
 
-        for (int i = 0; i < count; i ++)
+
+        for (int i = 0; i < count; i++)
         {
             AnimationClip clip = animationClips[i];
             animClips[i] = animationClips[i];
             fpsList[i] = 0;
             rootMotionEnabled[i] = false;
             individualDifferenceEnabled[i] = true;
-            wrapModes[i] = clip.isLooping ? GPUSkinningWrapMode.Loop : GPUSkinningWrapMode.Once ;
+            wrapModes[i] = clip.isLooping ? GPUSkinningWrapMode.Loop : GPUSkinningWrapMode.Once;
             //Debug.Log(i + ", " + clip.name + ", isLooping=" + clip.isLooping + ", wrapMode=" + clip.wrapMode);
         }
+
+
+
+
 
 
 

@@ -298,6 +298,7 @@ export default class GPUSkinningPlayerResources
         {
             return;
         }
+        console.log("CloneMaterial skinningQuality=", skinningQuality);
 
         let SKILL_N:ShaderDefine;
         switch(skinningQuality)
@@ -336,6 +337,7 @@ export default class GPUSkinningPlayerResources
 
     CloneMaterial(originalMaterial:Material, skinningQuality: GPUSkinningQuality)
     {
+        console.log("CloneMaterial skinningQuality=", skinningQuality);
         let material =  <Material> originalMaterial.clone();
         
         let SKILL_N:ShaderDefine;

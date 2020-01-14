@@ -30,7 +30,7 @@ export default class TestShader
 		// 初始化shader
         await MaterialInstall.install();
         // this.TestPrefab();
-        // var plane2:Laya.MeshSprite3D = <any> this.scene.addChild(new Laya.MeshSprite3D(Laya.PrimitiveMesh.createPlane(5, 5, 1,1)));
+        var plane2:Laya.MeshSprite3D = <any> this.scene.addChild(new Laya.MeshSprite3D(Laya.PrimitiveMesh.createPlane(10, 1, 1,1)));
         // plane2.transform.localRotationEulerX = 20;
 
         // var plane:Laya.MeshSprite3D = <any> this.scene.addChild(new Laya.MeshSprite3D(Laya.PrimitiveMesh.createPlane(5, 5, 1,1)));
@@ -47,8 +47,8 @@ export default class TestShader
         // plane.meshRenderer.sharedMaterial = mat;
 
         var nameList = [
-            "Hero_1001_Dianguanglongqi_Skin1",
             "Hero_1002_Fengyunzhanji_Skin1",
+            "Hero_1001_Dianguanglongqi_Skin1",
             "Hero_1004_Dongzhuo_Skin1",
             "Monster_2002_shuangdaobing_Skin1",
             "Monster_2003_langyabing_Skin1",
@@ -64,7 +64,9 @@ export default class TestShader
         for(var j = 0; j < nameList.length; j ++)
         {
             var mono = await GPUSkining.CreateByNameAsync(nameList[j]);
-            mono.Player.isRandomPlayClip = true;
+            // mono.Player.isRandomPlayClip = true;
+            window['mono'] = mono;
+            mono.Player.Play("Idle");
             
             for(var i = 0; i < mono.anim.clips.length; i ++)
             {
@@ -79,6 +81,7 @@ export default class TestShader
             var x = j - y * 5 - 2.5;
             sprite.transform.localPositionX = x * 1.5;
             sprite.transform.localPositionZ = -y * 2;
+            sprite.transform.localPositionY = -0.5;
             break;
         }
         return;

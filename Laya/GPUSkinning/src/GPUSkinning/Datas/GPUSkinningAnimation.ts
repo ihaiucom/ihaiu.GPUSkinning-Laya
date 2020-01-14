@@ -65,6 +65,7 @@ export default class GPUSkinningAnimation
         this.textureWidth = b.readUint32();
         this.textureHeight = b.readUint32();
         this.sphereRadius = b.readFloat32();
+        this.skinQuality = <GPUSkinningQuality> b.readInt32();
         this.bonesCount = b.readUint32();
         this.bounds = ByteReadUtil.ReadBounds(b);
 
