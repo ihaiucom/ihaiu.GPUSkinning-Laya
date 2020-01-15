@@ -48,7 +48,7 @@ namespace GPUSkingings
                 dir = Path.GetDirectoryName(dir);
             }
 
-            string savedPath = dir + "/GPUSKinning_" + name + "_Anim.skinlani";
+            string savedPath = dir + "/GPUSKinning_" + name + "_Anim.bin";
             //string savedPath = dir + "/GPUSKinning_Anim_" + name + ".bytes";
 
             using (FileStream fileStream = new FileStream(savedPath, FileMode.Create))

@@ -166,6 +166,12 @@ export default class GPUSkinningAnimation
     {
         Laya.loader.load(path, Laya.Handler.create(this, (data: ArrayBuffer)=>
         {
+            if(data == null)
+            {
+                console.error("加载资源失败" , path);
+                callback(null);
+                return;
+            }
             var obj = GPUSkinningAnimation.CreateFromBytes(data);
             if(callback)
             {

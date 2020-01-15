@@ -34,6 +34,11 @@ export default class GPUSkinningClip
     /** 事件列表 */
     events: GPUSkinningAnimEvent[];
 
+    /** 帧数 */
+    frameCount = 0;
+    /** 最后一帧 */
+    frameLastIndex = 0;
+
 
     
     FromBytes(data: ArrayBuffer): void
@@ -87,7 +92,7 @@ export default class GPUSkinningClip
 
             b.pos = pos;
             var itemBuffer = b.readArrayBuffer(len);
-            var item:any = GPUSkinningFrame.CreateFromBytes(itemBuffer);
+            var item:any = GPUSkinningFrame.CreateFromBytes(itemBuffer, this.rootMotionEnabled);
             frameList.push(item);
         }
 
@@ -107,6 +112,9 @@ export default class GPUSkinningClip
             var item:any = GPUSkinningAnimEvent.CreateFromBytes(itemBuffer);
             eventList.push(item);
         }
+
+        this.frameCount = Math.floor(this.length * this.fps);
+        this.frameLastIndex = this.frameCount  - 1;
 
 
     }

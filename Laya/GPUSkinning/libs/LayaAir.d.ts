@@ -32553,6 +32553,7 @@ declare module laya.resource {
 		 * @param miplevel 层级。
 		 */
 		setSubPixels(x:number,y:number,width:number,height:number,pixels:Uint8Array|Float32Array,miplevel?:number):void;
+		setSubPixels16(x:number,y:number,width:number,height:number,pixels:Uint8Array|Float32Array|Int16Array|Uint16Array,miplevel?:number):void;
 
 		/**
 		 * 通过压缩数据填充纹理。

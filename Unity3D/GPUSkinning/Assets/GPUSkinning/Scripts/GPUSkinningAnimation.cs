@@ -145,15 +145,37 @@ public class GPUSkinningAnimation : ScriptableObject
 
         int intSize = sizeof(int);
 
+        Dictionary<int, GPUSkinningBone> exportBoneDict = new Dictionary<int, GPUSkinningBone>();
+        for (int i = 0; i < bones.Length; i++)
+        {
+            GPUSkinningBone item = bones[i];
+            item.index = i;
+            if (item.isExposed)
+            {
+                exportBoneDict.Add(item.index, item);
+            }
+        }
+
+        if(exportBoneDict.Count > 0)
+        {
+            if(exportBoneDict.ContainsKey(rootBoneIndex))
+            {
+                exportBoneDict.Add(rootBoneIndex, bones[rootBoneIndex]);
+            }
+        }
+
+        List<int> exportBoneIndexList = new List<int>();
         List<GPUSkinningBone> exportBoneList = new List<GPUSkinningBone>();
         for (int i = 0; i < bones.Length; i++)
         {
             GPUSkinningBone item = bones[i];
-            if(item.isExposed)
+            if (exportBoneDict.ContainsKey(item.index))
             {
                 exportBoneList.Add(item);
+                exportBoneIndexList.Add(item.index);
             }
         }
+
 
 
         // 写入剪辑列表 数量
@@ -171,7 +193,7 @@ public class GPUSkinningAnimation : ScriptableObject
         for (int i = 0; i < clips.Length; i ++)
         {
             GPUSkinningClip item = clips[i];
-            MemoryStream itemStream = item.ToSteam();
+            MemoryStream itemStream = item.ToSteam(exportBoneIndexList);
             clipSteamList.Add(itemStream);
             b.Write((uint)posBegin);
             b.Write((uint)itemStream.Length);

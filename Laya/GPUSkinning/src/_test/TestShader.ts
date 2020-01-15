@@ -25,13 +25,15 @@ export default class TestShader
 
     async InitAsync()
     {
+        GPUSkining.resRoot = "res3d/GPUSKinning-30/";
+        await GPUSkining.InitAsync();
         
-		await GPUSkining.InitAsync();
 		// 初始化shader
         await MaterialInstall.install();
         // this.TestPrefab();
-        var plane2:Laya.MeshSprite3D = <any> this.scene.addChild(new Laya.MeshSprite3D(Laya.PrimitiveMesh.createPlane(10, 1, 1,1)));
+        // var plane2:Laya.MeshSprite3D = <any> this.scene.addChild(new Laya.MeshSprite3D(Laya.PrimitiveMesh.createPlane(10, 1, 1,1)));
         // plane2.transform.localRotationEulerX = 20;
+
 
         // var plane:Laya.MeshSprite3D = <any> this.scene.addChild(new Laya.MeshSprite3D(Laya.PrimitiveMesh.createPlane(5, 5, 1,1)));
         // var mat = new Laya.UnlitMaterial();
@@ -39,16 +41,18 @@ export default class TestShader
         // window['planemat'] = mat;
         // window['plane'] = plane;
 
-        // // var texture =  await this.LoadAnimTextureAsync("res/gpuskining/rili.bytes", 2, 2);
+        // // var texture =  await this.LoadAnimTextureAsync("res/gpuskining/rili-32.bin", 2, 2);
+        // var texture =  await this.LoadAnimTexture16Async("res/gpuskining/rili-16.bin", 2, 2);
         // // var texture =  await this.LoadAnimTextureAsync("res/gpuskining/GPUSKinning_Laya_Texture_MutantAnim2.bytes", 128, 64);
         // // var texture =  this.GetAnimTextureAsync();
-        // // mat.albedoTexture = texture;
+        // mat.albedoTexture = texture;
+        // // mat.GPUSkinning_TextureMatrix = texture;
         // // mat.GPUSkinning_TextureMatrix = texture;
         // plane.meshRenderer.sharedMaterial = mat;
 
         var nameList = [
-            "Hero_1002_Fengyunzhanji_Skin1",
             "Hero_1001_Dianguanglongqi_Skin1",
+            "Hero_1002_Fengyunzhanji_Skin1",
             "Hero_1004_Dongzhuo_Skin1",
             "Monster_2002_shuangdaobing_Skin1",
             "Monster_2003_langyabing_Skin1",
@@ -66,12 +70,12 @@ export default class TestShader
             var mono = await GPUSkining.CreateByNameAsync(nameList[j]);
             // mono.Player.isRandomPlayClip = true;
             window['mono'] = mono;
-            mono.Player.Play("Idle");
+            mono.Player.Play("ATTACK_01");
             
             for(var i = 0; i < mono.anim.clips.length; i ++)
             {
-                mono.anim.clips[i].wrapMode = GPUSkinningWrapMode.Loop;
-                mono.anim.clips[i].individualDifferenceEnabled =true;
+                // mono.anim.clips[i].wrapMode = GPUSkinningWrapMode.Loop;
+                // mono.anim.clips[i].individualDifferenceEnabled =true;
             }
 
             this.scene.addChild(mono.owner);
@@ -81,7 +85,11 @@ export default class TestShader
             var x = j - y * 5 - 2.5;
             sprite.transform.localPositionX = x * 1.5;
             sprite.transform.localPositionZ = -y * 2;
-            sprite.transform.localPositionY = -0.5;
+            // sprite.transform.localPositionY = -0.5;
+            // if(j == 0)
+            // {
+            //     this.CloneMono(mono);
+            // }
             break;
         }
         return;
@@ -141,7 +149,7 @@ export default class TestShader
         // await this.TestLoadCube();
     }
 
-    CloneMono(mono: GPUSkinningPlayerMono, nx = 10, ny = 20)
+    CloneMono(mono: GPUSkinningPlayerMono, nx = 10, ny = 10)
     {
         var names = [];
         for(var i = 0; i < mono.anim.clips.length; i ++)
@@ -213,6 +221,35 @@ export default class TestShader
         texture.anisoLevel = 0;
         texture.lock = true;
         texture.setSubPixels(0, 0, width, height, f32, 0)
+        console.log(width, height);
+        
+        window['animBuffer2'] = arrayBuffer;
+        window['animTexture2'] = texture;
+        resolve(texture);
+
+			}), null, Laya.Loader.BUFFER);
+		});
+    }
+    
+    
+	LoadAnimTexture16Async(path: string, width: int, height:int): Promise<any>
+	{
+		return new  Promise<any>((resolve)=>
+		{
+			Laya.loader.load(path, Laya.Handler.create(this, (arrayBuffer:ArrayBuffer)=>
+			{
+        var f32 = new Float32Array(arrayBuffer);
+        window['f32'] = f32;
+        var f16 = new Uint16Array(arrayBuffer);
+        window['f16'] = f16;
+       
+        var texture: Laya.Texture2D = new Laya.Texture2D(width, height, Laya.TextureFormat.R32G32B32A32, false, false);
+        texture.wrapModeU = Laya.BaseTexture.WARPMODE_CLAMP;
+        texture.wrapModeV = Laya.BaseTexture.WARPMODE_CLAMP;
+        texture.filterMode = Laya.BaseTexture.FILTERMODE_POINT;
+        texture.anisoLevel = 0;
+        texture.lock = true;
+        texture.setSubPixels16(0, 0, width, height, f16, 0)
         console.log(width, height);
         
         window['animBuffer2'] = arrayBuffer;

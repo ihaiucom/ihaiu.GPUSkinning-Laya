@@ -82,6 +82,8 @@ export default class GPUSkinningPlayerResources
 
     public static  shaderPorpID_GPUSkinning_FrameIndex_PixelSegmentation : int= 0;
 
+    public static  shaderPorpID_GPUSkinning_FrameIndex_PixelSegmentation_Last : int= 0;
+
     private static  shaderPropID_GPUSkinning_RootMotion : int= 0;
 
     public static  shaderPorpID_GPUSkinning_FrameIndex_PixelSegmentation_Blend_CrossFade : int= 0;
@@ -247,11 +249,15 @@ export default class GPUSkinningPlayerResources
 
 
     /** 更新数据 */
-    public UpdatePlayingData( mpb: Laya.ShaderData , spriteShaderData: Laya.ShaderData, playingClip: GPUSkinningClip , frameIndex: int , frame: GPUSkinningFrame , rootMotionEnabled: boolean ,
+    public UpdatePlayingData( mpb: Laya.ShaderData , spriteShaderData: Laya.ShaderData, 
+        playingClip: GPUSkinningClip , frameIndex: int ,  
+        nextFrameIndex: int ,  nextFrameFade,
+        frame: GPUSkinningFrame , rootMotionEnabled: boolean ,
         lastPlayedClip: GPUSkinningClip , frameIndex_crossFade: int , crossFadeTime: float , crossFadeProgress: float )
     {
+        // console.log("frameIndex=", frameIndex, "nextFrameIndex=", nextFrameIndex, "nextFrameFade", nextFrameFade );
         // console.log(spriteShaderData["__id"], playingClip.name,"frameIndex=", frameIndex, "pixelSegmentation", playingClip.pixelSegmentation);
-        spriteShaderData.setVector( GPUSkinningPlayerResources.shaderPorpID_GPUSkinning_FrameIndex_PixelSegmentation, new Vector4(frameIndex, playingClip.pixelSegmentation, 0, 0));
+        spriteShaderData.setVector( GPUSkinningPlayerResources.shaderPorpID_GPUSkinning_FrameIndex_PixelSegmentation, new Vector4(frameIndex, playingClip.pixelSegmentation, nextFrameIndex, nextFrameFade));
 
         if (rootMotionEnabled)
         {
@@ -266,7 +272,8 @@ export default class GPUSkinningPlayerResources
                 mpb.setMatrix4x4(GPUSkinningPlayerResources.shaderPropID_GPUSkinning_RootMotion_CrossFade, 
                     lastPlayedClip.frames[frameIndex_crossFade].RootMotionInv(this.anim.rootBoneIndex));
             }
-
+            console.log(spriteShaderData["__id"], "frameIndex_crossFade",frameIndex_crossFade, "CrossFadeBlendFactor", this.CrossFadeBlendFactor(crossFadeProgress, crossFadeTime) ,  playingClip.name,"frameIndex=", frameIndex, "pixelSegmentation", playingClip.pixelSegmentation);
+      
             spriteShaderData.setVector(GPUSkinningPlayerResources.shaderPorpID_GPUSkinning_FrameIndex_PixelSegmentation_Blend_CrossFade,
                 new Vector4(frameIndex_crossFade, lastPlayedClip.pixelSegmentation, this.CrossFadeBlendFactor(crossFadeProgress, crossFadeTime)));
         }
@@ -298,7 +305,7 @@ export default class GPUSkinningPlayerResources
         {
             return;
         }
-        console.log("CloneMaterial skinningQuality=", skinningQuality);
+        // console.log("CloneMaterial skinningQuality=", skinningQuality);
 
         let SKILL_N:ShaderDefine;
         switch(skinningQuality)

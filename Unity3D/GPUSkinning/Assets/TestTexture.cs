@@ -32,16 +32,52 @@ public class TestTexture : MonoBehaviour
     void Update()
     {
         if (isRunEditor)
-            ToBytes3();
+            ToBytes3_16Bit();
     }
 
 
-    [ContextMenu("To Bytes2")]
-    public void ToBytes3()
+
+    [ContextMenu("To ToBytes3_16Bit")]
+    public void ToBytes3_16Bit()
+    {
+
+        Texture2D texture = new Texture2D(2, 2, TextureFormat.RGBAHalf, false, true);
+        Color[] pixels = texture.GetPixels();
+
+        for(int i = 0; i < frame0Points.Length; i ++)
+        {
+            Vector3 pos = frame0Points[i];
+            pixels[i] = new Color(pos.x, pos.y, pos.z, 1);
+
+        }
+
+
+        texture.SetPixels(pixels);
+        texture.Apply();
+
+        bytes = texture.GetRawTextureData();
+
+        Debug.Log("bytes.Length=" + bytes.Length);
+
+
+        string savedPath = "Assets/rili-16.bin";
+        using (FileStream fileStream = new FileStream(savedPath, FileMode.Create))
+        {
+            fileStream.Write(bytes, 0, bytes.Length);
+            fileStream.Flush();
+            fileStream.Close();
+            fileStream.Dispose();
+        }
+
+    }
+
+
+    [ContextMenu("To ToBytes3_32Bit")]
+    public void ToBytes3_32Bit()
     {
         var stream = new MemoryStream();
         var b = new BinaryWriter(stream);
-        for(int i = 0; i < frame0Points.Length; i ++)
+        for (int i = 0; i < frame0Points.Length; i++)
         {
             Vector3 pos = frame0Points[i];
             b.Write((float)pos.x);
@@ -56,7 +92,7 @@ public class TestTexture : MonoBehaviour
         Debug.Log("stream.Length=" + stream.Length + ", bytes.Length=" + bytes.Length);
 
 
-        string savedPath = "Assets/rili.bytes";
+        string savedPath = "Assets/rili-36.bin";
         using (FileStream fileStream = new FileStream(savedPath, FileMode.Create))
         {
             fileStream.Write(bytes, 0, bytes.Length);

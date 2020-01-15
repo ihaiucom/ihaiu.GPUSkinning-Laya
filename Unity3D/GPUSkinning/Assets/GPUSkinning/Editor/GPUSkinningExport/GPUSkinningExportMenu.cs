@@ -215,7 +215,7 @@ namespace GPUSkingings
             foreach (string filePath in fileList)
             {
                 string src = filePath;
-                string dest = outDir + "/" + Path.GetFileName(filePath).Replace("_Laya_Texture_", "_").Replace(".bytes", "_MatrixTexture.bytes");
+                string dest = outDir + "/" + Path.GetFileName(filePath).Replace("_Laya_Texture_", "_").Replace(".bytes", "_MatrixTexture.bin");
                 File.Copy(src, dest, true);
             }
             Debug.Log("MatrixTexture.Count=" + fileList.Length);

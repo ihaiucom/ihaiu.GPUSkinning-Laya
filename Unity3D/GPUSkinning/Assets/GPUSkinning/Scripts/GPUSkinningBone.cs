@@ -5,6 +5,8 @@ using System.IO;
 [System.Serializable]
 public class GPUSkinningBone
 {
+    public int index = -1;
+
 	[System.NonSerialized]
 	public Transform transform = null;
 

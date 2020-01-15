@@ -39,6 +39,12 @@ export default class GPUSkinningPlayer
     private lastPlayingFrameIndex: int = -1;
     private lastPlayingClip: GPUSkinningClip = null;
     private playingClip: GPUSkinningClip = null;
+
+
+    private nextFrameIndex: int = -1;
+    private nextLerpProgress: float = 0;
+
+
     private res: GPUSkinningPlayerResources = null;
     private rootMotionFrameIndex:int = -1;
 
@@ -237,6 +243,34 @@ export default class GPUSkinningPlayer
         }
     }
 
+    /** 获取下一帧 */
+    private GetNextFrameIndex(currentFrameIndex:int): int
+    {
+        var frameIndex = currentFrameIndex;
+        var frameEnd = Math.floor(this.playingClip.length * this.playingClip.fps) - 1;
+        if(frameIndex == frameEnd)
+        {
+            switch(this.WrapMode)
+            {
+                case GPUSkinningWrapMode.Once:
+                    frameIndex = frameEnd;
+                    break;
+                case GPUSkinningWrapMode.Loop:
+                    frameIndex = 0;
+                    break;
+                default:
+                    console.error(`GPUSkinningPlayer.GetNextFrameIndex 未知 播放模式 WrapMode=${this.WrapMode}`);
+                    break;
+            }
+        }
+        else
+        {
+            frameIndex ++;
+        }
+        return frameIndex;
+
+    }
+
     /** 获取动画过度帧 */
     private GetCrossFadeFrameIndex(): int
     {
@@ -273,7 +307,8 @@ export default class GPUSkinningPlayer
     /** 获取动画剪辑最后一帧索引 */
     private GetTheLastFrameIndex_WrapMode_Once(clip: GPUSkinningClip ):int
     {
-        return Math.floor(clip.length * clip.fps) - 1;
+        return clip.frameLastIndex;
+        // return Math.floor(clip.length * clip.fps) - 1;
     }
 
     /** 获取动画剪辑帧索引 */
@@ -619,7 +654,7 @@ export default class GPUSkinningPlayer
                 {
                     this.UpdateMaterial(timeDelta, currMtrl);
                     this.time += timeDelta;
-                    if(this.time > playingClip.length)
+                    if(this.time > playingClip.length || this.__frameIndex == this.GetTheLastFrameIndex_WrapMode_Once(this.playingClip))
                     {
                         this.time = playingClip.length;
                     }
@@ -634,6 +669,13 @@ export default class GPUSkinningPlayer
         this.crossFadeProgress += timeDelta;
         this.lastPlayedTime += timeDelta;
 
+        
+        this.lastPlayingClip = this.playingClip;
+        this.lastPlayingFrameIndex = this.__frameIndex;
+
+        this.nextFrameIndex = this.__frameIndex;
+        this.nextLerpProgress += timeDelta;
+
     }
 
     
@@ -641,9 +683,10 @@ export default class GPUSkinningPlayer
     onRenderUpdate(context: Laya.RenderContext3D, transform: Laya.Transform3D, render:Laya.MeshRenderer)
     {
         console.log(render['__id'], "onRenderUpdate");
-        render._shaderValues.setVector( GPUSkinningPlayerResources.shaderPorpID_GPUSkinning_FrameIndex_PixelSegmentation, new Vector4(this.__frameIndex, this.playingClip.pixelSegmentation, 0, 0));
+        // render._shaderValues.setVector( GPUSkinningPlayerResources.shaderPorpID_GPUSkinning_FrameIndex_PixelSegmentation, new Vector4(this.__frameIndex, this.playingClip.pixelSegmentation, 0, 0));
 
     }
+
 
 
     private UpdateMaterial(deltaTime: float , currMtrl: GPUSkinningMaterial )
@@ -651,14 +694,18 @@ export default class GPUSkinningPlayer
         let res = this.res;
         let frameIndex = this.GetFrameIndex();
         this.__frameIndex = frameIndex;
+        this.nextFrameIndex = this.GetNextFrameIndex(frameIndex);
         if(this.lastPlayingClip == this.playingClip && this.lastPlayingFrameIndex == frameIndex)
         {
-            res.Update(deltaTime, currMtrl);
-            return;
+            // res.Update(deltaTime, currMtrl);
+            // return;
+        }
+        else
+        {
+            this.nextLerpProgress = 0;
         }
 
-        this.lastPlayingClip = this.playingClip;
-        this.lastPlayingFrameIndex = frameIndex;
+
 
         let lastPlayedClip = this.lastPlayingClip;
         let playingClip = this.playingClip;
@@ -673,6 +720,12 @@ export default class GPUSkinningPlayer
             blend_crossFade = res.CrossFadeBlendFactor(this.crossFadeProgress, this.crossFadeTime);
         }
 
+        let nextFrameFade = res.CrossFadeBlendFactor(this.nextLerpProgress, playingClip.fps * 0.001);
+        // if(nextFrameFade != 0)
+        // {
+        //     nextFrameFade = 0.5;
+        // }
+
         var mpb = currMtrl.material._shaderValues;
 
         let frame: GPUSkinningFrame = playingClip.frames[frameIndex];
@@ -681,7 +734,10 @@ export default class GPUSkinningPlayer
         {
             res.Update(deltaTime, currMtrl);
             res.UpdatePlayingData(
-                mpb, this.spriteShaderData, playingClip, frameIndex, frame, playingClip.rootMotionEnabled && this.rootMotionEnabled,
+                mpb, this.spriteShaderData, 
+                playingClip, frameIndex, 
+                this.nextFrameIndex, nextFrameFade,
+                frame,  playingClip.rootMotionEnabled && this.rootMotionEnabled,
                 lastPlayedClip, this.GetCrossFadeFrameIndex(), this.crossFadeTime, this.crossFadeProgress
             );
 
@@ -698,8 +754,10 @@ export default class GPUSkinningPlayer
                 this.DoRootMotion(frame, blend_crossFade, true);
             }
         }
+        
 
         this.UpdateEvents(playingClip, frameIndex, frame_crossFade == null ? null : lastPlayedClip, frameIndex_crossFade);
+
     }
 
 

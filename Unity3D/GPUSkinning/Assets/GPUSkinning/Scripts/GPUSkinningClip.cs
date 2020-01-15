@@ -46,7 +46,7 @@ public class GPUSkinningClip
     }
 
 
-    public MemoryStream ToSteam()
+    public MemoryStream ToSteam(List<int> exportBoneIndexList)
     {
         MemoryStream stream = new MemoryStream();
         stream.Position = 0;
@@ -76,7 +76,7 @@ public class GPUSkinningClip
         for (int i = 0; i < frames.Length; i++)
         {
             GPUSkinningFrame item = frames[i];
-            MemoryStream itemStream = item.ToSteam();
+            MemoryStream itemStream = item.ToSteam(exportBoneIndexList, rootMotionEnabled);
             frameSteamList.Add(itemStream);
             b.Write((uint)posBegin);
             b.Write((uint)itemStream.Length);

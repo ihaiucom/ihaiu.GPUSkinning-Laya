@@ -2011,6 +2011,37 @@ window.Laya = (function (exports) {
       this._readyed = true;
       this._activeResource();
     }
+
+    setSubPixels16(x, y, width, height, pixels, miplevel = 0) {
+      // if (this._gpuCompressFormat())
+      //     throw "Texture2D:the format is GPU compression format.";
+      if (!pixels)
+        throw "Texture2D:pixels can't be null.";
+      var gl = LayaGL.instance;
+      var textureType = this._glTextureType;
+      WebGLContext.bindTexture(gl, textureType, this._glTexture);
+      var ext = gl.getExtension('OES_texture_half_float');
+      gl.getExtension('OES_texture_half_float_linear');
+      var glFormat = this._getGLFormat();
+      // gl.texParameterf(textureType, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      // gl.texSubImage2D(textureType, miplevel, x, y, width, height, gl.RGBA, LayaGL.layaGPUInstance._oesTextureHalfFloat.HALF_FLOAT_OES, pixels);
+      // gl.texSubImage2D(textureType, miplevel, x, y, width, height, gl.RGBA, gl.UNSIGNED_SHORT , pixels);
+      // gl.texSubImage2D(textureType, miplevel, x, y, width, height, gl.RGBA, ext.HALF_FLOAT_OES, pixels);
+      // gl.texSubImage2D(textureType, miplevel, x, y, width, height, gl.RGBA,  gl.FLOAT, pixels);
+
+      // gl.texSubImage2D(textureType, miplevel, x, y, width, height, glFormat, gl.FLOAT, pixels);
+      // gl.texSubImage2D(textureType, miplevel, x, y, width, height, gl.RGBA,  gl.FLOAT, pixels); // 对的
+      // gl.texImage2D(textureType, miplevel, gl.RGBA32F, width, height, 0, gl.RGBA, gl.FLOAT, pixels); //对的
+
+      // gl.texImage2D(textureType, miplevel, gl.RGBA16F, width, height, 0, gl.RGBA, gl.HALF_FLOAT, pixels); //对的
+
+      // gl.texImage2D(textureType, miplevel, gl.RGBA, width, height, 0, gl.RGBA, ext.HALF_FLOAT_OES , pixels); //对的
+      // gl.texImage2D(textureType, miplevel, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_SHORT_4_4_4_4 , pixels); //对的
+      gl.texImage2D(textureType, miplevel, gl.RGBA, width, height, 0, gl.RGBA, LayaGL.layaGPUInstance._oesTextureHalfFloat.HALF_FLOAT_OES, pixels);
+      this._readyed = true;
+      this._activeResource();
+    }
+
     setCompressData(data) {
       switch (this._format) {
         case exports.TextureFormat.DXT1:
@@ -10431,13 +10462,7 @@ window.Laya = (function (exports) {
       this.initRender(Render._mainCanvas, width, height);
       window.requestAnimationFrame(loop);
       function loop(stamp) {
-        // TODO ZF
-        try {
-          ILaya.stage._loop();
-        }
-        catch (error) {
-          console.error(error);
-        }
+        ILaya.stage._loop();
         window.requestAnimationFrame(loop);
       }
       ILaya.stage.on("visibilitychange", this, this._onVisibilitychange);
@@ -10453,7 +10478,7 @@ window.Laya = (function (exports) {
     initRender(canvas, w, h) {
       function getWebGLContext(canvas) {
         var gl;
-        var names = ["experimental-webgl", "webgl2", "webgl",  "webkit-3d", "moz-webgl"];
+        var names = ["experimental-webgl", "webgl2", "webgl", "webkit-3d", "moz-webgl"];
         if (!Config.useWebGL2 || Browser.onBDMiniGame) {
           names.shift();
         }

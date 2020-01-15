@@ -34,12 +34,15 @@ export default class GPUSkinningFrame
     }
 
     
-    FromBytes(data: ArrayBuffer): void
+    FromBytes(data: ArrayBuffer, rootMotionEnabled:boolean): void
     {
         var b:Laya.Byte = new Laya.Byte(data);
-        this.rootMotionDeltaPositionL = b.readFloat32();
-        this.rootMotionDeltaPositionQ = ByteReadUtil.ReadQuaternion(b);
-        this.rootMotionDeltaRotation = ByteReadUtil.ReadQuaternion(b);
+        if(rootMotionEnabled)
+        {
+            this.rootMotionDeltaPositionL = b.readFloat32();
+            this.rootMotionDeltaPositionQ = ByteReadUtil.ReadQuaternion(b);
+            this.rootMotionDeltaRotation = ByteReadUtil.ReadQuaternion(b);
+        }
 
         var matricesCount = b.readUint32();
         this.matrices = [];
@@ -52,10 +55,10 @@ export default class GPUSkinningFrame
 
     }
 
-    static CreateFromBytes(data: ArrayBuffer):GPUSkinningFrame
+    static CreateFromBytes(data: ArrayBuffer, rootMotionEnabled:boolean):GPUSkinningFrame
     {
         var obj = new GPUSkinningFrame();
-        obj.FromBytes(data);
+        obj.FromBytes(data, rootMotionEnabled);
         return obj;
     }
 

@@ -386,7 +386,7 @@ namespace GPUSkingings
             }
 
 
-            string savedPath = dir + "/" + meshName + ".skinlm";
+            string savedPath = dir + "/" + meshName + ".bin";
             //string savedPath = dir + "/GPUSKinning_Mesh_Hero_1001_Dianguanglongqi_Skin1-GPUSKinning_Mesh_Hero_1001_Dianguanglongqi_Skin1.lm";
 
             using (FileStream fileStream = new FileStream(savedPath, FileMode.Create))

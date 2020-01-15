@@ -91,17 +91,17 @@ export default class GPUSkining
     static resRoot = "res3d/Conventional/";
     static GetAnimName(name: string): string
     {
-      return `GPUSKinning_${name}_Anim.skinlani`;
+      return `GPUSKinning_${name}_Anim.bin`;
     }
 
     static GetMeshName(name: string): string
     {
-      return `GPUSKinning_${name}_Mesh.skinlm`;
+      return `GPUSKinning_${name}_Mesh.bin`;
     }
     
     static GetMatrixTextureName(name: string): string
     {
-      return `GPUSKinning_${name}_MatrixTexture.bytes`;
+      return `GPUSKinning_${name}_MatrixTexture.bin`;
     }
     
     static GetMainTextureName(name: string): string
@@ -153,7 +153,7 @@ export default class GPUSkining
     {
       if(!materialCls)
       {
-        materialCls = GPUSkinningCartoonMaterial;
+        materialCls = GPUSkinningUnlitMaterial;
       }
       var animPath: string = this.GetPath(this.GetAnimName(name));
       var meshPath: string = this.GetPath(this.GetMeshName(name));
@@ -167,6 +167,12 @@ export default class GPUSkining
       var anim = await GPUSkinningAnimation.LoadAsync(animPath);
       // window['anim'] = anim;
       // console.log(anim);
+
+      if(anim == null)
+      {
+        console.error("GPUSkinning资源加载失败", name);
+        return;
+      }
 
       var mesh = await GPUSkiningMesh.LoadAsync(meshPath);
       var mainTexture:Laya.Texture2D = await this.LoadAsync(mainTexturePath, Laya.Loader.TEXTURE2D);

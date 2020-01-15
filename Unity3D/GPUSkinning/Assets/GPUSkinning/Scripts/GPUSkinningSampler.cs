@@ -1299,6 +1299,8 @@ public class GPUSkinningSampler : MonoBehaviour
             animationClips = controller.animationClips;
         }
 
+        skinQuality = GPUSkinningQuality.Bone4;
+
 
         int count = animationClips.Length;
         //Debug.Log("count=" + count);
