@@ -9,8 +9,6 @@ import GPUSkinningAnimation from "./Datas/GPUSkinningAnimation";
 import GPUSkinningPlayerMono from "./GPUSkinningPlayerMono";
 import { GPUSkinningBaseMaterial } from "./Material/GPUSkinningBaseMaterial";
 import { GPUSkinningUnlitMaterial } from "./Material/GPUSkinningUnlitMaterial";
-import LayaExtends_Node from "../LayaExtends/LayaExtends_Node";
-import LayaExtends_Texture2D from "../LayaExtends/LayaExtends_Texture2D";
 import GPUSkinningPlayerMonoManager from "./GPUSkinningPlayerMonoManager";
 import GPUSkinningPlayer from "./GPUSkinningPlayer";
 import GPUSkinningPlayerResources from "./GPUSkinningPlayerResources";
@@ -18,8 +16,10 @@ import GPUSkinningPlayerJoint from "./GPUSkinningPlayerJoint";
 import { GPUSkiningLoadModelV05 } from "./Mesh/GPUSkiningLoadModelV05";
 import GPUSkiningVertexMesh from "./Mesh/GPUSkiningVertexMesh";
 import GPUSkinningClip from "./Datas/GPUSkinningClip";
-import LayaExtends_Laya3D from "../LayaExtends/LayaExtends_Laya3D";
 import { GPUSkinningCartoonMaterial } from "./Material/GPUSkinningCartoonMaterial";
+import LayaExtends_Node from "../LayaExtends/LayaExtends_Node";
+// import LayaExtends_Laya3D from "../LayaExtends/LayaExtends_Laya3D";
+// import LayaExtends_Texture2D from "../LayaExtends/LayaExtends_Texture2D";
 export default class GPUSkining
 {
     static EXT_SKING_MESH = "skinlm";
@@ -54,8 +54,8 @@ export default class GPUSkining
 
 
       LayaExtends_Node.Init();
-      LayaExtends_Texture2D.Init();
-      LayaExtends_Laya3D.Init();
+      // LayaExtends_Texture2D.Init();
+      // LayaExtends_Laya3D.Init();
 
       Laya3D.SKING_MESH = "SKING_MESH";
 

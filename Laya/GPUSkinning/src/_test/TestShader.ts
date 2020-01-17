@@ -68,14 +68,14 @@ export default class TestShader
         for(var j = 0; j < nameList.length; j ++)
         {
             var mono = await GPUSkining.CreateByNameAsync(nameList[j]);
-            // mono.Player.isRandomPlayClip = true;
+            mono.Player.isRandomPlayClip = true;
             window['mono'] = mono;
             mono.Player.Play("ATTACK_01");
             
             for(var i = 0; i < mono.anim.clips.length; i ++)
             {
-                // mono.anim.clips[i].wrapMode = GPUSkinningWrapMode.Loop;
-                // mono.anim.clips[i].individualDifferenceEnabled =true;
+                mono.anim.clips[i].wrapMode = GPUSkinningWrapMode.Loop;
+                mono.anim.clips[i].individualDifferenceEnabled =true;
             }
 
             this.scene.addChild(mono.owner);
@@ -86,11 +86,10 @@ export default class TestShader
             sprite.transform.localPositionX = x * 1.5;
             sprite.transform.localPositionZ = -y * 2;
             // sprite.transform.localPositionY = -0.5;
-            // if(j == 0)
-            // {
-            //     this.CloneMono(mono);
-            // }
-            break;
+            if(j == 0)
+            {
+                this.CloneMono(mono);
+            }
         }
         return;
         

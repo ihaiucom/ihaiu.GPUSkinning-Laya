@@ -156,7 +156,7 @@ namespace GPUSkingings
         public static void ExportGPUSkinningLayaByDirectory()
         {
             string dirPath = "Assets/GameResources/GPUSkinning";
-            string outDir = "../Unity3DExport/res3d/Conventional";
+            string outDir = "../Unity3DExport/res3d/GPUSkinning-30";
             if (!Directory.Exists(dirPath))
             {
                 Debug.Log("不存在该目录:" + dirPath);
@@ -224,6 +224,7 @@ namespace GPUSkingings
 
         public static void GPUSkinningToGPUSkinningLayaMainTexture(string dirPath, string outDir)
         {
+            string outDirLaya = "../Unity3DExport/res3d/Conventional";
             string[] fileList = Directory.GetFiles(dirPath, "*.mat");
             foreach (string filePath in fileList)
             {
@@ -236,11 +237,75 @@ namespace GPUSkingings
                 string texturePath =  AssetDatabase.GetAssetPath(material.mainTexture);
                 string ext = Path.GetExtension(texturePath);
 
+
+                string layaTexturePath = outDirLaya + "/" + texturePath;
+                if (!File.Exists(layaTexturePath))
+                {
+                    layaTexturePath = outDirLaya + "/" + texturePath.Replace(ext, ".jpg");
+                }
+                if (!File.Exists(layaTexturePath))
+                {
+                    Debug.LogWarning("没找到文件layaTexturePath=" + layaTexturePath);
+                    layaTexturePath = texturePath;
+                }
+
                 string dest = outDir + "/" + material.name.Replace("_Material_", "_") + "_MainTexture" + ext;
-                File.Copy(texturePath, dest, true);
+                File.Copy(layaTexturePath, dest, true);
             }
 
             Debug.Log("MainTexture.Count=" + fileList.Length);
+        }
+
+
+        [MenuItem("GPUSkinning/拷贝Laya导出的贴图替换现在的主贴图")]
+        public static void CopyMainTextureUseLayaExport()
+        {
+            string dirPath = "Assets/GameResources/GPUSkinning";
+            string outDir = "../Unity3DExport/res3d/GPUSkinning-30";
+            string outDirLaya = "../Unity3DExport/res3d/Conventional";
+            if (!Directory.Exists(dirPath))
+            {
+                Debug.Log("不存在该目录:" + dirPath);
+                return;
+            }
+
+            if (!Directory.Exists(outDir))
+            {
+                Directory.CreateDirectory(outDir);
+            }
+
+
+            string[] fileList = Directory.GetFiles(dirPath, "*.mat");
+            foreach (string filePath in fileList)
+            {
+                Material material = AssetDatabase.LoadAssetAtPath<Material>(filePath);
+                if (material == null || material.mainTexture == null)
+                {
+                    continue;
+                }
+
+                string texturePath = AssetDatabase.GetAssetPath(material.mainTexture);
+                string ext = Path.GetExtension(texturePath);
+                
+
+                string layaTexturePath = outDirLaya + "/"  + texturePath;
+                if(!File.Exists(layaTexturePath))
+                {
+                    layaTexturePath = outDirLaya + "/" + texturePath.Replace(ext, ".jpg");
+                }
+                if (!File.Exists(layaTexturePath))
+                {
+                    Debug.LogWarning("没找到文件layaTexturePath=" + layaTexturePath);
+                    continue;
+                }
+                //Debug.Log(layaTexturePath);
+
+                string dest = outDir + "/" + material.name.Replace("_Material_", "_") + "_MainTexture" + ext;
+                File.Copy(layaTexturePath, dest, true);
+            }
+
+            Debug.Log("MainTexture.Count=" + fileList.Length);
+
         }
     }
 }

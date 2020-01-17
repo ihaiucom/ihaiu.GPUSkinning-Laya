@@ -6,7 +6,7 @@ import GameUI from "./script/GameUI"
 export default class GameConfig{
     static width:number=1334;
     static height:number=750;
-    static scaleMode:string= Laya.Stage.SCALE_SHOWALL;
+    static scaleMode:string= Laya.Stage.SCALE_FIXED_AUTO;
     static screenMode:string="none";
     static alignV:string="top";
     static alignH:string="left";

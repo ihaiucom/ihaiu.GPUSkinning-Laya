@@ -90,6 +90,7 @@ export default class GPUSkinningPlayerMono extends Laya.Script3D
         this.textureRawData = null;
 
         GPUSkinningPlayerMono.playerManager.Unregister(this);
+        this.player = null;
     }
 
     public SetData(anim: GPUSkinningAnimation, mesh: Mesh, mtrl: Material, textureRawData: Texture2D)
