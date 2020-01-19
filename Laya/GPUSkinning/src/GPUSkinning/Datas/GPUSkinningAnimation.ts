@@ -6,7 +6,7 @@ import Byte = Laya.Byte;
 import ByteReadUtil from "./ByteReadUtil";
 
 /** 烘焙动画--全部数据信息 */
-export default class GPUSkinningAnimation
+export default class GPUSkinningAnimation extends Laya.Resource
 {
     version:string;
     /** 编号 */
@@ -164,20 +164,49 @@ export default class GPUSkinningAnimation
     
     static Load(path: string, callback:(  (anim: GPUSkinningAnimation) => any)  ):void
     {
-        Laya.loader.load(path, Laya.Handler.create(this, (data: ArrayBuffer)=>
+        Laya.loader.load(path, Laya.Handler.create(this, (data: ArrayBuffer | GPUSkinningAnimation)=>
         {
+
             if(data == null)
             {
                 console.error("加载资源失败" , path);
                 callback(null);
                 return;
             }
-            var obj = GPUSkinningAnimation.CreateFromBytes(data);
+            
+            var anim: GPUSkinningAnimation;
+            if(data instanceof ArrayBuffer)
+            {
+                anim = GPUSkinningAnimation.CreateFromBytes(data);
+                anim._url = Laya.URL.formatURL(path);
+                Laya.Loader.clearRes(path);
+                Laya.Loader.cacheRes(path, anim);
+            }
+            else
+            {
+                anim = data;
+            }
+
             if(callback)
             {
-                callback(obj);
+                callback(anim);
             }
         }), null, Laya.Loader.BUFFER)
     }
+
+    protected _disposeResource(): void 
+    {
+		super._disposeResource();
+    }
+    
+    
+	/**
+	 * 销毁资源,销毁后资源不能恢复。
+	 */
+	destroy(): void {
+		// console.log("destroy GPUSkinningAnimation", this._url);
+		super.destroy();
+	}
+    
 
 }

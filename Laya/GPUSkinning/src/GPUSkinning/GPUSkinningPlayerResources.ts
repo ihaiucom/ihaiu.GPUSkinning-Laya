@@ -217,6 +217,17 @@ export default class GPUSkinningPlayerResources
         for (let i = 0; i < numPlayers; ++i)
         {
             let player: GPUSkinningPlayerMono  = this.players[i];
+            if(!player.isEnable)
+            {
+                // console.log(player.anim.name, player.isEnable);
+                continue;
+            }
+            
+            if(!player.Player || !player.Player.Position)
+            {
+                console.error("player.Player =null");
+                return;
+            }
             let bounds: BoundSphere  = this.cullingBounds.Get(i);
             bounds.center = player.Player.Position;
             bounds.radius = this.anim.sphereRadius;
@@ -231,7 +242,7 @@ export default class GPUSkinningPlayerResources
         {
             this.executeOncePerFrame.MarkAsExecuted();
             this.time += deltaTime;
-            this.UpdateCullingBounds();
+            // this.UpdateCullingBounds();
         }
 
         if (mtrl.executeOncePerFrame.CanBeExecute())
@@ -327,6 +338,7 @@ export default class GPUSkinningPlayerResources
         {
             let materialItem = new GPUSkinningMaterial();
             let material =  materialItem.material = <Material> originalMaterial.clone();
+            material.lock = true;
 
             mtrls[i] = materialItem;
             
@@ -344,7 +356,11 @@ export default class GPUSkinningPlayerResources
 
     CloneMaterial(originalMaterial:Material, skinningQuality: GPUSkinningQuality)
     {
-        console.log("CloneMaterial skinningQuality=", skinningQuality);
+        if(originalMaterial == null)
+        {
+            console.error("GPUSkinningPlayerResources.CloneMaterial originalMaterial=null");
+        }
+        // console.log("CloneMaterial skinningQuality=", skinningQuality);
         let material =  <Material> originalMaterial.clone();
         
         let SKILL_N:ShaderDefine;

@@ -20,6 +20,8 @@ import Transform3D = Laya.Transform3D;
 
 
 import GPUSkinningAnimEvent from "./Datas/GPUSkinningAnimEvent";
+import GPUSkining from "./GPUSkining";
+import { GPUSkinningUnlitMaterial } from "./Material/GPUSkinningUnlitMaterial";
 
 /** GPU骨骼动画--组件播放控制器 */
 export default class GPUSkinningPlayer
@@ -402,6 +404,24 @@ export default class GPUSkinningPlayer
         this.mtrl = mtrl2;
         this.mr.sharedMaterial = mtrl == null ? null : mtrl.material;
         this.mf.sharedMesh = res.mesh;
+
+        // if(res.anim.name == "Monster_4003_Kuileishi_Skin1")
+        // {
+        //     var path = GPUSkining.GetPath("GPUSKinning_Monster_4003_Kuileishi_Skin1_MainTexture2.png");
+        //     Laya.loader.load(path, Laya.Handler.create(this, (texture2D:any)=>
+		// 	{
+        //         if(texture2D)
+        //         {
+        //             var material2:GPUSkinningUnlitMaterial = <GPUSkinningUnlitMaterial> res.CloneMaterial(mtrl.material, res.anim.skinQuality);
+        //             material2.albedoTexture = texture2D;
+        //             var materialList = [mtrl.material, material2];
+        //             this.mr.sharedMaterials = materialList;
+        //         }
+                
+
+        //     }), null, Laya.Loader.TEXTURE2D);
+            
+        // }
 
 
         this.ConstructJoints();

@@ -11,6 +11,7 @@ import GPUSkinningPlayerResources from "./GPUSkinningPlayerResources";
 /** GPU骨骼动画--组件 */
 export default class GPUSkinningPlayerMono extends Laya.Script3D
 {
+    isEnable: boolean = false;
     /** 烘焙动画--全部数据信息 */
     anim: GPUSkinningAnimation;
 
@@ -54,12 +55,33 @@ export default class GPUSkinningPlayerMono extends Laya.Script3D
         dest.mtrl = this.mtrl;
         dest.textureRawData = this.textureRawData;
         dest.Init();
-	}
-    
+    }
+    /**
+     * 创建后只执行一次
+     * 此方法为虚方法，使用时重写覆盖即可
+     */
+    onAwake():void
+    {
+
+        // console.log("onAwake");
+    }
+
+    /**
+     * 每次启动后执行
+     * 此方法为虚方法，使用时重写覆盖即可
+     */
+    onEnable():void
+    {
+        // console.log("onEnable");
+        this.Init();
+
+        this.isEnable = true;
+    }
+
 
     onStart():void
     {
-        this.Init();
+        // console.log("onStart");
     }
 
     
@@ -80,16 +102,27 @@ export default class GPUSkinningPlayerMono extends Laya.Script3D
 
 	}
 
+	/**
+	 * 禁用时执行
+	 * 此方法为虚方法，使用时重写覆盖即可
+	 */
+	onDisable(): void {
+
+        // console.log("onDisable");
+        this.isEnable = false;
+	}
+
     
     onDestroy():void
     {
 
+        // console.log("onDestroy");
+        GPUSkinningPlayerMono.playerManager.Unregister(this);
         this.anim = null;
         this.mesh = null;
         this.mtrl = null;
         this.textureRawData = null;
 
-        GPUSkinningPlayerMono.playerManager.Unregister(this);
         this.player = null;
     }
 
@@ -110,6 +143,7 @@ export default class GPUSkinningPlayerMono extends Laya.Script3D
     Init()
     {
         this.gameObject = <Laya.MeshSprite3D> this.owner;
+
 
         if(this.player != null)
         {

@@ -32161,7 +32161,7 @@ declare module laya.resource {
 		/**
 		 * @private 
 		 */
-		private _url:any;
+		 _url:any;
 
 		/**
 		 * @private 

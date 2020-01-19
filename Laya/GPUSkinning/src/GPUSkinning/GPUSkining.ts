@@ -119,24 +119,36 @@ export default class GPUSkining
 	{
 		return new  Promise<any>((resolve)=>
 		{
-			Laya.loader.load(path, Laya.Handler.create(this, (arrayBuffer:ArrayBuffer)=>
+			Laya.loader.load(path, Laya.Handler.create(this, (arrayBuffer:ArrayBuffer | Laya.Texture2D)=>
 			{
-        
-        var f32 = new Float32Array(arrayBuffer);
-        var texture: Laya.Texture2D = new Laya.Texture2D(width, height, Laya.TextureFormat.R32G32B32A32, false, true);
-        texture.wrapModeU = Laya.BaseTexture.WARPMODE_CLAMP;
-        texture.wrapModeV = Laya.BaseTexture.WARPMODE_CLAMP;
-        texture.filterMode = Laya.BaseTexture.FILTERMODE_POINT;
-        texture.anisoLevel = 0;
-        texture.lock = true;
-        texture.setSubPixels(0, 0, width, height, f32, 0)
+        var texture: Laya.Texture2D;
+        if(arrayBuffer instanceof ArrayBuffer)
+        {
+          var f32 = new Float32Array(arrayBuffer);
+          texture = new Laya.Texture2D(width, height, Laya.TextureFormat.R32G32B32A32, false, true);
+          texture.wrapModeU = Laya.BaseTexture.WARPMODE_CLAMP;
+          texture.wrapModeV = Laya.BaseTexture.WARPMODE_CLAMP;
+          texture.filterMode = Laya.BaseTexture.FILTERMODE_POINT;
+          texture.anisoLevel = 0;
+          texture.lock = true;
+          texture.setSubPixels(0, 0, width, height, f32, 0);
+          texture._url =  Laya.URL.formatURL(path);
+
+
+          Laya.Loader.clearRes(path);
+          Laya.Loader.cacheRes(path, texture);
+        }
+        else
+        {
+          texture = arrayBuffer;
+        }
         
         resolve(texture);
 
 			}), null, Laya.Loader.BUFFER);
 		});
-	}
-    
+  }
+  
 	static LoadAsync(path: string, type?:string): Promise<any>
 	{
 		return new  Promise<any>((resolve)=>
@@ -148,8 +160,20 @@ export default class GPUSkining
 			}), null, type);
 		});
 	}
+    
+	static Load3DAsync(path: string, type?:string): Promise<any>
+	{
+		return new  Promise<any>((resolve)=>
+		{
+			Laya.loader.create(path, Laya.Handler.create(this, (data:any)=>
+			{
+        resolve(data);
 
-    static async CreateByNameAsync(name: string, mainTexturePath?: string, materialCls?: any): Promise<GPUSkinningPlayerMono>
+			}), null, type);
+		});
+	}
+
+    static async CreateByNameAsync(name: string, isUnloadBin?: boolean, mainTexturePath?: string, materialCls?: any): Promise<GPUSkinningPlayerMono>
     {
       if(!materialCls)
       {
@@ -165,8 +189,6 @@ export default class GPUSkining
      
 
       var anim = await GPUSkinningAnimation.LoadAsync(animPath);
-      // window['anim'] = anim;
-      // console.log(anim);
 
       if(anim == null)
       {
@@ -175,25 +197,16 @@ export default class GPUSkining
       }
 
       var mesh = await GPUSkiningMesh.LoadAsync(meshPath);
-      var mainTexture:Laya.Texture2D = await this.LoadAsync(mainTexturePath, Laya.Loader.TEXTURE2D);
-      // console.log(mainTexture);
-      // console.log(mesh);
+      var mainTexture:Laya.Texture2D = await this.Load3DAsync(mainTexturePath, Laya.Loader.TEXTURE2D);
       var animTexture = await this.LoadAnimTextureAsync(matrixTexturePath, anim.textureWidth, anim.textureHeight);
-      // console.log(animTexture);
       var material:GPUSkinningUnlitMaterial = new materialCls();
       material.albedoTexture = mainTexture;
       material.GPUSkinning_TextureMatrix = animTexture;
-      // console.log(material);
-
-      // var mat:Laya.UnlitMaterial = window['planemat'];
-      // if(mat)mat.albedoTexture = animTexture;
 
       var sprite = new Laya.MeshSprite3D();
       var mono: GPUSkinningPlayerMono = sprite.addComponent(GPUSkinningPlayerMono);
       mono.SetData(anim, mesh, material, animTexture);
-      // window['mono'] = mono;
-      // console.log(mono);
-      // mono.Player.Play("IDLE");
+
 
       return mono;
     }

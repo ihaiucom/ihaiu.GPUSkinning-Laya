@@ -51,6 +51,7 @@ export default class TestShader
         // plane.meshRenderer.sharedMaterial = mat;
 
         var nameList = [
+            "Monster_4003_Kuileishi_Skin1",
             "Hero_1001_Dianguanglongqi_Skin1",
             "Hero_1002_Fengyunzhanji_Skin1",
             "Hero_1004_Dongzhuo_Skin1",
@@ -67,7 +68,8 @@ export default class TestShader
 
         for(var j = 0; j < nameList.length; j ++)
         {
-            var mono = await GPUSkining.CreateByNameAsync(nameList[j]);
+            var resId = nameList[j];
+            var mono = await GPUSkining.CreateByNameAsync(nameList[j], true);
             mono.Player.isRandomPlayClip = true;
             window['mono'] = mono;
             mono.Player.Play("ATTACK_01");
@@ -81,25 +83,28 @@ export default class TestShader
             this.scene.addChild(mono.owner);
             var sprite: Laya.MeshSprite3D = <Laya.MeshSprite3D> mono.owner;
 
+            // sprite.meshRenderer.sharedMaterials
+
             var y = Math.floor(j / 5);
             var x = j - y * 5 - 2.5;
             sprite.transform.localPositionX = x * 1.5;
             sprite.transform.localPositionZ = -y * 2;
             // sprite.transform.localPositionY = -0.5;
-            if(j == 0)
-            {
-                this.CloneMono(mono);
-            }
+            // if(j == 0)
+            // {
+            //     this.CloneMono(mono);
+            // }
+            break;
         }
         return;
         
 
 
-        var mono = await GPUSkining.CreateByNameAsync("MutantAnim2", "res/gpuskining/enemy_mutant_d.jpg");
+        var mono = await GPUSkining.CreateByNameAsync("MutantAnim2", true, "res/gpuskining/enemy_mutant_d.jpg");
         
         this.scene.addChild(mono.owner);
 
-        var mono = await GPUSkining.CreateByNameAsync("Hero_1001_Dianguanglongqi_Skin1", "res/gpuskining/Hero_1001_Dianguanglongqi.jpg");
+        var mono = await GPUSkining.CreateByNameAsync("Hero_1001_Dianguanglongqi_Skin1",true, "res/gpuskining/Hero_1001_Dianguanglongqi.jpg");
         if(mono)
         {
             mono.Player.Play("IDLE");

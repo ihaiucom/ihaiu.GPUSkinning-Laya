@@ -18,6 +18,12 @@ export default class GPUSkiningMesh extends Laya.Mesh
 				if(data instanceof ArrayBuffer)
 				{
 					var mesh = GPUSkiningMesh._parse(data);
+					mesh._url = Laya.URL.formatURL(path);
+
+					                
+
+					Laya.Loader.clearRes(path);
+					Laya.Loader.cacheRes(path, mesh);
 					resolve(mesh);
 				}
 				else
@@ -27,5 +33,14 @@ export default class GPUSkiningMesh extends Laya.Mesh
 
 			}), null, Laya.Loader.BUFFER);
 		});
+	}
+
+	
+	/**
+	 * 销毁资源,销毁后资源不能恢复。
+	 */
+	destroy(): void {
+		// console.log("destroy GPUSkiningMesh", this._url);
+		super.destroy();
 	}
 }
