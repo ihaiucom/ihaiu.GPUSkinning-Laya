@@ -887,6 +887,13 @@
       let numPlayers = this.players.length;
       for (let i = 0; i < numPlayers; ++i) {
         let player = this.players[i];
+        if (!player.isEnable) {
+          continue;
+        }
+        if (!player.Player || !player.Player.Position) {
+          console.error("player.Player =null");
+          return;
+        }
         let bounds = this.cullingBounds.Get(i);
         bounds.center = player.Player.Position;
         bounds.radius = this.anim.sphereRadius;
@@ -897,7 +904,6 @@
       if (this.executeOncePerFrame.CanBeExecute()) {
         this.executeOncePerFrame.MarkAsExecuted();
         this.time += deltaTime;
-        this.UpdateCullingBounds();
       }
       if (mtrl.executeOncePerFrame.CanBeExecute()) {
         let anim = this.anim;
@@ -949,6 +955,7 @@
       for (let i = 0; i < MaterialState.Count; ++i) {
         let materialItem = new GPUSkinningMaterial();
         let material = materialItem.material = originalMaterial.clone();
+        material.lock = true;
         mtrls[i] = materialItem;
         material.name = GPUSkinningPlayerResources.keywords[i];
         material._shaderValues.addDefine(SKILL_N);
@@ -956,7 +963,9 @@
       }
     }
     CloneMaterial(originalMaterial, skinningQuality) {
-      console.log("CloneMaterial skinningQuality=", skinningQuality);
+      if (originalMaterial == null) {
+        console.error("GPUSkinningPlayerResources.CloneMaterial originalMaterial=null");
+      }
       let material = originalMaterial.clone();
       let SKILL_N;
       switch (skinningQuality) {
@@ -1033,6 +1042,7 @@
       if (item.players.indexOf(player) == -1) {
         item.players.push(player);
         item.AddCullingBounds();
+        player.isEnable = true;
       }
       return item;
     }
@@ -1047,6 +1057,7 @@
         if (playerIndex != -1) {
           items[i].players.splice(playerIndex, 1);
           items[i].RemoveCullingBounds(playerIndex);
+          player.isEnable = false;
           if (items[i].players.length == 0) {
             items[i].Destroy();
             items.splice(i, 1);
@@ -1283,7 +1294,7 @@
       }
     }
     GetTheLastFrameIndex_WrapMode_Once(clip) {
-      return Math.floor(clip.length * clip.fps) - 1;
+      return clip.frameLastIndex;
     }
     GetFrameIndex_WrapMode_Loop(clip, time) {
       return Math.floor(time * clip.fps) % Math.floor(clip.length * clip.fps);
@@ -1397,6 +1408,7 @@
             || (playingClip != null && !this.isPlaying)) {
             this.SetNewPlayingClip(item, nomrmalizeTime);
           }
+          this.time = nomrmalizeTime * item.length;
           return;
         }
       }
@@ -1474,7 +1486,7 @@
           else {
             this.UpdateMaterial(timeDelta, currMtrl);
             this.time += timeDelta;
-            if (this.time > playingClip.length) {
+            if (this.time > playingClip.length || this.__frameIndex == this.GetTheLastFrameIndex_WrapMode_Once(this.playingClip)) {
               this.time = playingClip.length;
             }
           }
@@ -1513,9 +1525,6 @@
         blend_crossFade = res.CrossFadeBlendFactor(this.crossFadeProgress, this.crossFadeTime);
       }
       let nextFrameFade = res.CrossFadeBlendFactor(this.nextLerpProgress, playingClip.fps * 0.001);
-      if (nextFrameFade != 0) {
-        nextFrameFade = 0.5;
-      }
       var mpb = currMtrl.material._shaderValues;
       let frame = playingClip.frames[frameIndex];
       if (this.Visible ||
@@ -1595,6 +1604,7 @@
   class GPUSkinningPlayerMono extends Laya.Script3D {
     constructor() {
       super(...arguments);
+      this.isEnable = false;
       this.defaultPlayingClipIndex = 0;
       this.rootMotionEnabled = false;
       this.lodEnabled = true;
@@ -1610,8 +1620,13 @@
       dest.textureRawData = this.textureRawData;
       dest.Init();
     }
-    onStart() {
+    onAwake() {
+    }
+    onEnable() {
       this.Init();
+      this.isEnable = true;
+    }
+    onStart() {
     }
     onUpdate() {
       if (this.player != null) {
@@ -1620,12 +1635,16 @@
     }
     onPreRender() {
     }
+    onDisable() {
+      this.isEnable = false;
+    }
     onDestroy() {
+      GPUSkinningPlayerMono.playerManager.Unregister(this);
       this.anim = null;
       this.mesh = null;
       this.mtrl = null;
       this.textureRawData = null;
-      GPUSkinningPlayerMono.playerManager.Unregister(this);
+      this.player = null;
     }
     SetData(anim, mesh, mtrl, textureRawData) {
       if (this.player != null) {
@@ -2035,6 +2054,9 @@
         Laya.loader.load(path, Laya.Handler.create(this, (data) => {
           if (data instanceof ArrayBuffer) {
             var mesh = GPUSkiningMesh._parse(data);
+            mesh._url = Laya.URL.formatURL(path);
+            Laya.Loader.clearRes(path);
+            Laya.Loader.cacheRes(path, mesh);
             resolve(mesh);
           }
           else {
@@ -2042,6 +2064,9 @@
           }
         }), null, Laya.Loader.BUFFER);
       });
+    }
+    destroy() {
+      super.destroy();
     }
   }
 
@@ -2186,6 +2211,8 @@
       this.pixelSegmentation = 0;
       this.rootMotionEnabled = false;
       this.individualDifferenceEnabled = false;
+      this.frameCount = 0;
+      this.frameLastIndex = 0;
     }
     FromBytes(data) {
       var b = new Byte$1(data);
@@ -2235,6 +2262,8 @@
         var item = GPUSkinningAnimEvent.CreateFromBytes(itemBuffer);
         eventList.push(item);
       }
+      this.frameCount = Math.floor(this.length * this.fps);
+      this.frameLastIndex = this.frameCount - 1;
     }
     static CreateFromBytes(data) {
       var obj = new GPUSkinningClip();
@@ -2244,8 +2273,9 @@
   }
 
   var Byte$2 = Laya.Byte;
-  class GPUSkinningAnimation {
+  class GPUSkinningAnimation extends Laya.Resource {
     constructor() {
+      super(...arguments);
       this.bonesCount = 67;
       this.rootBoneIndex = 0;
       this.textureWidth = 0;
@@ -2330,11 +2360,26 @@
           callback(null);
           return;
         }
-        var obj = GPUSkinningAnimation.CreateFromBytes(data);
+        var anim;
+        if (data instanceof ArrayBuffer) {
+          anim = GPUSkinningAnimation.CreateFromBytes(data);
+          anim._url = Laya.URL.formatURL(path);
+          Laya.Loader.clearRes(path);
+          Laya.Loader.cacheRes(path, anim);
+        }
+        else {
+          anim = data;
+        }
         if (callback) {
-          callback(obj);
+          callback(anim);
         }
       }), null, Laya.Loader.BUFFER);
+    }
+    _disposeResource() {
+      super._disposeResource();
+    }
+    destroy() {
+      super.destroy();
     }
   }
 
@@ -2730,107 +2775,6 @@
   GPUSkinningUnlitMaterial.BLEND_DST = Shader3D$4.propertyNameToID("s_BlendDst");
   GPUSkinningUnlitMaterial.DEPTH_TEST = Shader3D$4.propertyNameToID("s_DepthTest");
   GPUSkinningUnlitMaterial.DEPTH_WRITE = Shader3D$4.propertyNameToID("s_DepthWrite");
-
-  class LayaUtil {
-    static GetComponentsInChildren(go, componentType, outComponents) {
-      if (!outComponents) {
-        outComponents = [];
-      }
-      for (let i = 0, len = go.numChildren; i < len; i++) {
-        let child = go.getChildAt(i);
-        let component = child.getComponent(componentType);
-        if (component) {
-          outComponents.push(component);
-        }
-        this.GetComponentsInChildren(child, componentType, outComponents);
-      }
-      return outComponents;
-    }
-  }
-
-  class LayaExtends_Node {
-    constructor() {
-      Laya.Node.prototype.getComponentsInChildren = this.getComponentsInChildren;
-    }
-    static Init() {
-      if (this.isInited)
-        return;
-      this.isInited = true;
-      new LayaExtends_Node();
-    }
-    getComponentsInChildren(componentType, outComponents) {
-      if (outComponents) {
-        outComponents.length = 0;
-      }
-      else {
-        outComponents = [];
-      }
-      LayaUtil.GetComponentsInChildren(this, componentType, outComponents);
-      return outComponents;
-    }
-  }
-  LayaExtends_Node.isInited = false;
-
-  var LayaGL$1 = Laya.LayaGL;
-  var WebGLContext = Laya.WebGLContext;
-  class LayaExtends_Texture2D {
-    constructor() {
-      Laya.Texture2D.prototype.setFloatPixels = this.setFloatPixels;
-      Laya.Texture2D.prototype._setFloatPixels = this._setFloatPixels;
-    }
-    static Init() {
-      if (this.isInited)
-        return;
-      this.isInited = true;
-      new LayaExtends_Texture2D();
-    }
-    setFloatPixels(pixels, miplevel = 0) {
-      if (this._gpuCompressFormat())
-        throw "Texture2D:the format is GPU compression format.";
-      if (!pixels)
-        throw "Texture2D:pixels can't be null.";
-      var width = Math.max(this._width >> miplevel, 1);
-      var height = Math.max(this._height >> miplevel, 1);
-      var pixelsCount = width * height * this._getFormatByteCount();
-      if (pixels.length < pixelsCount)
-        throw "Texture2D:pixels length should at least " + pixelsCount + ".";
-      this._setFloatPixels(pixels, miplevel, width, height);
-      if (this._canRead)
-        this._pixels = pixels;
-      this._readyed = true;
-      this._activeResource();
-    }
-    _setFloatPixels(pixels, miplevel, width, height) {
-      var gl = LayaGL$1.instance;
-      var halfFloat = gl.getExtension('OES_texture_half_float');
-      gl.getExtension('OES_texture_half_float_linear');
-      var textureType = this._glTextureType;
-      var glFormat = this._getGLFormat();
-      WebGLContext.bindTexture(gl, textureType, this._glTexture);
-      gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-      gl.texImage2D(textureType, miplevel, gl.RGBA, width, height, 0, glFormat, halfFloat.HALF_FLOAT_OES, pixels);
-    }
-  }
-  LayaExtends_Texture2D.isInited = false;
-
-  class LayaExtends_Laya3D {
-    static Init() {
-      var _Laya3D = Laya3D;
-      _Laya3D._onMeshLmLoaded__src = _Laya3D._onMeshLmLoaded;
-      _Laya3D._onMeshLmLoaded = LayaExtends_Laya3D._onMeshLmLoaded;
-    }
-    static _onMeshLmLoaded__src(loader, lmData) {
-    }
-    static _onMeshLmLoaded(loader, lmData) {
-      var extension = Laya.Utils.getFileExtension(loader.url);
-      if (extension == GPUSkining.EXT_SKING_MESH) {
-        GPUSkining._onMeshLmLoaded(loader, lmData);
-      }
-      else {
-        Laya3D._onMeshLmLoaded__src(loader, lmData);
-      }
-    }
-  }
 
   var Shader3D$5 = Laya.Shader3D;
   var SubShader$2 = Laya.SubShader;
@@ -3262,6 +3206,46 @@
   GPUSkinningCartoonMaterial.DEPTH_TEST = Shader3D$5.propertyNameToID("s_DepthTest");
   GPUSkinningCartoonMaterial.DEPTH_WRITE = Shader3D$5.propertyNameToID("s_DepthWrite");
 
+  class LayaUtil {
+    static GetComponentsInChildren(go, componentType, outComponents) {
+      if (!outComponents) {
+        outComponents = [];
+      }
+      for (let i = 0, len = go.numChildren; i < len; i++) {
+        let child = go.getChildAt(i);
+        let component = child.getComponent(componentType);
+        if (component) {
+          outComponents.push(component);
+        }
+        this.GetComponentsInChildren(child, componentType, outComponents);
+      }
+      return outComponents;
+    }
+  }
+
+  class LayaExtends_Node {
+    constructor() {
+      Laya.Node.prototype.getComponentsInChildren = this.getComponentsInChildren;
+    }
+    static Init() {
+      if (this.isInited)
+        return;
+      this.isInited = true;
+      new LayaExtends_Node();
+    }
+    getComponentsInChildren(componentType, outComponents) {
+      if (outComponents) {
+        outComponents.length = 0;
+      }
+      else {
+        outComponents = [];
+      }
+      LayaUtil.GetComponentsInChildren(this, componentType, outComponents);
+      return outComponents;
+    }
+  }
+  LayaExtends_Node.isInited = false;
+
   var LoaderManager = Laya.LoaderManager;
   var Loader = Laya.Loader;
   var Event = Laya.Event;
@@ -3287,8 +3271,6 @@
       await GPUSkinningUnlitMaterial.install();
       await GPUSkinningCartoonMaterial.install();
       LayaExtends_Node.Init();
-      LayaExtends_Texture2D.Init();
-      LayaExtends_Laya3D.Init();
       Laya3D.SKING_MESH = "SKING_MESH";
       var createMap = LoaderManager.createMap;
       createMap["skinlm"] = [Laya3D.SKING_MESH, GPUSkiningMesh._parse];
@@ -3322,14 +3304,23 @@
     static LoadAnimTextureAsync(path, width, height) {
       return new Promise((resolve) => {
         Laya.loader.load(path, Laya.Handler.create(this, (arrayBuffer) => {
-          var f32 = new Float32Array(arrayBuffer);
-          var texture = new Laya.Texture2D(width, height, Laya.TextureFormat.R32G32B32A32, false, true);
-          texture.wrapModeU = Laya.BaseTexture.WARPMODE_CLAMP;
-          texture.wrapModeV = Laya.BaseTexture.WARPMODE_CLAMP;
-          texture.filterMode = Laya.BaseTexture.FILTERMODE_POINT;
-          texture.anisoLevel = 0;
-          texture.lock = true;
-          texture.setSubPixels(0, 0, width, height, f32, 0);
+          var texture;
+          if (arrayBuffer instanceof ArrayBuffer) {
+            var f32 = new Float32Array(arrayBuffer);
+            texture = new Laya.Texture2D(width, height, Laya.TextureFormat.R32G32B32A32, false, true);
+            texture.wrapModeU = Laya.BaseTexture.WARPMODE_CLAMP;
+            texture.wrapModeV = Laya.BaseTexture.WARPMODE_CLAMP;
+            texture.filterMode = Laya.BaseTexture.FILTERMODE_POINT;
+            texture.anisoLevel = 0;
+            texture.lock = true;
+            texture.setSubPixels(0, 0, width, height, f32, 0);
+            texture._url = Laya.URL.formatURL(path);
+            Laya.Loader.clearRes(path);
+            Laya.Loader.cacheRes(path, texture);
+          }
+          else {
+            texture = arrayBuffer;
+          }
           resolve(texture);
         }), null, Laya.Loader.BUFFER);
       });
@@ -3341,7 +3332,14 @@
         }), null, type);
       });
     }
-    static async CreateByNameAsync(name, mainTexturePath, materialCls) {
+    static Load3DAsync(path, type) {
+      return new Promise((resolve) => {
+        Laya.loader.create(path, Laya.Handler.create(this, (data) => {
+          resolve(data);
+        }), null, type);
+      });
+    }
+    static async CreateByNameAsync(name, isUnloadBin, mainTexturePath, materialCls) {
       if (!materialCls) {
         materialCls = GPUSkinningUnlitMaterial;
       }
@@ -3357,7 +3355,7 @@
         return;
       }
       var mesh = await GPUSkiningMesh.LoadAsync(meshPath);
-      var mainTexture = await this.LoadAsync(mainTexturePath, Laya.Loader.TEXTURE2D);
+      var mainTexture = await this.Load3DAsync(mainTexturePath, Laya.Loader.TEXTURE2D);
       var animTexture = await this.LoadAnimTextureAsync(matrixTexturePath, anim.textureWidth, anim.textureHeight);
       var material = new materialCls();
       material.albedoTexture = mainTexture;
@@ -3379,18 +3377,9 @@
       this.InitAsync();
     }
     async InitAsync() {
-      GPUSkining.resRoot = "res3d/GPUSKinning-60/";
+      GPUSkining.resRoot = "res3d/GPUSKinning-30/";
       await GPUSkining.InitAsync();
       await MaterialInstall.install();
-      var plane = this.scene.addChild(new Laya.MeshSprite3D(Laya.PrimitiveMesh.createPlane(5, 5, 1, 1)));
-      var mat = new Laya.UnlitMaterial();
-      plane.transform.localRotationEulerX = 20;
-      window['planemat'] = mat;
-      window['plane'] = plane;
-      var texture = await this.LoadAnimTexture16Async("res/gpuskining/rili-16.bin", 2, 2);
-      mat.albedoTexture = texture;
-      plane.meshRenderer.sharedMaterial = mat;
-      return;
       var nameList = [
         "Hero_1001_Dianguanglongqi_Skin1",
         "Hero_1002_Fengyunzhanji_Skin1",
@@ -3404,12 +3393,16 @@
         "Monster_4002_Baifuzhang_Skin1",
         "Monster_5002_Huaxiong_Skin1",
         "Monster_5003_Leique_Skin1",
+        "Monster_4003_Kuileishi_Skin1",
       ];
       for (var j = 0; j < nameList.length; j++) {
-        var mono = await GPUSkining.CreateByNameAsync(nameList[j]);
+        var mono = await GPUSkining.CreateByNameAsync(nameList[j], true);
+        mono.Player.isRandomPlayClip = true;
         window['mono'] = mono;
-        mono.Player.Play("RUN");
+        mono.Player.Play("ATTACK_01");
         for (var i = 0; i < mono.anim.clips.length; i++) {
+          mono.anim.clips[i].wrapMode = GPUSkinningWrapMode.Loop;
+          mono.anim.clips[i].individualDifferenceEnabled = true;
         }
         this.scene.addChild(mono.owner);
         var sprite = mono.owner;
@@ -3417,12 +3410,15 @@
         var x = j - y * 5 - 2.5;
         sprite.transform.localPositionX = x * 1.5;
         sprite.transform.localPositionZ = -y * 2;
-        break;
+        sprite.transform.localPositionY = -0.5;
+        if (j == 0) {
+          this.CloneMono(mono);
+        }
       }
       return;
-      var mono = await GPUSkining.CreateByNameAsync("MutantAnim2", "res/gpuskining/enemy_mutant_d.jpg");
+      var mono = await GPUSkining.CreateByNameAsync("MutantAnim2", true, "res/gpuskining/enemy_mutant_d.jpg");
       this.scene.addChild(mono.owner);
-      var mono = await GPUSkining.CreateByNameAsync("Hero_1001_Dianguanglongqi_Skin1", "res/gpuskining/Hero_1001_Dianguanglongqi.jpg");
+      var mono = await GPUSkining.CreateByNameAsync("Hero_1001_Dianguanglongqi_Skin1", true, "res/gpuskining/Hero_1001_Dianguanglongqi.jpg");
       if (mono) {
         mono.Player.Play("IDLE");
         for (var i = 0; i < mono.anim.clips.length; i++) {
@@ -3654,7 +3650,7 @@
   }
   GameConfig.width = 1334;
   GameConfig.height = 750;
-  GameConfig.scaleMode = Laya.Stage.SCALE_SHOWALL;
+  GameConfig.scaleMode = Laya.Stage.SCALE_FIXED_AUTO;
   GameConfig.screenMode = "none";
   GameConfig.alignV = "top";
   GameConfig.alignH = "left";

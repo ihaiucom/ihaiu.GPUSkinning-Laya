@@ -167,8 +167,11 @@ export default class GPUSkining
 		{
 			Laya.loader.create(path, Laya.Handler.create(this, (data:any)=>
 			{
-        resolve(data);
+        Laya.timer.frameOnce(1, this, ()=>{
 
+          resolve(data);
+
+        })
 			}), null, type);
 		});
 	}

@@ -51,7 +51,6 @@ export default class TestShader
         // plane.meshRenderer.sharedMaterial = mat;
 
         var nameList = [
-            "Monster_4003_Kuileishi_Skin1",
             "Hero_1001_Dianguanglongqi_Skin1",
             "Hero_1002_Fengyunzhanji_Skin1",
             "Hero_1004_Dongzhuo_Skin1",
@@ -64,6 +63,7 @@ export default class TestShader
             "Monster_4002_Baifuzhang_Skin1",
             "Monster_5002_Huaxiong_Skin1",
             "Monster_5003_Leique_Skin1",
+            "Monster_4003_Kuileishi_Skin1",
         ];
 
         for(var j = 0; j < nameList.length; j ++)
@@ -89,12 +89,11 @@ export default class TestShader
             var x = j - y * 5 - 2.5;
             sprite.transform.localPositionX = x * 1.5;
             sprite.transform.localPositionZ = -y * 2;
-            // sprite.transform.localPositionY = -0.5;
-            // if(j == 0)
-            // {
-            //     this.CloneMono(mono);
-            // }
-            break;
+            sprite.transform.localPositionY = -0.5;
+            if(j == 0)
+            {
+                this.CloneMono(mono);
+            }
         }
         return;
         

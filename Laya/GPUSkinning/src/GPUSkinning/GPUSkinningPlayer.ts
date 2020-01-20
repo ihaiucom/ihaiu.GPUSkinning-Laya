@@ -539,6 +539,8 @@ export default class GPUSkinningPlayer
                 {
                     this.SetNewPlayingClip(item, nomrmalizeTime);
                 }
+                
+                this.time = nomrmalizeTime * item.length;
                 return;
             }
         }

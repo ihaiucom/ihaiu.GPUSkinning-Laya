@@ -1443,6 +1443,7 @@ var laya = (function () {
 	                    || (playingClip != null && !this.isPlaying)) {
 	                    this.SetNewPlayingClip(item, nomrmalizeTime);
 	                }
+	                this.time = nomrmalizeTime * item.length;
 	                return;
 	            }
 	        }
@@ -2685,7 +2686,9 @@ var laya = (function () {
 	    static Load3DAsync(path, type) {
 	        return new Promise((resolve) => {
 	            Laya.loader.create(path, Laya.Handler.create(this, (data) => {
-	                resolve(data);
+	                Laya.timer.frameOnce(1, this, () => {
+	                    resolve(data);
+	                });
 	            }), null, type);
 	        });
 	    }
