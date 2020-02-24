@@ -51,7 +51,7 @@ export default class GPUSkinningPlayerMonoManager
             item.mesh = mesh;
         }
 
-        item.InitMaterial(originalMtrl, anim.skinQuality);
+        item.InitMaterial(<any>originalMtrl, anim.skinQuality);
 
         if(item.texture == null)
         {

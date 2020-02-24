@@ -26,6 +26,7 @@ import { GPUSkinningUnlitMaterial } from "./Material/GPUSkinningUnlitMaterial";
 /** GPU骨骼动画--组件播放控制器 */
 export default class GPUSkinningPlayer
 {
+    __mname:string;
     private go: Laya.MeshSprite3D;
     private transform: Laya.Transform3D;
     private mr: MeshRenderer;
@@ -399,7 +400,7 @@ export default class GPUSkinningPlayer
         let mtrl: GPUSkinningMaterial = this.GetCurrentMaterial();
         this.mtrl = mtrl;
         var mtrl2 = new GPUSkinningMaterial();
-        mtrl2.material =  res.CloneMaterial(mtrl.material, res.anim.skinQuality)
+        mtrl2.material =  res.CloneMaterial(<any>mtrl.material, res.anim.skinQuality)
         mtrl = mtrl2;
         this.mtrl = mtrl2;
         this.mr.sharedMaterial = mtrl == null ? null : mtrl.material;

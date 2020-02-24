@@ -55,6 +55,23 @@ export default class GPUSkinningPlayerMono extends Laya.Script3D
         dest.mtrl = this.mtrl;
         dest.textureRawData = this.textureRawData;
         dest.Init();
+
+        if(dest.anim.name == "Monster_2012_Laohu_Skin1")
+        {
+            console.log("GPUSkinningPlayerMono _cloneTo", dest.anim.name);
+        }
+        
+        if(dest.player )
+        {
+            if(dest.player.__mname)
+            {
+                console.warn(dest.player.__mname);
+            }
+            else
+            {
+                dest.player.__mname = dest.anim.name + " _cloneTo Set";
+            }
+        }
     }
     /**
      * 创建后只执行一次
@@ -73,7 +90,21 @@ export default class GPUSkinningPlayerMono extends Laya.Script3D
     onEnable():void
     {
         // console.log("onEnable");
+        var preHasPlayer = this.player != null;
         this.Init();
+
+        
+        if(!preHasPlayer  && this.player )
+        {
+            if(this.player.__mname)
+            {
+                console.warn(this.player.__mname);
+            }
+            else
+            {
+                this.player.__mname = this.anim.name + " onEnable Set";
+            }
+        }
 
         this.isEnable = true;
     }
@@ -143,6 +174,18 @@ export default class GPUSkinningPlayerMono extends Laya.Script3D
         this.mtrl = mtrl;
         this.textureRawData = textureRawData;
         this.Init();
+
+        if(this.player )
+        {
+            if(this.player.__mname)
+            {
+                console.warn(this.player.__mname);
+            }
+            else
+            {
+                this.player.__mname = anim.name + " SetData Set";
+            }
+        }
     }
 
     Init()

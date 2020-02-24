@@ -560,7 +560,8 @@ export class GPUSkinningUnlitMaterial extends GPUSkinningBaseMaterial
 		var dest: GPUSkinningUnlitMaterial = new GPUSkinningUnlitMaterial();
 		this.cloneTo(dest);
 		dest._albedoIntensity = this._albedoIntensity;
-        this._albedoColor.cloneTo(dest._albedoColor);
+		this._albedoColor.cloneTo(dest._albedoColor);
+		this.lock;
 		return dest;
 	}
 

@@ -1008,6 +1008,7 @@ var laya = (function () {
 	            let materialItem = new GPUSkinningMaterial();
 	            let material = materialItem.material = originalMaterial.clone();
 	            material.lock = true;
+	            material.__mname = originalMaterial.__mname + " " + GPUSkinningPlayerResources.keywords[i];
 	            mtrls[i] = materialItem;
 	            material.name = GPUSkinningPlayerResources.keywords[i];
 	            material._shaderValues.addDefine(SKILL_N);
@@ -1019,6 +1020,7 @@ var laya = (function () {
 	            console.error("GPUSkinningPlayerResources.CloneMaterial originalMaterial=null");
 	        }
 	        let material = originalMaterial.clone();
+	        material.__mname = originalMaterial.__mname + " CloneMaterial";
 	        let SKILL_N;
 	        switch (skinningQuality) {
 	            case GPUSkinningQuality.Bone1:
@@ -1671,11 +1673,31 @@ var laya = (function () {
 	        dest.mtrl = this.mtrl;
 	        dest.textureRawData = this.textureRawData;
 	        dest.Init();
+	        if (dest.anim.name == "Monster_2012_Laohu_Skin1") {
+	            console.log("GPUSkinningPlayerMono _cloneTo", dest.anim.name);
+	        }
+	        if (dest.player) {
+	            if (dest.player.__mname) {
+	                console.warn(dest.player.__mname);
+	            }
+	            else {
+	                dest.player.__mname = dest.anim.name + " _cloneTo Set";
+	            }
+	        }
 	    }
 	    onAwake() {
 	    }
 	    onEnable() {
+	        var preHasPlayer = this.player != null;
 	        this.Init();
+	        if (!preHasPlayer && this.player) {
+	            if (this.player.__mname) {
+	                console.warn(this.player.__mname);
+	            }
+	            else {
+	                this.player.__mname = this.anim.name + " onEnable Set";
+	            }
+	        }
 	        this.isEnable = true;
 	    }
 	    onStart() {
@@ -1710,6 +1732,14 @@ var laya = (function () {
 	        this.mtrl = mtrl;
 	        this.textureRawData = textureRawData;
 	        this.Init();
+	        if (this.player) {
+	            if (this.player.__mname) {
+	                console.warn(this.player.__mname);
+	            }
+	            else {
+	                this.player.__mname = anim.name + " SetData Set";
+	            }
+	        }
 	    }
 	    Init() {
 	        this.gameObject = this.owner;
@@ -2128,6 +2158,7 @@ var laya = (function () {
 	        this.cloneTo(dest);
 	        dest._albedoIntensity = this._albedoIntensity;
 	        this._albedoColor.cloneTo(dest._albedoColor);
+	        this.lock;
 	        return dest;
 	    }
 	}
@@ -2791,6 +2822,7 @@ var laya = (function () {
 	                        var material = new materialCls();
 	                        material.albedoTexture = mainTexture;
 	                        material.GPUSkinning_TextureMatrix = animTexture;
+	                        material.__mname = name + " prefab";
 	                        var sprite = new Laya.MeshSprite3D();
 	                        var mono = sprite.addComponent(GPUSkinningPlayerMono);
 	                        mono.SetData(anim, mesh, material, animTexture);

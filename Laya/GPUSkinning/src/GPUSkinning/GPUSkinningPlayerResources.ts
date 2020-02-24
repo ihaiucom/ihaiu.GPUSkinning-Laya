@@ -20,6 +20,7 @@ import GPUSkinningClip from "./Datas/GPUSkinningClip";
 import GPUSkinningFrame from "./Datas/GPUSkinningFrame";
 import { MaterialState } from "./MaterialState";
 import { GPUSkinningQuality } from "./Datas/GPUSkinningQuality";
+import { GPUSkinningBaseMaterial } from "./Material/GPUSkinningBaseMaterial";
 
 
 /** GPU骨骼动画--资源 */
@@ -320,7 +321,7 @@ export default class GPUSkinningPlayerResources
         return this.mtrls[state];
     }
 
-    public InitMaterial(originalMaterial: Material, skinningQuality: GPUSkinningQuality)
+    public InitMaterial(originalMaterial: GPUSkinningBaseMaterial, skinningQuality: GPUSkinningQuality)
     {
         if(this.mtrls != null)
         {
@@ -347,8 +348,9 @@ export default class GPUSkinningPlayerResources
         for (let i = 0; i < MaterialState.Count; ++i)
         {
             let materialItem = new GPUSkinningMaterial();
-            let material =  materialItem.material = <Material> originalMaterial.clone();
+            let material =  materialItem.material = <GPUSkinningBaseMaterial> originalMaterial.clone();
             material.lock = true;
+            material.__mname = originalMaterial.__mname + " "+ GPUSkinningPlayerResources.keywords[i];
 
             mtrls[i] = materialItem;
             
@@ -364,14 +366,15 @@ export default class GPUSkinningPlayerResources
         }
     }
 
-    CloneMaterial(originalMaterial:Material, skinningQuality: GPUSkinningQuality)
+    CloneMaterial(originalMaterial:GPUSkinningBaseMaterial, skinningQuality: GPUSkinningQuality)
     {
         if(originalMaterial == null)
         {
             console.error("GPUSkinningPlayerResources.CloneMaterial originalMaterial=null");
         }
         // console.log("CloneMaterial skinningQuality=", skinningQuality);
-        let material =  <Material> originalMaterial.clone();
+        let material =  <GPUSkinningBaseMaterial> originalMaterial.clone();
+        material.__mname = originalMaterial.__mname + " CloneMaterial";
         
         let SKILL_N:ShaderDefine;
         switch(skinningQuality)

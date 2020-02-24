@@ -298,6 +298,7 @@ export default class GPUSkining
                           var material:GPUSkinningUnlitMaterial = new materialCls();
                           material.albedoTexture = mainTexture;
                           material.GPUSkinning_TextureMatrix = animTexture;
+                          material.__mname = name + " prefab";
 
                           var sprite = new Laya.MeshSprite3D();
                           var mono: GPUSkinningPlayerMono = sprite.addComponent(GPUSkinningPlayerMono);

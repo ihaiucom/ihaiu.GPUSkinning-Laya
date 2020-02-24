@@ -87,7 +87,9 @@ export class GPUSkinningBaseMaterial extends Laya.Material
 		else
 			this._shaderValues.removeDefine(GPUSkinningBaseMaterial.SHADERDEFINE_GPUSKINING_MATRIX_TEXTURE);
 		this._shaderValues.setTexture(GPUSkinningBaseMaterial.GPUSKINING_MATRIX_TEXTURE, value);
-	}
+    }
+    
+    __mname:string;
 
 
 }
