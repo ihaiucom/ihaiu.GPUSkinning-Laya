@@ -114,38 +114,46 @@ export default class GPUSkining
       return this.resRoot + name;
     }
 
+    static LoadAnimTexture(path: string, width: int, height:int, callback:(  (anim: Laya.Texture2D) => any))
+    {
+          Laya.loader.load(path, Laya.Handler.create(this, (arrayBuffer:ArrayBuffer | Laya.Texture2D)=>
+          {
+            var texture: Laya.Texture2D;
+            if(arrayBuffer instanceof ArrayBuffer)
+            {
+              var f32 = new Float32Array(arrayBuffer);
+              texture = new Laya.Texture2D(width, height, Laya.TextureFormat.R32G32B32A32, false, true);
+              texture.wrapModeU = Laya.BaseTexture.WARPMODE_CLAMP;
+              texture.wrapModeV = Laya.BaseTexture.WARPMODE_CLAMP;
+              texture.filterMode = Laya.BaseTexture.FILTERMODE_POINT;
+              texture.anisoLevel = 0;
+              texture.lock = true;
+              texture.setSubPixels(0, 0, width, height, f32, 0);
+              texture._url =  Laya.URL.formatURL(path);
+
+
+              Laya.Loader.clearRes(path);
+              Laya.Loader.cacheRes(path, texture);
+            }
+            else
+            {
+              texture = arrayBuffer;
+            }
+            
+            callback(texture);
+
+          }), null, Laya.Loader.BUFFER);
+
+    }
+
     
 	static LoadAnimTextureAsync(path: string, width: int, height:int): Promise<any>
 	{
 		return new  Promise<any>((resolve)=>
 		{
-			Laya.loader.load(path, Laya.Handler.create(this, (arrayBuffer:ArrayBuffer | Laya.Texture2D)=>
-			{
-        var texture: Laya.Texture2D;
-        if(arrayBuffer instanceof ArrayBuffer)
-        {
-          var f32 = new Float32Array(arrayBuffer);
-          texture = new Laya.Texture2D(width, height, Laya.TextureFormat.R32G32B32A32, false, true);
-          texture.wrapModeU = Laya.BaseTexture.WARPMODE_CLAMP;
-          texture.wrapModeV = Laya.BaseTexture.WARPMODE_CLAMP;
-          texture.filterMode = Laya.BaseTexture.FILTERMODE_POINT;
-          texture.anisoLevel = 0;
-          texture.lock = true;
-          texture.setSubPixels(0, 0, width, height, f32, 0);
-          texture._url =  Laya.URL.formatURL(path);
-
-
-          Laya.Loader.clearRes(path);
-          Laya.Loader.cacheRes(path, texture);
-        }
-        else
-        {
-          texture = arrayBuffer;
-        }
-        
-        resolve(texture);
-
-			}), null, Laya.Loader.BUFFER);
+        this.LoadAnimTexture(path, width, height, (res: Laya.Texture2D)=>{
+          resolve(res);
+        });
 		});
   }
   
@@ -212,6 +220,103 @@ export default class GPUSkining
 
 
       return mono;
+    }
+
+    static GetLoadItemList(list: {url:string, type:string}[],name: string, mainTexturePath?: string): {url:string, type:string}[]
+    {
+      var animPath: string = this.GetPath(this.GetAnimName(name));
+      var meshPath: string = this.GetPath(this.GetMeshName(name));
+      var matrixTexturePath: string = this.GetPath(this.GetMatrixTextureName(name));
+      if(mainTexturePath == null || mainTexturePath == "")
+      { 
+        mainTexturePath = this.GetPath(this.GetMainTextureName(name));
+      }
+
+      if(!list)
+      {
+        list = [];
+      }
+
+      list.push();
+
+      list.push(
+                {url: animPath, type: Laya.Loader.BUFFER},
+                {url: meshPath, type: Laya.Loader.BUFFER},
+                {url: matrixTexturePath, type: Laya.Loader.BUFFER},
+                {url: mainTexturePath, type: Laya.Loader.TEXTURE2D},
+             );
+      return list;
+    }
+
+    static CreateByName(name: string, callback:Laya.Handler, isUnloadBin?: boolean, mainTexturePath?: string, materialCls?: any)
+    {
+      if(!materialCls)
+      {
+        materialCls = GPUSkinningUnlitMaterial;
+      }
+      var animPath: string = this.GetPath(this.GetAnimName(name));
+      var meshPath: string = this.GetPath(this.GetMeshName(name));
+      var matrixTexturePath: string = this.GetPath(this.GetMatrixTextureName(name));
+      if(mainTexturePath == null || mainTexturePath == "")
+      { 
+        mainTexturePath = this.GetPath(this.GetMainTextureName(name));
+      }
+
+      GPUSkinningAnimation.Load(animPath, (anim: GPUSkinningAnimation)=>
+      {
+            if(anim == null)
+            {
+              console.error("GPUSkinning.CreateByName资源加载失败", animPath);
+              callback.runWith(null);
+              return;
+            }
+            
+            GPUSkiningMesh.Load(meshPath, (mesh: GPUSkiningMesh)=>
+            {
+                  if(mesh == null)
+                  {
+                    console.error("GPUSkinning.CreateByName资源加载失败", meshPath);
+                    callback.runWith(null);
+                    return;
+                  }
+
+                  this.LoadAnimTexture(matrixTexturePath, anim.textureWidth, anim.textureHeight, (animTexture: Laya.Texture2D)=>
+                  {
+                      if(animTexture == null)
+                      {
+                        console.error("GPUSkinning.CreateByName资源加载失败", matrixTexturePath);
+                        callback.runWith(null);
+                      }
+                      
+                      Laya.loader.create(mainTexturePath, Laya.Handler.create(this, (mainTexture:Laya.Texture2D)=>
+                      {
+                          if(mainTexture == null)
+                          {
+                            console.error("GPUSkinning.CreateByName资源加载失败", mainTexturePath);
+                          }
+
+                          var material:GPUSkinningUnlitMaterial = new materialCls();
+                          material.albedoTexture = mainTexture;
+                          material.GPUSkinning_TextureMatrix = animTexture;
+
+                          var sprite = new Laya.MeshSprite3D();
+                          var mono: GPUSkinningPlayerMono = sprite.addComponent(GPUSkinningPlayerMono);
+                          mono.SetData(anim, mesh, material, animTexture);
+                          callback.runWith(mono);
+
+                      }), null, Laya.Loader.TEXTURE2D);
+
+                  });
+
+
+
+              
+            })
+
+
+      })
+
+
     }
 
 

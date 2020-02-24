@@ -13,26 +13,35 @@ export default class GPUSkiningMesh extends Laya.Mesh
 	{
 		return new  Promise<GPUSkiningMesh>((resolve)=>
 		{
-			Laya.loader.load(path, Laya.Handler.create(this, (data:any)=>
-			{
-				if(data instanceof ArrayBuffer)
-				{
-					var mesh = GPUSkiningMesh._parse(data);
-					mesh._url = Laya.URL.formatURL(path);
-
-					                
-
-					Laya.Loader.clearRes(path);
-					Laya.Loader.cacheRes(path, mesh);
-					resolve(mesh);
-				}
-				else
-				{
-					resolve(data);
-				}
-
-			}), null, Laya.Loader.BUFFER);
+            this.Load(path, (data: GPUSkiningMesh)=>
+            {
+                resolve(data);
+			});
 		});
+	}
+
+	static Load(path: string, callback:(  (anim: GPUSkiningMesh) => any))
+	{
+		Laya.loader.load(path, Laya.Handler.create(this, (data:any)=>
+		{
+			if(data instanceof ArrayBuffer)
+			{
+				var mesh = GPUSkiningMesh._parse(data);
+				mesh._url = Laya.URL.formatURL(path);
+
+								
+
+				Laya.Loader.clearRes(path);
+				Laya.Loader.cacheRes(path, mesh);
+				callback(mesh);
+			}
+			else
+			{
+				callback(data);
+			}
+
+		}), null, Laya.Loader.BUFFER);
+
 	}
 
 	

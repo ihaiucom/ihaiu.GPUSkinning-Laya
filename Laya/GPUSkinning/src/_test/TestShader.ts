@@ -90,10 +90,10 @@ export default class TestShader
             sprite.transform.localPositionX = x * 1.5;
             sprite.transform.localPositionZ = -y * 2;
             sprite.transform.localPositionY = -0.5;
-            // if(j == 0)
-            // {
-            //     this.CloneMono(mono);
-            // }
+            if(j == 0)
+            {
+                this.CloneMono(mono);
+            }
             break;
         }
         return;
