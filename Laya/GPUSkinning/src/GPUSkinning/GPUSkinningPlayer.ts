@@ -427,6 +427,16 @@ export default class GPUSkinningPlayer
         this.ConstructJoints();
     }
 
+    
+    onDestroy():void
+    {
+        if( this.mtrl)
+        {
+            this.mtrl.Destroy();
+            this.mtrl = null;
+        }
+    }
+
     /** 构建骨骼节点 */
     private ConstructJoints()
     {

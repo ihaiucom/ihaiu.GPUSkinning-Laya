@@ -123,7 +123,12 @@ export default class GPUSkinningPlayerMono extends Laya.Script3D
         this.mtrl = null;
         this.textureRawData = null;
 
-        this.player = null;
+        if(this.player)
+        {
+            this.player.onDestroy();
+            this.player = null;
+        }
+        
     }
 
     public SetData(anim: GPUSkinningAnimation, mesh: Mesh, mtrl: Material, textureRawData: Texture2D)

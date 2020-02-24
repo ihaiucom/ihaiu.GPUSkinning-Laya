@@ -126,8 +126,18 @@ export default class GPUSkinningPlayerResources
     /** 销毁 */
     public Destroy()
     {
-        this.anim = null;
-        this.mesh = null;
+        
+        if(this.anim != null)
+        {
+            this.anim.destroy();
+            this.anim = null;
+        }
+
+        if(this.mesh != null)
+        {
+            this.mesh.destroy();
+            this.mesh = null;
+        }
 
 
         if(this.mtrls != null)

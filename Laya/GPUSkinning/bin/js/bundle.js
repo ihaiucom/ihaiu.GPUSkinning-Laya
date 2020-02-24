@@ -876,8 +876,14 @@ var laya = (function () {
 	        this.shaderPropID_GPUSkinning_RootMotion_CrossFade = Shader3D.propertyNameToID("u_GPUSkinning_RootMotion_CrossFade");
 	    }
 	    Destroy() {
-	        this.anim = null;
-	        this.mesh = null;
+	        if (this.anim != null) {
+	            this.anim.destroy();
+	            this.anim = null;
+	        }
+	        if (this.mesh != null) {
+	            this.mesh.destroy();
+	            this.mesh = null;
+	        }
 	        if (this.mtrls != null) {
 	            for (let i = 0; i < this.mtrls.length; i++) {
 	                this.mtrls[i].Destroy();
@@ -1379,6 +1385,12 @@ var laya = (function () {
 	            this.mf.sharedMesh = mesh;
 	        }
 	    }
+	    onDestroy() {
+	        if (this.mtrl) {
+	            this.mtrl.Destroy();
+	            this.mtrl = null;
+	        }
+	    }
 	    ConstructJoints() {
 	        if (this.joints)
 	            return;
@@ -1684,7 +1696,10 @@ var laya = (function () {
 	        this.mesh = null;
 	        this.mtrl = null;
 	        this.textureRawData = null;
-	        this.player = null;
+	        if (this.player) {
+	            this.player.onDestroy();
+	            this.player = null;
+	        }
 	    }
 	    SetData(anim, mesh, mtrl, textureRawData) {
 	        if (this.player != null) {
