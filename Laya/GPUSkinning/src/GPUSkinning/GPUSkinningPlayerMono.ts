@@ -6,6 +6,7 @@ import Mesh = Laya.Mesh;
 import Material = Laya.Material;
 import Texture2D = Laya.Texture2D;
 import GPUSkinningPlayerResources from "./GPUSkinningPlayerResources";
+import GPUSkining from "./GPUSkining";
 
 
 /** GPU骨骼动画--组件 */
@@ -131,6 +132,11 @@ export default class GPUSkinningPlayerMono extends Laya.Script3D
     
     onUpdate():void
     {
+        if(GPUSkining.IsPauseAll)
+        {
+            return;
+        }
+        
         if(this.player != null)
         {
             this.player.Update(Laya.timer.delta / 1000 );

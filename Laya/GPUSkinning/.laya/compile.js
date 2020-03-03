@@ -27,7 +27,7 @@ gulp.task("compile", prevTasks, function () {
 	}
 
 	return rollup.rollup({
-		input: workSpaceDir + '/src/GPUSkinning/GPUSkining.ts',
+		input: workSpaceDir + '/src/GPUSkinning/GPUSKiningLib.ts',
 		// input: workSpaceDir + '/src/_test/TestMain.ts',
 		// input: workSpaceDir + '/src/Main.ts',
 		treeshake: true,//建议忽略

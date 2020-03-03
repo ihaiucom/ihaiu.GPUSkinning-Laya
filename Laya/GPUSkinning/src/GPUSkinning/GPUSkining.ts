@@ -22,6 +22,7 @@ import LayaExtends_Node from "../LayaExtends/LayaExtends_Node";
 // import LayaExtends_Texture2D from "../LayaExtends/LayaExtends_Texture2D";
 export default class GPUSkining
 {
+    static IsPauseAll: boolean = false;
     static EXT_SKING_MESH = "skinlm";
 
     static async InitAsync()
