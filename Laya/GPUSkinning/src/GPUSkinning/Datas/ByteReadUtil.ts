@@ -37,6 +37,14 @@ export default class ByteReadUtil
     }
 
     
+    
+    static mm = new Matrix4x4(
+		-1.0, 0.0, 0.0, 0.0,
+		0.0, 1.0, 0.0, 0.0,
+		0.0, 0.0, 1.0, 0.0,
+		0.0, 0.0, 0.0, 1.0
+    );
+    
     static ReadMatrix4x4(b:Byte):Matrix4x4
     {
         var m00 = b.readFloat32();
@@ -60,13 +68,27 @@ export default class ByteReadUtil
         var m31 = b.readFloat32();
         var m32 = b.readFloat32();
         var m33 = b.readFloat32();
-        var v = new Matrix4x4
+        // var v = new Matrix4x4
+        // (
+        //     -m00, m01, m02, m03,
+        //     -m10, m11, m12, m13,
+        //     -m20, m21, m22, m23,
+        //     -m30, m31, m32, m33,
+        // );
+
+        
+        var v2 = new Matrix4x4
         (
             m00, m01, m02, m03,
             m10, m11, m12, m13,
             m20, m21, m22, m23,
             m30, m31, m32, m33,
         );
+
+        var v = new Matrix4x4();
+
+        Matrix4x4.multiply(this.mm, v2, v);
+
         return v;
     }
 }

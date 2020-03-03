@@ -1,7 +1,10 @@
+import GPUSkinningBone from "./Datas/GPUSkinningBone";
 
 export default class GPUSkinningPlayerJoint extends Laya.Script3D
 {
 
+    bone: GPUSkinningBone;
+    index: int = 0;
     BoneIndex:int = 0;
     BoneGUID: string = null;
 
@@ -27,8 +30,10 @@ export default class GPUSkinningPlayerJoint extends Laya.Script3D
         this.transform = this.go.transform;
     }
 
-    Init(boneIndex: int, boneGUID: string)
+    Init(bone: GPUSkinningBone, index: int, boneIndex: int, boneGUID: string)
     {
+        this.bone = bone;
+        this.index = index;
         this.BoneIndex = boneIndex;
         this.BoneGUID = boneGUID;
     }

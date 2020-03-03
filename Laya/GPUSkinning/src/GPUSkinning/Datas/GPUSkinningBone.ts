@@ -15,6 +15,9 @@ export default class GPUSkinningBone
     /** 矩阵 */
     bindpose: Matrix4x4;
 
+    /** 索引 */
+    boneIndex: int = -1;
+
     /** 父节点索引 */
     parentBoneIndex: int = -1;
 
@@ -43,6 +46,7 @@ export default class GPUSkinningBone
         this.name = b.readUTFString();
         this.guid = b.readUTFString();
         this.isExposed = b.readByte() != 0;
+        this.boneIndex = b.readInt32();
         this.parentBoneIndex = b.readInt32();
         this.bindpose = ByteReadUtil.ReadMatrix4x4(b);
 

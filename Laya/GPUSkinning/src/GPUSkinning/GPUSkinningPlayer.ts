@@ -132,6 +132,7 @@ export default class GPUSkinningPlayer
     }
 
     /** 骨骼列表 */
+    private jointMap: Map<string, GPUSkinningPlayerJoint> = new Map<string, GPUSkinningPlayerJoint>();
     private joints: GPUSkinningPlayerJoint[]  = null;
     public get Joints(): GPUSkinningPlayerJoint[]
     {
@@ -446,6 +447,7 @@ export default class GPUSkinningPlayer
 
 
         
+        this.jointMap.clear();
         let existingJoints: GPUSkinningPlayerJoint[] = this.go.getComponentsInChildren<GPUSkinningPlayerJoint>(GPUSkinningPlayerJoint);
 
         let bones: GPUSkinningBone[] = this.res.anim.bones;
@@ -475,12 +477,14 @@ export default class GPUSkinningPlayer
                     let existingJoint = existingJoints[j];
                     if(existingJoint && existingJoint.BoneGUID == bone.guid)
                     {
-                        if(existingJoint.BoneIndex != i)
+                        if(existingJoint.index != i)
                         {
-                            existingJoint.Init(i, bone.guid);
+                            existingJoint.Init(bone, i, bone.boneIndex, bone.guid);
                         }
 
+                        existingJoint.GameObject.name = bone.name;
                         joints.push(existingJoint);
+                        this.jointMap.set(bone.name, existingJoint);
                         existingJoints[j] = null; 
                         inTheExistingJoints = true;
                         break;
@@ -496,8 +500,11 @@ export default class GPUSkinningPlayer
                 joinGO.transform.localScale = new Vector3(1, 1, 1);
 
                 let join:GPUSkinningPlayerJoint = joinGO.addComponent(GPUSkinningPlayerJoint);
+                join.onAwake();
                 joints.push(join);
-                join.Init(i, bone.guid);
+                join.Init(bone, i, bone.boneIndex, bone.guid);
+                
+                this.jointMap.set(bone.name, join);
             }
         }
 
@@ -525,8 +532,33 @@ export default class GPUSkinningPlayer
 
                 joinGO.removeSelf();
                 joinGO.destroy();
+                this.jointMap.delete(join.bone.name);
 
             }
+        }
+    }
+
+    /** 查找导出的骨骼节点 */
+    public FindJoint(boneName: string):GPUSkinningPlayerJoint
+    {
+        if(this.jointMap.has(boneName))
+        {
+            return this.jointMap.get(boneName);
+        }
+        return null;
+    }
+    
+    /** 查找导出的骨骼节点GameObject */
+    public FindJointGameObject(boneName: string):Laya.Sprite3D
+    {
+        var joint = this.FindJoint(boneName);
+        if(joint)
+        {
+            return joint.GameObject;
+        }
+        else
+        {
+            return null;
         }
     }
 
@@ -816,9 +848,9 @@ export default class GPUSkinningPlayer
             if (jointTransform != null)
             {
                 // TODO: Update Joint when Animation Blend
+                var jointMatrix: Matrix4x4 = new Matrix4x4();
 
-                let jointMatrix: Matrix4x4 = new Matrix4x4();
-                Matrix4x4.multiply(frame.matrices[joint.BoneIndex], bones[joint.BoneIndex].BindposeInv, jointMatrix);
+                Matrix4x4.multiply(frame.matrices[joint.index], bones[joint.index].BindposeInv, jointMatrix);
                 if(playingClip.rootMotionEnabled && this.rootMotionEnabled)
                 {
                     let outM: Matrix4x4 = new Matrix4x4();
@@ -826,18 +858,22 @@ export default class GPUSkinningPlayer
                     jointMatrix = outM;
                 }
 
-                var vec3 = new Vector3();
-                jointMatrix.getTranslationVector(vec3);
-                jointTransform.localPosition = vec3;
+                jointTransform.localMatrix = jointMatrix;
 
-                vec3 = new Vector3();
 
-                jointMatrix.getForward(vec3);
+                // var vec3 = new Vector3();
+                // jointMatrix.getTranslationVector(vec3);
+                // jointTransform.localPosition = vec3;
 
-                var vec3_2 = new Vector3();
-                Quaternion.angleTo(new Vector3(1, 0, 0), vec3, vec3_2);
+                // vec3 = new Vector3();
 
-                jointTransform.localRotationEuler = vec3_2;
+                // jointMatrix.getForward(vec3);
+
+                // var vec3_2 = new Vector3();
+                // Quaternion.angleTo(new Vector3(0, 0, 0), vec3, vec3_2);
+
+                // jointTransform.localRotationEuler = vec3_2;
+                // console.log("localPosition=", jointTransform.localPosition, " localRotationEuler=", jointTransform.localRotationEuler);
             }
             else
             {

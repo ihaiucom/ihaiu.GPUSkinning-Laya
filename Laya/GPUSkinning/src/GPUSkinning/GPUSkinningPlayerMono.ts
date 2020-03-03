@@ -46,6 +46,19 @@ export default class GPUSkinningPlayerMono extends Laya.Script3D
         return this.player;
     }
 
+    /** 查找导出的骨骼节点GameObject */
+    public FindJointGameObject(boneName: string):Laya.Sprite3D
+    {
+        if(this.player)
+        {
+            return this.player.FindJointGameObject(boneName);
+        }
+        else
+        {
+            return null;
+        }
+    }
+
     gameObject: Laya.MeshSprite3D;
 
     _cloneTo(dest: GPUSkinningPlayerMono): void 

@@ -50,20 +50,24 @@ export default class TestShader
         // // mat.GPUSkinning_TextureMatrix = texture;
         // plane.meshRenderer.sharedMaterial = mat;
 
+        var box1 = new Laya.MeshSprite3D(Laya.PrimitiveMesh.createBox());
+        var box2 = new Laya.MeshSprite3D(Laya.PrimitiveMesh.createSphere());
+        var box3 = new Laya.MeshSprite3D(Laya.PrimitiveMesh.createBox());
+
         var nameList = [
             "Hero_1001_Dianguanglongqi_Skin1",
-            "Hero_1002_Fengyunzhanji_Skin1",
-            "Hero_1004_Dongzhuo_Skin1",
-            "Monster_2002_shuangdaobing_Skin1",
-            "Monster_2003_langyabing_Skin1",
-            "Monster_2005_gongjianshou_Skin1",
-            "Monster_2011_Fujiang_Skin1",
-            "Monster_2012_Laohu_Skin1",
-            "Monster_2013_Guo_Skin1",
-            "Monster_4002_Baifuzhang_Skin1",
-            "Monster_5002_Huaxiong_Skin1",
-            "Monster_5003_Leique_Skin1",
-            "Monster_4003_Kuileishi_Skin1",
+            // "Hero_1002_Fengyunzhanji_Skin1",
+            // "Hero_1004_Dongzhuo_Skin1",
+            // "Monster_2002_shuangdaobing_Skin1",
+            // "Monster_2003_langyabing_Skin1",
+            // "Monster_2005_gongjianshou_Skin1",
+            // "Monster_2011_Fujiang_Skin1",
+            // "Monster_2012_Laohu_Skin1",
+            // "Monster_2013_Guo_Skin1",
+            // "Monster_4002_Baifuzhang_Skin1",
+            // "Monster_5002_Huaxiong_Skin1",
+            // "Monster_5003_Leique_Skin1",
+            // "Monster_4003_Kuileishi_Skin1",
         ];
 
         for(var j = 0; j < nameList.length; j ++)
@@ -73,6 +77,27 @@ export default class TestShader
             mono.Player.isRandomPlayClip = true;
             window['mono'] = mono;
             mono.Player.Play("ATTACK_01");
+
+            var left:Laya.Sprite3D = <any> mono.FindJointGameObject("Bip001 L Hand");
+            var right:Laya.Sprite3D = <any> mono.FindJointGameObject("Bip001 R Hand");
+            var prop:Laya.Sprite3D = <any> mono.FindJointGameObject("Bip001 Prop1");
+            left.addChild(box1);
+            right.addChild(box2);
+            prop.addChild(box3);
+            box1.transform.localPosition = new Laya.Vector3(0, 0, 0);
+            box1.transform.localRotationEuler = new Laya.Vector3(0, 0, 0);
+            box1.transform.localScale = new Laya.Vector3(0.3, 0.3, 0.3);
+
+            
+            box2.transform.localPosition = new Laya.Vector3(0, 0, 0);
+            box2.transform.localRotationEuler = new Laya.Vector3(0, 0, 0);
+            box2.transform.localScale = new Laya.Vector3(0.3, 0.3, 0.3);
+
+            
+            box3.transform.localPosition = new Laya.Vector3(0, 0, 0);
+            box3.transform.localRotationEuler = new Laya.Vector3(0, 0, 0);
+            box3.transform.localScale = new Laya.Vector3(0.1, 0.1, 2);
+            window['box3'] = box3;
             
             for(var i = 0; i < mono.anim.clips.length; i ++)
             {
@@ -90,10 +115,10 @@ export default class TestShader
             sprite.transform.localPositionX = x * 1.5;
             sprite.transform.localPositionZ = -y * 2;
             sprite.transform.localPositionY = -0.5;
-            if(j == 0)
-            {
-                this.CloneMono(mono);
-            }
+            // if(j == 0)
+            // {
+            //     this.CloneMono(mono);
+            // }
             break;
         }
         return;
@@ -126,29 +151,29 @@ export default class TestShader
 
         return;
 
-        var mono = await GPUSkining.CreateByNameAsync("Hero_1001_Dianguanglongqi_Skin1", "res/gpuskining/Hero_1001_Dianguanglongqi.jpg");
-        if(mono)
-        {
+        // var mono = await GPUSkining.CreateByNameAsync("Hero_1001_Dianguanglongqi_Skin1", "res/gpuskining/Hero_1001_Dianguanglongqi.jpg");
+        // if(mono)
+        // {
             
-        for(var i = 0; i < mono.anim.clips.length; i ++)
-        {
-            mono.anim.clips[i].wrapMode = GPUSkinningWrapMode.Loop;
-            mono.anim.clips[i].individualDifferenceEnabled =true;
-        }
+        // for(var i = 0; i < mono.anim.clips.length; i ++)
+        // {
+        //     mono.anim.clips[i].wrapMode = GPUSkinningWrapMode.Loop;
+        //     mono.anim.clips[i].individualDifferenceEnabled =true;
+        // }
 
-            this.scene.addChild(mono.owner);
+        //     this.scene.addChild(mono.owner);
 
-            var sprite: Laya.MeshSprite3D = <Laya.MeshSprite3D> mono.owner;
-            sprite.transform.localPositionX = 2;
-            mono.Player.Play("IDLE");
+        //     var sprite: Laya.MeshSprite3D = <Laya.MeshSprite3D> mono.owner;
+        //     sprite.transform.localPositionX = 2;
+        //     mono.Player.Play("IDLE");
 
 
-            window['sprite2'] = sprite;
-            window['mono2'] = mono;
-            // sprite.transform.localRotationEulerX = -90;
-            // this.CloneMono(mono);
+        //     window['sprite2'] = sprite;
+        //     window['mono2'] = mono;
+        //     // sprite.transform.localRotationEulerX = -90;
+        //     // this.CloneMono(mono);
 
-        }
+        // }
 
         // await this.TestLoadCube();
     }
