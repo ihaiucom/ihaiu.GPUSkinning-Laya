@@ -80,10 +80,10 @@ export default class TestShader
 
             var left:Laya.Sprite3D = <any> mono.FindJointGameObject("Bip001 L Hand");
             var right:Laya.Sprite3D = <any> mono.FindJointGameObject("Bip001 R Hand");
-            var prop:Laya.Sprite3D = <any> mono.FindJointGameObject("Bip001 Prop1");
+            // var prop:Laya.Sprite3D = <any> mono.FindJointGameObject("Bip001 Prop1");
             left.addChild(box1);
             right.addChild(box2);
-            prop.addChild(box3);
+            // prop.addChild(box3);
             box1.transform.localPosition = new Laya.Vector3(0, 0, 0);
             box1.transform.localRotationEuler = new Laya.Vector3(0, 0, 0);
             box1.transform.localScale = new Laya.Vector3(0.3, 0.3, 0.3);

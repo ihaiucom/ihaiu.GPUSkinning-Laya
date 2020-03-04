@@ -55,6 +55,8 @@ export class GPUSkiningLoadModelV05 {
 		GPUSkiningLoadModelV05._subMeshes = subMeshes;
 		GPUSkiningLoadModelV05._version = version;
 		GPUSkiningLoadModelV05._readData = readData;
+
+
 		GPUSkiningLoadModelV05.READ_DATA();
 		GPUSkiningLoadModelV05.READ_BLOCK();
 		GPUSkiningLoadModelV05.READ_STRINGS();
@@ -150,6 +152,7 @@ export class GPUSkiningLoadModelV05 {
 			switch (GPUSkiningLoadModelV05._version) {
 				case "LAYAMODEL:05":
 				case "LAYAMODEL:GPUSkining_05": 
+				case "LAYAMODEL:GPUSkining_06": 
 					vertexData = arrayBuffer.slice(vbStart, vbStart + vertexCount * vertexStride);
 					floatData = new Float32Array(vertexData);
 					uint8Data = new Uint8Array(vertexData);

@@ -522,8 +522,11 @@ export default class GPUSkinningPlayer
             for(let i = 0; i < joints.length; i ++)
             {
                 let join = joints[i];
+                if(!join)
+                    continue;
+
                 let joinGO = <Laya.Sprite3D> join.owner;
-                for(let j = joinGO.numChildren; j >= 0 ; j --)
+                for(let j = joinGO.numChildren -1; j >= 0 ; j --)
                 {
                     let child =  <Laya.Sprite3D> joinGO.getChildAt(j);
                     this.go.addChild(child);
@@ -532,7 +535,10 @@ export default class GPUSkinningPlayer
 
                 joinGO.removeSelf();
                 joinGO.destroy();
-                this.jointMap.delete(join.bone.name);
+                if(join.bone)
+                {
+                    this.jointMap.delete(join.bone.name);
+                }
 
             }
         }

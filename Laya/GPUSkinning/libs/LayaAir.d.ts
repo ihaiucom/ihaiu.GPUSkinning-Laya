@@ -46867,6 +46867,7 @@ declare module Laya {
 
 		_subMeshes: SubMesh[];
 		_setSubMeshes(subMeshes: SubMesh[]): void
+		_needUpdateBounds: boolean;
 
 	}
 	
