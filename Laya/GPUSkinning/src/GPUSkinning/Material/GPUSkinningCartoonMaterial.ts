@@ -19,6 +19,7 @@ export class GPUSkinningCartoonMaterial extends GPUSkinningBaseMaterial
     
     /** Shader名称 */
     public static shaderName = "GPUSkinningCartoon";
+    public static outlinePass = "GPUSkinningCartoonOutline";
 
 	private static _isInstalled: boolean = false;
     public static async install()
@@ -37,6 +38,10 @@ export class GPUSkinningCartoonMaterial extends GPUSkinningBaseMaterial
 
     private static async initShader()
     {
+		
+        var outlineVS: string = await this.loadShaderVSAsync(GPUSkinningCartoonMaterial.outlinePass);
+		var outlinePS: string = await this.loadShaderPSAsync(GPUSkinningCartoonMaterial.outlinePass);
+		
         var vs: string = await GPUSkinningCartoonMaterial.loadShaderVSAsync(GPUSkinningCartoonMaterial.shaderName);
         var ps: string = await GPUSkinningCartoonMaterial.loadShaderPSAsync(GPUSkinningCartoonMaterial.shaderName);
         
@@ -127,7 +132,13 @@ export class GPUSkinningCartoonMaterial extends GPUSkinningBaseMaterial
         
         shader = Shader3D.add(GPUSkinningCartoonMaterial.shaderName, null, null, true);
         subShader =  new SubShader(attributeMap, uniformMap);
-        shader.addSubShader(subShader);
+		shader.addSubShader(subShader);
+		
+		
+        var outlinePass = subShader.addShaderPass(outlineVS, outlinePS);
+		outlinePass.renderState.cull = Laya.RenderState.CULL_FRONT;
+		// outlinePass.renderState.depthWrite = false;
+
         
 
         var mainPass =  subShader.addShaderPass(vs, ps, stateMap);

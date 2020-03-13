@@ -189,7 +189,7 @@ export default class GPUSkining
     {
       if(!materialCls)
       {
-        materialCls = GPUSkinningUnlitMaterial;
+        materialCls = GPUSkinningCartoonMaterial;
       }
       var animPath: string = this.GetPath(this.GetAnimName(name));
       var meshPath: string = this.GetPath(this.GetMeshName(name));
@@ -253,7 +253,7 @@ export default class GPUSkining
     {
       if(!materialCls)
       {
-        materialCls = GPUSkinningUnlitMaterial;
+        materialCls = GPUSkinningCartoonMaterial;
       }
       var animPath: string = this.GetPath(this.GetAnimName(name));
       var meshPath: string = this.GetPath(this.GetMeshName(name));

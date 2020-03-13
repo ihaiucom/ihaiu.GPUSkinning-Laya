@@ -2272,6 +2272,8 @@ var laya = (function () {
 	        GPUSkinningCartoonMaterial.defaultMaterial.lock = true;
 	    }
 	    static async initShader() {
+	        var outlineVS = await this.loadShaderVSAsync(GPUSkinningCartoonMaterial.outlinePass);
+	        var outlinePS = await this.loadShaderPSAsync(GPUSkinningCartoonMaterial.outlinePass);
 	        var vs = await GPUSkinningCartoonMaterial.loadShaderVSAsync(GPUSkinningCartoonMaterial.shaderName);
 	        var ps = await GPUSkinningCartoonMaterial.loadShaderPSAsync(GPUSkinningCartoonMaterial.shaderName);
 	        var attributeMap;
@@ -2339,6 +2341,8 @@ var laya = (function () {
 	        shader = Shader3D$3.add(GPUSkinningCartoonMaterial.shaderName, null, null, true);
 	        subShader = new SubShader$1(attributeMap, uniformMap);
 	        shader.addSubShader(subShader);
+	        var outlinePass = subShader.addShaderPass(outlineVS, outlinePS);
+	        outlinePass.renderState.cull = Laya.RenderState.CULL_FRONT;
 	        var mainPass = subShader.addShaderPass(vs, ps, stateMap);
 	    }
 	    static __initDefine__() {
@@ -2647,6 +2651,7 @@ var laya = (function () {
 	    }
 	}
 	GPUSkinningCartoonMaterial.shaderName = "GPUSkinningCartoon";
+	GPUSkinningCartoonMaterial.outlinePass = "GPUSkinningCartoonOutline";
 	GPUSkinningCartoonMaterial._isInstalled = false;
 	GPUSkinningCartoonMaterial.RENDERMODE_OPAQUE = 0;
 	GPUSkinningCartoonMaterial.RENDERMODE_CUTOUT = 1;
@@ -2808,7 +2813,7 @@ var laya = (function () {
 	    }
 	    static async CreateByNameAsync(name, isUnloadBin, mainTexturePath, materialCls) {
 	        if (!materialCls) {
-	            materialCls = GPUSkinningUnlitMaterial;
+	            materialCls = GPUSkinningCartoonMaterial;
 	        }
 	        var animPath = this.GetPath(this.GetAnimName(name));
 	        var meshPath = this.GetPath(this.GetMeshName(name));
@@ -2848,7 +2853,7 @@ var laya = (function () {
 	    }
 	    static CreateByName(name, callback, isUnloadBin, mainTexturePath, materialCls) {
 	        if (!materialCls) {
-	            materialCls = GPUSkinningUnlitMaterial;
+	            materialCls = GPUSkinningCartoonMaterial;
 	        }
 	        var animPath = this.GetPath(this.GetAnimName(name));
 	        var meshPath = this.GetPath(this.GetMeshName(name));

@@ -51,7 +51,7 @@ export class TestScene extends Laya.Scene3D
         camera.transform.localPosition = new Vector3(0, 0, 10);
 
         camera.clearColor = new Laya.Vector4(0.2, 0.5, 0.8, 1);
-        // camera.orthographic = true;
+        camera.orthographic = true;
         camera.orthographicVerticalSize = 5.2;
         camera.farPlane = 2000;
         
@@ -65,14 +65,15 @@ export class TestScene extends Laya.Scene3D
         //创建平行光
         let directionLight: Laya.DirectionLight =<Laya.DirectionLight> this.addChild(new Laya.DirectionLight());
 		directionLight.color = new Laya.Vector3(1, 1, 1);
-		this.lightRotaitonSrc= directionLight.transform.localRotationEuler = new Laya.Vector3(125, 68, 106);
-		this.directionLight = directionLight;
+		this.lightRotaitonSrc= directionLight.transform.localRotationEuler = new Laya.Vector3(-45, 80, 0);
+        this.directionLight = directionLight;
+        directionLight.transform.rotationEuler = new Laya.Vector3(-20, 20, 0); 
         
 
         this.addChild(cameraRootNode);
         this.addChild(directionLight);
 
-        this.lightRotaitonStart();
+        // this.lightRotaitonStart();
         
     }
 

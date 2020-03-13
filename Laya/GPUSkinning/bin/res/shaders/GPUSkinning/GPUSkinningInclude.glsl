@@ -20,6 +20,9 @@ uniform mat4 u_GPUSkinning_RootMotion;
 // 混合帧 根骨骼 逆矩阵
 uniform mat4 u_GPUSkinning_RootMotion_CrossFade;
 
+uniform mat4 frameMaterial;
+
+mat4 skinTransform;
 
 struct GPUSkingingTextureMatrixs
 {
@@ -259,6 +262,11 @@ vec4 skin_noroot(GPUSkingingTextureMatrixs s, vec4 vertex, vec4 uv2, vec4 uv3)
 
 vec4 skin_root(GPUSkingingTextureMatrixs s, vec4 vertex, vec4 uv2, vec4 uv3, mat4 root)
 {
+    // skinTransform = s.m0 * uv2.y
+    //             + s.m1 * uv2.w
+    //             + s.m2 * uv3.y
+    //             + s.m3 * uv3.w;
+    //  return root * skinTransform * vertex;
      return (root * (s.m0 * vertex)) * uv2.y 
          + (root * (s.m1 * vertex)) * uv2.w 
          + (root * (s.m2 * vertex)) * uv3.y 
@@ -282,6 +290,11 @@ vec4 rootOff_BlendOff(vec4 vertex, vec4 uv2, vec4 uv3)
     float frameNextIndex = getFrameNextIndex();
     GPUSkingingTextureMatrixs sc = textureMatrix(uv2, uv3, frameStartIndex);
     GPUSkingingTextureMatrixs sn = textureMatrix(uv2, uv3, frameNextIndex);
+
+    skinTransform = sc.m0 * uv2.y
+                + sc.m1 * uv2.w
+                + sc.m2 * uv3.y
+                + sc.m3 * uv3.w;
     
     vec4 pc = skin_noroot(sc, vertex, uv2, uv3);
     vec4 pn = skin_noroot(sn, vertex, uv2, uv3);

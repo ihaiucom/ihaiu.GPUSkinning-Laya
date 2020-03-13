@@ -100,34 +100,20 @@ void main()
 	vec3 worldLightDir = normalize(lightDir);
 
 
-	// 环境灯光
-	vec3 ambient = vec3(0.2117647, 0.227451, 0.2588235);
-	// ambient = u_AmbientColor;
 
+	float _shadowAngleStep = 0.2;
+	float _ShadowStrength = 0.1;
+	vec4 finalColor = mainTexture;
+	finalColor.rgb *= u_AlbedoColor.rgb;
 
 	// 灯光和法线角度
-	float angle = (1.0 - max(0.0, dot(worldLightDir, worldNormal) ) );
-
-	// 灯光和法线角度， 值加深
-	float angleExp = clamp(pow(angle, u_CartoonColorDeep), 0.0, u_CartoonColorRange);
-
-
-	vec3 emissive = (
-						(
-							(mainTexture.rgb - angleExp)
-							+
-							(u_CartoonShadowColor.rgb * angleExp)
-						)
-						+
-						(
-							(mainTexture.rgb * u_AlbedoColor.rgb)
-							*
-							ambient
-						)
-					);
-
-	vec4 finalColor = vec4(emissive, mainTexture.a) ;
-	// vec4 finalColor = mainTexture ;
+	float angle = dot(worldLightDir, worldNormal);
+	float stepValue = step(angle, _shadowAngleStep);
+	finalColor.rgb -= stepValue *  _ShadowStrength;
+	// float v = 1.0 - stepValue *  _ShadowStrength;
+	// v = angle;
+	// finalColor.rgb = vec3(v, v, v);
+	// finalColor.rgb = v_Normal;
 
 	
 	gl_FragColor = finalColor;

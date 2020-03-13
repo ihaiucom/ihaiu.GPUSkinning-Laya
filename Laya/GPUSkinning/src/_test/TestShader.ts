@@ -70,13 +70,15 @@ export default class TestShader
             // "Monster_4003_Kuileishi_Skin1",
         ];
 
+        // for(var j = 0; j < nameList.length; j ++)
         for(var j = 0; j < nameList.length; j ++)
         {
             var resId = nameList[j];
             var mono = await GPUSkining.CreateByNameAsync(nameList[j], true);
-            mono.Player.isRandomPlayClip = true;
+            // mono.Player.isRandomPlayClip = true;
             window['mono'] = mono;
-            mono.Player.Play("ATTACK_01");
+            // mono.Player.Play("ATTACK_01");
+            mono.Player.Play("IDLE");
 
             var left:Laya.Sprite3D = <any> mono.FindJointGameObject("Bip001 L Hand");
             var right:Laya.Sprite3D = <any> mono.FindJointGameObject("Bip001 R Hand");
@@ -112,13 +114,18 @@ export default class TestShader
 
             var y = Math.floor(j / 5);
             var x = j - y * 5 - 2.5;
-            sprite.transform.localPositionX = x * 1.5;
-            sprite.transform.localPositionZ = -y * 2;
-            sprite.transform.localPositionY = -0.5;
-            // if(j == 0)
-            // {
-            //     this.CloneMono(mono);
-            // }
+            // sprite.transform.localPositionX = x * 1.5;
+            // sprite.transform.localPositionZ = -y * 2;
+            // sprite.transform.localPositionY = -0.5;
+
+            
+            sprite.transform.localPositionX =0;
+            sprite.transform.localPositionZ =0;
+            sprite.transform.localPositionY =0;
+            if(j == 0)
+            {
+                this.CloneMono(mono, 1, 1);
+            }
             break;
         }
         return;
@@ -193,15 +200,17 @@ export default class TestShader
             for(var x = 0; x < nx; x ++)
             {
                 var c : Laya.MeshSprite3D= <any>sprite.clone();
-                c.transform.localPositionX = x - 5;
+                c.transform.localPositionX = x ;
                 // c.transform.localPositionX = x - 2;
-                c.transform.localPositionZ = -y * 2 + 5;
+                c.transform.localPositionZ = -1;
                 let cm :GPUSkinningPlayerMono= c.getComponent(GPUSkinningPlayerMono);
                 cm.SetData(mono.anim, mono.mesh, mono.mtrl, mono.textureRawData)
+                cm.Player.Play("IDLE");
                 this.scene.addChild(c);
                 let i = Random.range(0, mono.anim.clips.length - 1);
                 i = Math.floor(i);
                 cm.Player.Play(names[i]);
+                cm.Player.Play("IDLE");
 
                 // setTimeout(() => {
                     
