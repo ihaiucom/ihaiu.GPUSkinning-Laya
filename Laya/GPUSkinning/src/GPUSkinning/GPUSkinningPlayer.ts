@@ -195,14 +195,16 @@ export default class GPUSkinningPlayer
             }
             else if(this.WrapMode == GPUSkinningWrapMode.Loop)
             {
-                if(this.playingClip.individualDifferenceEnabled)
-                {
-                    this.res.Time = this.playingClip.length + v * this.playingClip.length - this.timeDiff;
-                }
-                else
-                {
-                    this.res.Time = v * this.playingClip.length;
-                }
+                // if(this.playingClip.individualDifferenceEnabled)
+                // {
+                //     this.res.Time = this.playingClip.length + v * this.playingClip.length - this.timeDiff;
+                // }
+                // else
+                // {
+                //     this.res.Time = v * this.playingClip.length;
+                // }
+                
+                this.time = v * this.playingClip.length;
             }
             else
             {
@@ -221,7 +223,8 @@ export default class GPUSkinningPlayer
                 time = this.time;
                 break;
             case GPUSkinningWrapMode.Loop:
-                time = this.res.Time + (this.playingClip.individualDifferenceEnabled ? this.timeDiff : 0);
+                time = this.time;
+                // time = this.res.Time + (this.playingClip.individualDifferenceEnabled ? this.timeDiff : 0);
                 break;
             default:
                 console.error(`GPUSkinningPlayer.GetCurrentTime 未知 播放模式 WrapMode=${this.WrapMode}`);
@@ -407,23 +410,6 @@ export default class GPUSkinningPlayer
         this.mr.sharedMaterial = mtrl == null ? null : mtrl.material;
         this.mf.sharedMesh = res.mesh;
 
-        // if(res.anim.name == "Monster_4003_Kuileishi_Skin1")
-        // {
-        //     var path = GPUSkining.GetPath("GPUSKinning_Monster_4003_Kuileishi_Skin1_MainTexture2.png");
-        //     Laya.loader.load(path, Laya.Handler.create(this, (texture2D:any)=>
-		// 	{
-        //         if(texture2D)
-        //         {
-        //             var material2:GPUSkinningUnlitMaterial = <GPUSkinningUnlitMaterial> res.CloneMaterial(mtrl.material, res.anim.skinQuality);
-        //             material2.albedoTexture = texture2D;
-        //             var materialList = [mtrl.material, material2];
-        //             this.mr.sharedMaterials = materialList;
-        //         }
-                
-
-        //     }), null, Laya.Loader.TEXTURE2D);
-            
-        // }
 
 
         this.ConstructJoints();
@@ -568,6 +554,12 @@ export default class GPUSkinningPlayer
         }
     }
 
+    public GotoAndStop(clipName:string, nomrmalizeTime : number = 0)
+    {
+        this.Play(clipName, nomrmalizeTime);
+        this.Stop();
+    }
+
     /** 播放 */
     public Play(clipName:string, nomrmalizeTime : number = 0)
     {
@@ -659,7 +651,8 @@ export default class GPUSkinningPlayer
     /** 暂停 */
     public Stop()
     {
-        this.isPlaying = false;
+        // this.isPlaying = false;
+        this.speed = 0;
     }
 
     /** 继续播放 */
@@ -667,7 +660,8 @@ export default class GPUSkinningPlayer
     {
         if(this.playingClip != null)
         {
-            this.isPlaying = true;
+            // this.isPlaying = true;
+            this.speed = 1;
         }
     }
 
@@ -713,6 +707,7 @@ export default class GPUSkinningPlayer
         {
             case GPUSkinningWrapMode.Loop:
                 this.UpdateMaterial(timeDelta, currMtrl);
+                this.time += timeDelta;
                 break;
 
             case GPUSkinningWrapMode.Once:
@@ -765,7 +760,15 @@ export default class GPUSkinningPlayer
         let res = this.res;
         let frameIndex = this.GetFrameIndex();
         this.__frameIndex = frameIndex;
-        this.nextFrameIndex = this.GetNextFrameIndex(frameIndex);
+        if(this.speed == 0)
+        {
+            this.nextFrameIndex = this.__frameIndex;
+        }
+        else
+        {
+            this.nextFrameIndex = this.GetNextFrameIndex(frameIndex);
+        }
+        
         if(this.lastPlayingClip == this.playingClip && this.lastPlayingFrameIndex == frameIndex)
         {
             // res.Update(deltaTime, currMtrl);

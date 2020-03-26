@@ -101,11 +101,11 @@ export default class TestShader
             box3.transform.localScale = new Laya.Vector3(0.1, 0.1, 2);
             window['box3'] = box3;
             
-            for(var i = 0; i < mono.anim.clips.length; i ++)
-            {
-                mono.anim.clips[i].wrapMode = GPUSkinningWrapMode.Loop;
-                mono.anim.clips[i].individualDifferenceEnabled =true;
-            }
+            // for(var i = 0; i < mono.anim.clips.length; i ++)
+            // {
+            //     mono.anim.clips[i].wrapMode = GPUSkinningWrapMode.Loop;
+            //     mono.anim.clips[i].individualDifferenceEnabled =true;
+            // }
 
             this.scene.addChild(mono.owner);
             var sprite: Laya.MeshSprite3D = <Laya.MeshSprite3D> mono.owner;
@@ -122,10 +122,10 @@ export default class TestShader
             sprite.transform.localPositionX =0;
             sprite.transform.localPositionZ =0;
             sprite.transform.localPositionY =0;
-            if(j == 0)
-            {
-                this.CloneMono(mono, 1, 1);
-            }
+            // if(j == 0)
+            // {
+            //     this.CloneMono(mono, 1, 1);
+            // }
             break;
         }
         return;
