@@ -83,7 +83,10 @@ export class GPUSkinningCartoon2TextureMaterial extends GPUSkinningBaseMaterial
             'u_CartoonColorDeep': Shader3D.PERIOD_MATERIAL,
             // 卡通材质 -- 描边粗细
             'u_CartoonOutlineWidth': Shader3D.PERIOD_MATERIAL,
-
+			// 卡通材质 -- 阴影贴图
+			'u_ShadowTexture': Shader3D.PERIOD_MATERIAL,
+			// 卡通材质 -- 场景光照贴图
+			'u_SceneLightingTexture': Shader3D.PERIOD_SCENE,
 			
 			'u_AlbedoTexture': Shader3D.PERIOD_MATERIAL,
 			'u_AlbedoColor': Shader3D.PERIOD_MATERIAL,
@@ -158,6 +161,8 @@ export class GPUSkinningCartoon2TextureMaterial extends GPUSkinningBaseMaterial
 	static RENDERMODE_ADDTIVE: number = 3;
 
 	static SHADERDEFINE_ALBEDOTEXTURE: ShaderDefine;
+	static SHADERDEFINE_SHADOWTEXTURE: ShaderDefine;
+	static SHADERDEFINE_SCENELIGHTINGTEXTURE: ShaderDefine;
 	static SHADERDEFINE_TILINGOFFSET: ShaderDefine;
 	static SHADERDEFINE_ENABLEVERTEXCOLOR: ShaderDefine;
 
@@ -171,6 +176,8 @@ export class GPUSkinningCartoon2TextureMaterial extends GPUSkinningBaseMaterial
 	// 卡通材质 -- 描边粗细
     static CARTOON_OUTLINEWIDTH: number = Shader3D.propertyNameToID("u_CartoonOutlineWidth");
 
+	static SCENELIGHTINGTEXTURE: number = Shader3D.propertyNameToID("u_SceneLightingTexture");
+	static SHADOWTEXTURE: number = Shader3D.propertyNameToID("u_ShadowTexture");
 	static ALBEDOTEXTURE: number = Shader3D.propertyNameToID("u_AlbedoTexture");
 	static ALBEDOCOLOR: number = Shader3D.propertyNameToID("u_AlbedoColor");
 	static TILINGOFFSET: number = Shader3D.propertyNameToID("u_TilingOffset");
@@ -189,6 +196,8 @@ export class GPUSkinningCartoon2TextureMaterial extends GPUSkinningBaseMaterial
 	 */
 	static __initDefine__(): void {
 		GPUSkinningCartoon2TextureMaterial.SHADERDEFINE_ALBEDOTEXTURE = Shader3D.getDefineByName("ALBEDOTEXTURE");
+		GPUSkinningCartoon2TextureMaterial.SHADERDEFINE_SHADOWTEXTURE = Shader3D.getDefineByName("SHADOWTEXTURE");
+		GPUSkinningCartoon2TextureMaterial.SHADERDEFINE_SCENELIGHTINGTEXTURE = Shader3D.getDefineByName("SCENELIGHTING");
 		GPUSkinningCartoon2TextureMaterial.SHADERDEFINE_TILINGOFFSET = Shader3D.getDefineByName("TILINGOFFSET");
 		GPUSkinningCartoon2TextureMaterial.SHADERDEFINE_ENABLEVERTEXCOLOR = Shader3D.getDefineByName("ENABLEVERTEXCOLOR");
 	}
@@ -406,6 +415,38 @@ export class GPUSkinningCartoon2TextureMaterial extends GPUSkinningBaseMaterial
 		else
 			this._shaderValues.removeDefine(GPUSkinningCartoon2TextureMaterial.SHADERDEFINE_ALBEDOTEXTURE);
 		this._shaderValues.setTexture(GPUSkinningCartoon2TextureMaterial.ALBEDOTEXTURE, value);
+	}
+
+	
+	/**
+	 * 阴影贴图
+	 */
+	get shadowTexture(): BaseTexture {
+		return this._shaderValues.getTexture(GPUSkinningCartoon2TextureMaterial.SHADOWTEXTURE);
+	}
+
+	set shadowTexture(value: BaseTexture) {
+		if (value)
+			this._shaderValues.addDefine(GPUSkinningCartoon2TextureMaterial.SHADERDEFINE_SHADOWTEXTURE);
+		else
+			this._shaderValues.removeDefine(GPUSkinningCartoon2TextureMaterial.SHADERDEFINE_SHADOWTEXTURE);
+		this._shaderValues.setTexture(GPUSkinningCartoon2TextureMaterial.SHADOWTEXTURE, value);
+	}
+
+	
+	/**
+	 * 场景光照
+	 */
+	get sceneLightingTexture(): BaseTexture {
+		return this._shaderValues.getTexture(GPUSkinningCartoon2TextureMaterial.SCENELIGHTINGTEXTURE);
+	}
+
+	set sceneLightingTexture(value: BaseTexture) {
+		if (value)
+			this._shaderValues.addDefine(GPUSkinningCartoon2TextureMaterial.SHADERDEFINE_SCENELIGHTINGTEXTURE);
+		else
+			this._shaderValues.removeDefine(GPUSkinningCartoon2TextureMaterial.SHADERDEFINE_SCENELIGHTINGTEXTURE);
+		this._shaderValues.setTexture(GPUSkinningCartoon2TextureMaterial.SCENELIGHTINGTEXTURE, value);
 	}
 
 	/**
