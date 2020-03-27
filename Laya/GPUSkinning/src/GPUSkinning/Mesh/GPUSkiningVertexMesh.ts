@@ -47,7 +47,6 @@ export default class GPUSkiningVertexMesh extends VertexMesh
                     case "UV2":
                         element = new VertexElement(offset, VertexElementFormat.Vector4, this.MESH_TEXTURECOORDINATE2);
 						offset += 16;
-						console.log("UV2", element)
                         break;
 					case "BLENDWEIGHT":
 						element = new VertexElement(offset, VertexElementFormat.Vector4, this.MESH_BLENDWEIGHT0);

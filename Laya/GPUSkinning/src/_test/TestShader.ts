@@ -55,9 +55,9 @@ export default class TestShader
         var box3 = new Laya.MeshSprite3D(Laya.PrimitiveMesh.createBox());
 
         var nameList = [
-            "Hero_1001_Dianguanglongqi_Skin1",
+            // "Hero_1001_Dianguanglongqi_Skin1",
             // "Hero_1002_Fengyunzhanji_Skin1",
-            // "Hero_1004_Dongzhuo_Skin1",
+            "Hero_1004_Dongzhuo_Skin1",
             // "Monster_2002_shuangdaobing_Skin1",
             // "Monster_2003_langyabing_Skin1",
             // "Monster_2005_gongjianshou_Skin1",
@@ -78,34 +78,34 @@ export default class TestShader
             // mono.Player.isRandomPlayClip = true;
             window['mono'] = mono;
             // mono.Player.Play("ATTACK_01");
-            mono.Player.Play("IDLE");
+            mono.Player.Play("Idle");
 
-            var left:Laya.Sprite3D = <any> mono.FindJointGameObject("Bip001 L Hand");
-            var right:Laya.Sprite3D = <any> mono.FindJointGameObject("Bip001 R Hand");
-            // var prop:Laya.Sprite3D = <any> mono.FindJointGameObject("Bip001 Prop1");
-            left.addChild(box1);
-            right.addChild(box2);
+            // var left:Laya.Sprite3D = <any> mono.FindJointGameObject("Bip001 L Hand");
+            // var right:Laya.Sprite3D = <any> mono.FindJointGameObject("Bip001 R Hand");
+            // // var prop:Laya.Sprite3D = <any> mono.FindJointGameObject("Bip001 Prop1");
+            // left.addChild(box1);
+            // right.addChild(box2);
             // prop.addChild(box3);
-            box1.transform.localPosition = new Laya.Vector3(0, 0, 0);
-            box1.transform.localRotationEuler = new Laya.Vector3(0, 0, 0);
-            box1.transform.localScale = new Laya.Vector3(0.3, 0.3, 0.3);
+            // box1.transform.localPosition = new Laya.Vector3(0, 0, 0);
+            // box1.transform.localRotationEuler = new Laya.Vector3(0, 0, 0);
+            // box1.transform.localScale = new Laya.Vector3(0.3, 0.3, 0.3);
 
             
-            box2.transform.localPosition = new Laya.Vector3(0, 0, 0);
-            box2.transform.localRotationEuler = new Laya.Vector3(0, 0, 0);
-            box2.transform.localScale = new Laya.Vector3(0.3, 0.3, 0.3);
+            // box2.transform.localPosition = new Laya.Vector3(0, 0, 0);
+            // box2.transform.localRotationEuler = new Laya.Vector3(0, 0, 0);
+            // box2.transform.localScale = new Laya.Vector3(0.3, 0.3, 0.3);
 
             
-            box3.transform.localPosition = new Laya.Vector3(0, 0, 0);
-            box3.transform.localRotationEuler = new Laya.Vector3(0, 0, 0);
-            box3.transform.localScale = new Laya.Vector3(0.1, 0.1, 2);
-            window['box3'] = box3;
+            // box3.transform.localPosition = new Laya.Vector3(0, 0, 0);
+            // box3.transform.localRotationEuler = new Laya.Vector3(0, 0, 0);
+            // box3.transform.localScale = new Laya.Vector3(0.1, 0.1, 2);
+            // window['box3'] = box3;
             
-            // for(var i = 0; i < mono.anim.clips.length; i ++)
-            // {
-            //     mono.anim.clips[i].wrapMode = GPUSkinningWrapMode.Loop;
-            //     mono.anim.clips[i].individualDifferenceEnabled =true;
-            // }
+            for(var i = 0; i < mono.anim.clips.length; i ++)
+            {
+                mono.anim.clips[i].wrapMode = GPUSkinningWrapMode.Loop;
+                mono.anim.clips[i].individualDifferenceEnabled =true;
+            }
 
             this.scene.addChild(mono.owner);
             var sprite: Laya.MeshSprite3D = <Laya.MeshSprite3D> mono.owner;

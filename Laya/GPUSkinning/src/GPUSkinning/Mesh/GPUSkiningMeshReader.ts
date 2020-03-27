@@ -30,7 +30,6 @@ export class GPUSkiningMeshReader
 			boundsMax.z = readData.readFloat32();
         }
 
-        console.log(readData.pos);
         
         switch (version) 
         {
@@ -47,7 +46,6 @@ export class GPUSkiningMeshReader
             mesh._needUpdateBounds = false;
             mesh.bounds.setMin(boundsMin);
             mesh.bounds.setMin(boundsMax);
-            console.log(boundsMin, boundsMax);
         }
         mesh._setSubMeshes(subMeshes);
     }

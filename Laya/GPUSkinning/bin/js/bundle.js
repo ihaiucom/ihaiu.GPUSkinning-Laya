@@ -1679,7 +1679,6 @@
                         case "UV2":
                             element = new VertexElement(offset, VertexElementFormat.Vector4, this.MESH_TEXTURECOORDINATE2);
                             offset += 16;
-                            console.log("UV2", element);
                             break;
                         case "BLENDWEIGHT":
                             element = new VertexElement(offset, VertexElementFormat.Vector4, this.MESH_BLENDWEIGHT0);
@@ -1988,7 +1987,6 @@
                 boundsMax.y = readData.readFloat32();
                 boundsMax.z = readData.readFloat32();
             }
-            console.log(readData.pos);
             switch (version) {
                 case "LAYAMODEL:GPUSkining_05":
                 case "LAYAMODEL:GPUSkining_06":
@@ -2001,7 +1999,6 @@
                 mesh._needUpdateBounds = false;
                 mesh.bounds.setMin(boundsMin);
                 mesh.bounds.setMin(boundsMax);
-                console.log(boundsMin, boundsMax);
             }
             mesh._setSubMeshes(subMeshes);
         }
@@ -3570,26 +3567,16 @@
             var box2 = new Laya.MeshSprite3D(Laya.PrimitiveMesh.createSphere());
             var box3 = new Laya.MeshSprite3D(Laya.PrimitiveMesh.createBox());
             var nameList = [
-                "Hero_1001_Dianguanglongqi_Skin1",
+                "Hero_1004_Dongzhuo_Skin1",
             ];
             for (var j = 0; j < nameList.length; j++) {
                 var mono = await GPUSkining.CreateByNameAsync(nameList[j], true);
                 window['mono'] = mono;
-                mono.Player.Play("IDLE");
-                var left = mono.FindJointGameObject("Bip001 L Hand");
-                var right = mono.FindJointGameObject("Bip001 R Hand");
-                left.addChild(box1);
-                right.addChild(box2);
-                box1.transform.localPosition = new Laya.Vector3(0, 0, 0);
-                box1.transform.localRotationEuler = new Laya.Vector3(0, 0, 0);
-                box1.transform.localScale = new Laya.Vector3(0.3, 0.3, 0.3);
-                box2.transform.localPosition = new Laya.Vector3(0, 0, 0);
-                box2.transform.localRotationEuler = new Laya.Vector3(0, 0, 0);
-                box2.transform.localScale = new Laya.Vector3(0.3, 0.3, 0.3);
-                box3.transform.localPosition = new Laya.Vector3(0, 0, 0);
-                box3.transform.localRotationEuler = new Laya.Vector3(0, 0, 0);
-                box3.transform.localScale = new Laya.Vector3(0.1, 0.1, 2);
-                window['box3'] = box3;
+                mono.Player.Play("Idle");
+                for (var i = 0; i < mono.anim.clips.length; i++) {
+                    mono.anim.clips[i].wrapMode = GPUSkinningWrapMode.Loop;
+                    mono.anim.clips[i].individualDifferenceEnabled = true;
+                }
                 this.scene.addChild(mono.owner);
                 var sprite = mono.owner;
                 sprite.transform.localPositionX = 0;
