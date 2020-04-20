@@ -18,6 +18,8 @@ import GPUSkiningVertexMesh from "./Mesh/GPUSkiningVertexMesh";
 import GPUSkinningClip from "./Datas/GPUSkinningClip";
 import { GPUSkinningCartoonMaterial } from "./Material/GPUSkinningCartoonMaterial";
 import LayaExtends_Node from "../LayaExtends/LayaExtends_Node";
+import { GPUSkinningCartoon2TextureMaterial } from "./Material/GPUSkinningCartoon2TextureMaterial";
+import SceneMaterial from "./Material/SceneMaterial";
 // import LayaExtends_Laya3D from "../LayaExtends/LayaExtends_Laya3D";
 // import LayaExtends_Texture2D from "../LayaExtends/LayaExtends_Texture2D";
 export default class GPUSkining
@@ -41,6 +43,7 @@ export default class GPUSkining
       window['GPUSkinningUnlitMaterial'] = GPUSkinningUnlitMaterial;
       window['GPUSkinningAnimation'] = GPUSkinningAnimation;
       window['GPUSkinningClip'] = GPUSkinningClip;
+      window['SceneMaterial'] = SceneMaterial;
       
       
       var GPUSkinningIncludegGLSL: string = await GPUSkinningBaseMaterial.loadShaderGlslAsync("GPUSkinningInclude");
@@ -50,8 +53,9 @@ export default class GPUSkining
       // Shader3D.addInclude("GPUSkinningInclude4.glsl", GPUSkinningIncludegGLSL);
 
       GPUSkinningBaseMaterial.__initDefine__();
-      await GPUSkinningUnlitMaterial.install();
-      await GPUSkinningCartoonMaterial.install();
+      // await GPUSkinningUnlitMaterial.install();
+      // await GPUSkinningCartoonMaterial.install();
+      await GPUSkinningCartoon2TextureMaterial.install();
 
 
       LayaExtends_Node.Init();
@@ -108,6 +112,11 @@ export default class GPUSkining
     static GetMainTextureName(name: string): string
     {
       return `GPUSKinning_${name}_MainTexture.png`;
+    }
+    
+    static GetShadowTextureName(name: string): string
+    {
+      return `GPUSKinning_${name}_ShadowTexture.png`;
     }
 
     static GetPath(name: string)
@@ -185,45 +194,8 @@ export default class GPUSkining
 		});
 	}
 
-    static async CreateByNameAsync(name: string, isUnloadBin?: boolean, mainTexturePath?: string, materialCls?: any): Promise<GPUSkinningPlayerMono>
-    {
-      if(!materialCls)
-      {
-        materialCls = GPUSkinningCartoonMaterial;
-      }
-      var animPath: string = this.GetPath(this.GetAnimName(name));
-      var meshPath: string = this.GetPath(this.GetMeshName(name));
-      var matrixTexturePath: string = this.GetPath(this.GetMatrixTextureName(name));
-      if(mainTexturePath == null || mainTexturePath == "")
-      { 
-        mainTexturePath = this.GetPath(this.GetMainTextureName(name));
-      }
-     
 
-      var anim = await GPUSkinningAnimation.LoadAsync(animPath);
-
-      if(anim == null)
-      {
-        console.error("GPUSkinning资源加载失败", name);
-        return;
-      }
-
-      var mesh = await GPUSkiningMesh.LoadAsync(meshPath);
-      var mainTexture:Laya.Texture2D = await this.Load3DAsync(mainTexturePath, Laya.Loader.TEXTURE2D);
-      var animTexture = await this.LoadAnimTextureAsync(matrixTexturePath, anim.textureWidth, anim.textureHeight);
-      var material:GPUSkinningUnlitMaterial = new materialCls();
-      material.albedoTexture = mainTexture;
-      material.GPUSkinning_TextureMatrix = animTexture;
-
-      var sprite = new Laya.MeshSprite3D();
-      var mono: GPUSkinningPlayerMono = sprite.addComponent(GPUSkinningPlayerMono);
-      mono.SetData(anim, mesh, material, animTexture);
-
-
-      return mono;
-    }
-
-    static GetLoadItemList(list: {url:string, type:string}[],name: string, mainTexturePath?: string): {url:string, type:string}[]
+    static GetLoadItemList(list: {url:string, type:string}[],name: string, hasShadowTexture?: boolean,  mainTexturePath?: string): {url:string, type:string}[]
     {
       var animPath: string = this.GetPath(this.GetAnimName(name));
       var meshPath: string = this.GetPath(this.GetMeshName(name));
@@ -232,13 +204,13 @@ export default class GPUSkining
       { 
         mainTexturePath = this.GetPath(this.GetMainTextureName(name));
       }
+
 
       if(!list)
       {
         list = [];
       }
 
-      list.push();
 
       list.push(
                 {url: animPath, type: Laya.Loader.BUFFER},
@@ -246,23 +218,36 @@ export default class GPUSkining
                 {url: matrixTexturePath, type: Laya.Loader.BUFFER},
                 {url: mainTexturePath, type: Laya.Loader.TEXTURE2D},
              );
+      if(hasShadowTexture)
+      {
+          var shadowTexturePath = this.GetPath(this.GetShadowTextureName(name));
+          list.push({url: shadowTexturePath, type: Laya.Loader.TEXTURE2D});
+      }
       return list;
     }
 
-    static CreateByName(name: string, callback:Laya.Handler, isUnloadBin?: boolean, mainTexturePath?: string, materialCls?: any)
+    static async CreateByNameAsync(name: string, hasShadowTexture?: boolean, materialCls?: any): Promise<GPUSkinningPlayerMono>
+    {
+      return new Promise<GPUSkinningPlayerMono>((resolve)=>
+      {
+            this.CreateByName(name, Laya.Handler.create(this, (mono: GPUSkinningPlayerMono)=>{
+              resolve(mono);
+            }), hasShadowTexture, materialCls);
+      })
+    }
+
+    static CreateByName(name: string, callback:Laya.Handler, hasShadowTexture?: boolean, materialCls?: any)
     {
       if(!materialCls)
       {
-        materialCls = GPUSkinningCartoonMaterial;
+        materialCls = GPUSkinningCartoon2TextureMaterial;
       }
       var animPath: string = this.GetPath(this.GetAnimName(name));
       var meshPath: string = this.GetPath(this.GetMeshName(name));
       var matrixTexturePath: string = this.GetPath(this.GetMatrixTextureName(name));
-      if(mainTexturePath == null || mainTexturePath == "")
-      { 
-        mainTexturePath = this.GetPath(this.GetMainTextureName(name));
-      }
+      var mainTexturePath = this.GetPath(this.GetMainTextureName(name));
 
+      var shadowTexturePath = this.GetPath(this.GetShadowTextureName(name));
       GPUSkinningAnimation.Load(animPath, (anim: GPUSkinningAnimation)=>
       {
             if(anim == null)
@@ -296,15 +281,39 @@ export default class GPUSkining
                             console.error("GPUSkinning.CreateByName资源加载失败", mainTexturePath);
                           }
 
-                          var material:GPUSkinningUnlitMaterial = new materialCls();
-                          material.albedoTexture = mainTexture;
-                          material.GPUSkinning_TextureMatrix = animTexture;
-                          material.__mname = name + " prefab";
+                          var createFun = (shadowTexture?:Laya.Texture2D)=>
+                          {
+                            var material:GPUSkinningCartoon2TextureMaterial = new materialCls();
+                            material.albedoTexture = mainTexture;
+                            material.GPUSkinning_TextureMatrix = animTexture;
+                            material.__mname = name + " prefab";
+                            if(shadowTexture)
+                            {
+                              material.shadowTexture = shadowTexture;
+                            }
+  
+                            var sprite = new Laya.MeshSprite3D();
+                            var mono: GPUSkinningPlayerMono = sprite.addComponent(GPUSkinningPlayerMono);
+                            mono.SetData(anim, mesh, material, animTexture);
+                            callback.runWith(mono);
+                          }
 
-                          var sprite = new Laya.MeshSprite3D();
-                          var mono: GPUSkinningPlayerMono = sprite.addComponent(GPUSkinningPlayerMono);
-                          mono.SetData(anim, mesh, material, animTexture);
-                          callback.runWith(mono);
+                          
+                          if(hasShadowTexture)
+                          {  
+                              Laya.loader.create(shadowTexturePath, Laya.Handler.create(this, (shadowTexture:Laya.Texture2D)=>
+                              {
+                                createFun(shadowTexture);
+                                  
+                              }), null, Laya.Loader.TEXTURE2D);
+                          }
+                          else
+                          {
+                              createFun();
+                          }
+                         
+                          
+                        
 
                       }), null, Laya.Loader.TEXTURE2D);
 
@@ -324,3 +333,4 @@ export default class GPUSkining
 
 }
 window['GPUSkining'] = GPUSkining;
+window['SceneMaterial'] = SceneMaterial;

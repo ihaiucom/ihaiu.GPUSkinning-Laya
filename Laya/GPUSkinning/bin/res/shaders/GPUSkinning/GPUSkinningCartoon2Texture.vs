@@ -26,6 +26,13 @@ attribute vec4 a_Texcoord2;
 varying vec3 v_PositionWorld;
 
 
+#ifdef SCENELIGHTING
+	// x: xmin, y: xlength, z: zmin, w:zlength 
+	uniform vec4 u_SceneLightingSize;
+	varying vec2 v_SceneLightingUV; 
+	// uniform sampler2D u_SceneLightingTexture;
+	// varying vec3 v_SceneLighting; 
+#endif
 
 // MVP (模型-摄像机-屏幕)矩阵
 #ifdef GPU_INSTANCE
@@ -106,6 +113,7 @@ void main()
 	// v_Normal = a_Normal * worldInvMat;
 	v_Normal = (  (vec4(a_Normal, 1.0) * worldInvMat) ).rgb;
 	v_PositionWorld=(worldMat*position).xyz;
+
 	
 	// 视角方向
 	#if defined(DIRECTIONLIGHT)||defined(POINTLIGHT)||defined(SPOTLIGHT)
@@ -121,6 +129,14 @@ void main()
 		#endif
 	#endif
 	
+
+	#ifdef SCENELIGHTING
+		vec2 positionWorldUV = vec2(0.0, 0.0);
+		positionWorldUV.x = (v_PositionWorld.x - u_SceneLightingSize.x)/ u_SceneLightingSize.y;
+		positionWorldUV.y = (v_PositionWorld.z - u_SceneLightingSize.z)/ u_SceneLightingSize.w;
+		v_SceneLightingUV = positionWorldUV;
+		// v_SceneLighting = texture2D(u_SceneLightingTexture, positionWorldUV).rgb;
+	#endif
 
 	gl_Position=remapGLPositionZ(gl_Position);
 }

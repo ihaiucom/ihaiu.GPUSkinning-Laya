@@ -1,6 +1,46 @@
 (function () {
     'use strict';
 
+    var Shader3D = Laya.Shader3D;
+    var Vector4 = Laya.Vector4;
+    class SceneMaterial {
+        static Init(scene) {
+            this.scene = scene;
+            this._shaderValues = scene._shaderValues;
+            this.SHADERDEFINE_SCENELIGHTINGTEXTURE = Shader3D.getDefineByName("SCENELIGHTING");
+            this.sceneLightingSize = new Vector4(-10, 20, -10, 20);
+        }
+        static get sceneLightingTexture() {
+            return this._shaderValues.getTexture(this.SCENELIGHTINGTEXTURE);
+        }
+        static set sceneLightingTexture(value) {
+            if (value)
+                this._shaderValues.addDefine(this.SHADERDEFINE_SCENELIGHTINGTEXTURE);
+            else
+                this._shaderValues.removeDefine(this.SHADERDEFINE_SCENELIGHTINGTEXTURE);
+            this._shaderValues.setTexture(this.SCENELIGHTINGTEXTURE, value);
+        }
+        static SetSceneLightingTexture(value) {
+            this.sceneLightingTexture = value;
+        }
+        static get sceneLightingSize() {
+            return this._shaderValues.getVector(this.SCENELIGHTINGSIZE);
+        }
+        static set sceneLightingSize(value) {
+            this._shaderValues.setVector(this.SCENELIGHTINGSIZE, value);
+        }
+        static SetSceneLightingSize(value) {
+            this.sceneLightingSize = value;
+        }
+        static LoadSceneLightingTexture(path) {
+            Laya.loader.create(path, Laya.Handler.create(this, (texture) => {
+                this.sceneLightingTexture = texture;
+            }), null, Laya.Loader.TEXTURE2D);
+        }
+    }
+    SceneMaterial.SCENELIGHTINGTEXTURE = Shader3D.propertyNameToID("u_SceneLightingTexture");
+    SceneMaterial.SCENELIGHTINGSIZE = Shader3D.propertyNameToID("u_SceneLightingSize");
+
     var Vector3 = Laya.Vector3;
     class TestScene extends Laya.Scene3D {
         static create() {
@@ -32,12 +72,13 @@
             this.cameraNode = cameraRootNode;
             this.screen3DLayer = screenLayer;
             let directionLight = this.addChild(new Laya.DirectionLight());
-            directionLight.color = new Laya.Vector3(1, 1, 1);
+            directionLight.color = new Laya.Vector3(1, 1.0, 1.0);
             this.lightRotaitonSrc = directionLight.transform.localRotationEuler = new Laya.Vector3(-45, 80, 0);
             this.directionLight = directionLight;
             directionLight.transform.rotationEuler = new Laya.Vector3(-20, 20, 0);
             this.addChild(cameraRootNode);
             this.addChild(directionLight);
+            SceneMaterial.Init(this);
         }
         lightRotaitonStart() {
             this.lightRotaiton = this.directionLight.transform.localRotationEuler;
@@ -55,601 +96,730 @@
         }
     }
 
-    class MBaseMaterial extends Laya.Material {
-        static getShaderVS(filename) {
-            return this.SHADER_PATH_ROOT + filename + ".vs";
-        }
-        static getShaderPS(filename) {
-            return this.SHADER_PATH_ROOT + filename + ".fs";
-        }
-        static async loadShaderVSAsync(filename) {
-            let code = await this.loadAsync(this.getShaderVS(filename), Laya.Loader.TEXT);
-            return code.replace(/\r/g, "");
-        }
-        static async loadShaderPSAsync(filename) {
-            let code = await this.loadAsync(this.getShaderPS(filename), Laya.Loader.TEXT);
-            return code.replace(/\r/g, "");
-        }
-        static async loadAsync(path, type) {
-            return new Promise((resolve) => {
-                Laya.loader.load(path, Laya.Handler.create(null, (res) => {
-                    resolve(res);
-                }), null, type);
-            });
+    var VertexMesh = Laya.VertexMesh;
+    var VertexDeclaration = Laya.VertexDeclaration;
+    var VertexElement = Laya.VertexElement;
+    var VertexElementFormat = Laya.VertexElementFormat;
+    class GPUSkiningVertexMesh extends VertexMesh {
+        static getVertexDeclaration(vertexFlag, compatible = true) {
+            var verDec = this._declarationMap[vertexFlag + (compatible ? "_0" : "_1")];
+            if (!verDec) {
+                var subFlags = vertexFlag.split(",");
+                var offset = 0;
+                var elements = [];
+                for (var i = 0, n = subFlags.length; i < n; i++) {
+                    var element;
+                    switch (subFlags[i]) {
+                        case "POSITION":
+                            element = new VertexElement(offset, VertexElementFormat.Vector3, this.MESH_POSITION0);
+                            offset += 12;
+                            break;
+                        case "NORMAL":
+                            element = new VertexElement(offset, VertexElementFormat.Vector3, this.MESH_NORMAL0);
+                            offset += 12;
+                            break;
+                        case "COLOR":
+                            element = new VertexElement(offset, VertexElementFormat.Vector4, this.MESH_COLOR0);
+                            offset += 16;
+                            break;
+                        case "UV":
+                            element = new VertexElement(offset, VertexElementFormat.Vector2, this.MESH_TEXTURECOORDINATE0);
+                            offset += 8;
+                            break;
+                        case "UV1":
+                            element = new VertexElement(offset, VertexElementFormat.Vector4, this.MESH_TEXTURECOORDINATE1);
+                            offset += 16;
+                            break;
+                        case "UV2":
+                            element = new VertexElement(offset, VertexElementFormat.Vector4, this.MESH_TEXTURECOORDINATE2);
+                            offset += 16;
+                            break;
+                        case "BLENDWEIGHT":
+                            element = new VertexElement(offset, VertexElementFormat.Vector4, this.MESH_BLENDWEIGHT0);
+                            offset += 16;
+                            break;
+                        case "BLENDINDICES":
+                            if (compatible) {
+                                element = new VertexElement(offset, VertexElementFormat.Vector4, this.MESH_BLENDINDICES0);
+                                offset += 16;
+                            }
+                            else {
+                                element = new VertexElement(offset, VertexElementFormat.Byte4, this.MESH_BLENDINDICES0);
+                                offset += 4;
+                            }
+                            break;
+                        case "TANGENT":
+                            element = new VertexElement(offset, VertexElementFormat.Vector4, this.MESH_TANGENT0);
+                            offset += 16;
+                            console.log("TANGENT", element);
+                            break;
+                        default:
+                            throw "VertexMesh: unknown vertex flag.";
+                    }
+                    elements.push(element);
+                }
+                verDec = new VertexDeclaration(offset, elements);
+                this._declarationMap[vertexFlag + (compatible ? "_0" : "_1")] = verDec;
+            }
+            return verDec;
         }
     }
-    MBaseMaterial.SHADER_PATH_ROOT = "res/shaders/";
+    GPUSkiningVertexMesh.MESH_TEXTURECOORDINATE2 = 6;
+    GPUSkiningVertexMesh._declarationMap = {};
 
-    var Shader3D = Laya.Shader3D;
-    var SubShader = Laya.SubShader;
-    var VertexMesh = Laya.VertexMesh;
-    var BaseMaterial = Laya.BaseMaterial;
-    var Vector4 = Laya.Vector4;
-    var RenderState = Laya.RenderState;
-    var Scene3DShaderDeclaration = Laya.Scene3DShaderDeclaration;
-    class Cartoon2Material extends MBaseMaterial {
-        constructor() {
-            super();
-            this._enableVertexColor = false;
-            this._enableVertexColor = false;
-            this.setShaderName(Cartoon2Material.shaderName);
-            this._albedoIntensity = 1.0;
-            this._albedoColor = new Vector4(1.0, 1.0, 1.0, 1.0);
-            this._shadowColor = new Vector4(0.1764706, 0.1764706, 0.1764706, 1.0);
-            var sv = this._shaderValues;
-            sv.setVector(Cartoon2Material.ALBEDOCOLOR, new Vector4(1.0, 1.0, 1.0, 1.0));
-            sv.setVector(Cartoon2Material.MATERIALSPECULAR, new Vector4(1.0, 1.0, 1.0, 1.0));
-            sv.setNumber(Cartoon2Material.SHININESS, 0.078125);
-            sv.setVector(Cartoon2Material.SHADOWCOLOR, new Vector4(0.1764706, 0.1764706, 0.1764706, 1.0));
-            sv.setNumber(Cartoon2Material.COLOR_RANGE, 88.4);
-            sv.setNumber(Cartoon2Material.COLOR_DEEP, 0.08);
-            sv.setNumber(Cartoon2Material.OUTLINE_WIDTH, 0.004);
-            sv.setNumber(BaseMaterial.ALPHATESTVALUE, 0.5);
-            sv.setVector(Cartoon2Material.TILINGOFFSET, new Vector4(1.0, 1.0, 0.0, 0.0));
-            this._enableLighting = true;
-            this.renderMode = Cartoon2Material.RENDERMODE_OPAQUE;
+    var IndexBuffer3D = Laya.IndexBuffer3D;
+    var VertexBuffer3D = Laya.VertexBuffer3D;
+    var HalfFloatUtils = Laya.HalfFloatUtils;
+    var Matrix4x4 = Laya.Matrix4x4;
+    var SubMesh = Laya.SubMesh;
+    var IndexFormat = Laya.IndexFormat;
+    var LayaGL = Laya.LayaGL;
+    class GPUSkiningLoadModelV05 {
+        static parse(readData, version, mesh, subMeshes) {
+            GPUSkiningLoadModelV05._mesh = mesh;
+            GPUSkiningLoadModelV05._subMeshes = subMeshes;
+            GPUSkiningLoadModelV05._version = version;
+            GPUSkiningLoadModelV05._readData = readData;
+            GPUSkiningLoadModelV05.READ_DATA();
+            GPUSkiningLoadModelV05.READ_BLOCK();
+            GPUSkiningLoadModelV05.READ_STRINGS();
+            for (var i = 0, n = GPUSkiningLoadModelV05._BLOCK.count; i < n; i++) {
+                GPUSkiningLoadModelV05._readData.pos = GPUSkiningLoadModelV05._BLOCK.blockStarts[i];
+                var index = GPUSkiningLoadModelV05._readData.getUint16();
+                var blockName = GPUSkiningLoadModelV05._strings[index];
+                var fn = GPUSkiningLoadModelV05["READ_" + blockName];
+                if (fn == null)
+                    throw new Error("model file err,no this function:" + index + " " + blockName);
+                else
+                    fn.call(null);
+            }
+            GPUSkiningLoadModelV05._mesh._bindPoseIndices = new Uint16Array(GPUSkiningLoadModelV05._bindPoseIndices);
+            GPUSkiningLoadModelV05._bindPoseIndices.length = 0;
+            GPUSkiningLoadModelV05._strings.length = 0;
+            GPUSkiningLoadModelV05._readData = null;
+            GPUSkiningLoadModelV05._version = null;
+            GPUSkiningLoadModelV05._mesh = null;
+            GPUSkiningLoadModelV05._subMeshes = null;
         }
-        static async install() {
-            this.__initDefine__();
-            await this.initShader();
-            this.defaultMaterial = new Cartoon2Material();
-            this.defaultMaterial.enableLighting = true;
-            this.defaultMaterial.lock = true;
+        static _readString() {
+            return GPUSkiningLoadModelV05._strings[GPUSkiningLoadModelV05._readData.getUint16()];
         }
-        static async initShader() {
-            var outlineVS = await this.loadShaderVSAsync("Cartoon2OutlineShader");
-            var outlinePS = await this.loadShaderPSAsync("Cartoon2OutlineShader");
-            var vs = await this.loadShaderVSAsync(this.shaderName);
-            var ps = await this.loadShaderPSAsync(this.shaderName);
-            var attributeMap;
-            var uniformMap;
-            var stateMap;
-            var shader;
-            var subShader;
-            attributeMap =
-                {
-                    'a_Position': VertexMesh.MESH_POSITION0,
-                    'a_Color': VertexMesh.MESH_COLOR0,
-                    'a_Normal': VertexMesh.MESH_NORMAL0,
-                    'a_Texcoord0': VertexMesh.MESH_TEXTURECOORDINATE0,
-                    'a_Texcoord1': VertexMesh.MESH_TEXTURECOORDINATE1,
-                    'a_BoneWeights': VertexMesh.MESH_BLENDWEIGHT0,
-                    'a_BoneIndices': VertexMesh.MESH_BLENDINDICES0,
-                    'a_Tangent0': VertexMesh.MESH_TANGENT0,
-                    'a_MvpMatrix': VertexMesh.MESH_MVPMATRIX_ROW0,
-                    'a_WorldMat': VertexMesh.MESH_WORLDMATRIX_ROW0
-                };
-            uniformMap =
-                {
-                    'u_Bones': Shader3D.PERIOD_CUSTOM,
-                    'u_DiffuseTexture': Shader3D.PERIOD_MATERIAL,
-                    'u_SpecularTexture': Shader3D.PERIOD_MATERIAL,
-                    'u_NormalTexture': Shader3D.PERIOD_MATERIAL,
-                    'u_AlphaTestValue': Shader3D.PERIOD_MATERIAL,
-                    'u_DiffuseColor': Shader3D.PERIOD_MATERIAL,
-                    'u_ShadowColor': Shader3D.PERIOD_MATERIAL,
-                    'u_MaterialSpecular': Shader3D.PERIOD_MATERIAL,
-                    'u_Shininess': Shader3D.PERIOD_MATERIAL,
-                    'u_ColorRange': Shader3D.PERIOD_MATERIAL,
-                    'u_ColorDeep': Shader3D.PERIOD_MATERIAL,
-                    'u_OutlineWidth': Shader3D.PERIOD_MATERIAL,
-                    'u_TilingOffset': Shader3D.PERIOD_MATERIAL,
-                    'u_WorldMat': Shader3D.PERIOD_SPRITE,
-                    'u_MvpMatrix': Shader3D.PERIOD_SPRITE,
-                    'u_LightmapScaleOffset': Shader3D.PERIOD_SPRITE,
-                    'u_LightMap': Shader3D.PERIOD_SPRITE,
-                    'u_CameraPos': Shader3D.PERIOD_CAMERA,
-                    'u_Viewport': Shader3D.PERIOD_CAMERA,
-                    'u_ProjectionParams': Shader3D.PERIOD_CAMERA,
-                    'u_View': Shader3D.PERIOD_CAMERA,
-                    'u_ReflectTexture': Shader3D.PERIOD_SCENE,
-                    'u_ReflectIntensity': Shader3D.PERIOD_SCENE,
-                    'u_FogStart': Shader3D.PERIOD_SCENE,
-                    'u_FogRange': Shader3D.PERIOD_SCENE,
-                    'u_FogColor': Shader3D.PERIOD_SCENE,
-                    'u_DirationLightCount': Shader3D.PERIOD_SCENE,
-                    'u_LightBuffer': Shader3D.PERIOD_SCENE,
-                    'u_LightClusterBuffer': Shader3D.PERIOD_SCENE,
-                    'u_AmbientColor': Shader3D.PERIOD_SCENE,
-                    'u_shadowMap1': Shader3D.PERIOD_SCENE,
-                    'u_shadowMap2': Shader3D.PERIOD_SCENE,
-                    'u_shadowMap3': Shader3D.PERIOD_SCENE,
-                    'u_shadowPSSMDistance': Shader3D.PERIOD_SCENE,
-                    'u_lightShadowVP': Shader3D.PERIOD_SCENE,
-                    'u_shadowPCFoffset': Shader3D.PERIOD_SCENE,
-                    'u_DirectionLight.color': Shader3D.PERIOD_SCENE,
-                    'u_DirectionLight.direction': Shader3D.PERIOD_SCENE,
-                    'u_PointLight.position': Shader3D.PERIOD_SCENE,
-                    'u_PointLight.range': Shader3D.PERIOD_SCENE,
-                    'u_PointLight.color': Shader3D.PERIOD_SCENE,
-                    'u_SpotLight.position': Shader3D.PERIOD_SCENE,
-                    'u_SpotLight.direction': Shader3D.PERIOD_SCENE,
-                    'u_SpotLight.range': Shader3D.PERIOD_SCENE,
-                    'u_SpotLight.spot': Shader3D.PERIOD_SCENE,
-                    'u_SpotLight.color': Shader3D.PERIOD_SCENE
-                };
-            stateMap =
-                {
-                    's_Cull': Shader3D.RENDER_STATE_CULL,
-                    's_Blend': Shader3D.RENDER_STATE_BLEND,
-                    's_BlendSrc': Shader3D.RENDER_STATE_BLEND_SRC,
-                    's_BlendDst': Shader3D.RENDER_STATE_BLEND_DST,
-                    's_DepthTest': Shader3D.RENDER_STATE_DEPTH_TEST,
-                    's_DepthWrite': Shader3D.RENDER_STATE_DEPTH_WRITE
-                };
-            shader = Shader3D.add(this.shaderName, null, null, true);
-            subShader = new SubShader(attributeMap, uniformMap);
-            shader.addSubShader(subShader);
-            var outlinePass = subShader.addShaderPass(outlineVS, outlinePS);
-            outlinePass.renderState.cull = Laya.RenderState.CULL_FRONT;
-            var mainPass = subShader.addShaderPass(vs, ps, stateMap);
-            mainPass.renderState.cull = Laya.RenderState.CULL_NONE;
+        static READ_DATA() {
+            GPUSkiningLoadModelV05._DATA.offset = GPUSkiningLoadModelV05._readData.getUint32();
+            GPUSkiningLoadModelV05._DATA.size = GPUSkiningLoadModelV05._readData.getUint32();
         }
-        static __initDefine__() {
-            this.SHADERDEFINE_DIFFUSEMAP = Shader3D.getDefineByName("DIFFUSEMAP");
-            this.SHADERDEFINE_NORMALMAP = Shader3D.getDefineByName("NORMALMAP");
-            this.SHADERDEFINE_SPECULARMAP = Shader3D.getDefineByName("SPECULARMAP");
-            this.SHADERDEFINE_TILINGOFFSET = Shader3D.getDefineByName("TILINGOFFSET");
-            this.SHADERDEFINE_ENABLEVERTEXCOLOR = Shader3D.getDefineByName("ENABLEVERTEXCOLOR");
-        }
-        get _ColorR() {
-            return this._albedoColor.x;
-        }
-        set _ColorR(value) {
-            this._albedoColor.x = value;
-            this.albedoColor = this._albedoColor;
-        }
-        get _ColorG() {
-            return this._albedoColor.y;
-        }
-        set _ColorG(value) {
-            this._albedoColor.y = value;
-            this.albedoColor = this._albedoColor;
-        }
-        get _ColorB() {
-            return this._albedoColor.z;
-        }
-        set _ColorB(value) {
-            this._albedoColor.z = value;
-            this.albedoColor = this._albedoColor;
-        }
-        get _ColorA() {
-            return this._albedoColor.w;
-        }
-        set _ColorA(value) {
-            this._albedoColor.w = value;
-            this.albedoColor = this._albedoColor;
-        }
-        get _SpecColorR() {
-            return this._shaderValues.getVector(Cartoon2Material.MATERIALSPECULAR).x;
-        }
-        set _SpecColorR(value) {
-            this._shaderValues.getVector(Cartoon2Material.MATERIALSPECULAR).x = value;
-        }
-        get _SpecColorG() {
-            return this._shaderValues.getVector(Cartoon2Material.MATERIALSPECULAR).y;
-        }
-        set _SpecColorG(value) {
-            this._shaderValues.getVector(Cartoon2Material.MATERIALSPECULAR).y = value;
-        }
-        get _SpecColorB() {
-            return this._shaderValues.getVector(Cartoon2Material.MATERIALSPECULAR).z;
-        }
-        set _SpecColorB(value) {
-            this._shaderValues.getVector(Cartoon2Material.MATERIALSPECULAR).z = value;
-        }
-        get _SpecColorA() {
-            return this._shaderValues.getVector(Cartoon2Material.MATERIALSPECULAR).w;
-        }
-        set _SpecColorA(value) {
-            this._shaderValues.getVector(Cartoon2Material.MATERIALSPECULAR).w = value;
-        }
-        get _AlbedoIntensity() {
-            return this._albedoIntensity;
-        }
-        set _AlbedoIntensity(value) {
-            if (this._albedoIntensity !== value) {
-                var finalAlbedo = this._shaderValues.getVector(Cartoon2Material.ALBEDOCOLOR);
-                Vector4.scale(this._albedoColor, value, finalAlbedo);
-                this._albedoIntensity = value;
-                this._shaderValues.setVector(Cartoon2Material.ALBEDOCOLOR, finalAlbedo);
+        static READ_BLOCK() {
+            var count = GPUSkiningLoadModelV05._BLOCK.count = GPUSkiningLoadModelV05._readData.getUint16();
+            var blockStarts = GPUSkiningLoadModelV05._BLOCK.blockStarts = [];
+            var blockLengths = GPUSkiningLoadModelV05._BLOCK.blockLengths = [];
+            for (var i = 0; i < count; i++) {
+                blockStarts.push(GPUSkiningLoadModelV05._readData.getUint32());
+                blockLengths.push(GPUSkiningLoadModelV05._readData.getUint32());
             }
         }
-        get _Shininess() {
-            return this._shaderValues.getNumber(Cartoon2Material.SHININESS);
+        static READ_STRINGS() {
+            var offset = GPUSkiningLoadModelV05._readData.getUint32();
+            var count = GPUSkiningLoadModelV05._readData.getUint16();
+            var prePos = GPUSkiningLoadModelV05._readData.pos;
+            GPUSkiningLoadModelV05._readData.pos = offset + GPUSkiningLoadModelV05._DATA.offset;
+            for (var i = 0; i < count; i++)
+                GPUSkiningLoadModelV05._strings[i] = GPUSkiningLoadModelV05._readData.readUTFString();
+            GPUSkiningLoadModelV05._readData.pos = prePos;
         }
-        set _Shininess(value) {
-            value = Math.max(0.0, Math.min(1.0, value));
-            this._shaderValues.setNumber(Cartoon2Material.SHININESS, value);
+        static READ_MESH() {
+            var gl = LayaGL.instance;
+            var i;
+            var memorySize = 0;
+            var name = GPUSkiningLoadModelV05._readString();
+            var reader = GPUSkiningLoadModelV05._readData;
+            var arrayBuffer = reader.__getBuffer();
+            var vertexBufferCount = reader.getInt16();
+            var offset = GPUSkiningLoadModelV05._DATA.offset;
+            for (i = 0; i < vertexBufferCount; i++) {
+                var vbStart = offset + reader.getUint32();
+                var vertexCount = reader.getUint32();
+                var vertexFlag = GPUSkiningLoadModelV05._readString();
+                var vertexDeclaration = GPUSkiningVertexMesh.getVertexDeclaration(vertexFlag, false);
+                var vertexStride = vertexDeclaration.vertexStride;
+                var vertexData;
+                var floatData;
+                var uint8Data;
+                var subVertexFlags = vertexFlag.split(",");
+                var subVertexCount = subVertexFlags.length;
+                var mesh = GPUSkiningLoadModelV05._mesh;
+                switch (GPUSkiningLoadModelV05._version) {
+                    case "LAYAMODEL:05":
+                    case "LAYAMODEL:GPUSkining_05":
+                    case "LAYAMODEL:GPUSkining_06":
+                        vertexData = arrayBuffer.slice(vbStart, vbStart + vertexCount * vertexStride);
+                        floatData = new Float32Array(vertexData);
+                        uint8Data = new Uint8Array(vertexData);
+                        break;
+                    case "LAYAMODEL:COMPRESSION_05":
+                        vertexData = new ArrayBuffer(vertexStride * vertexCount);
+                        floatData = new Float32Array(vertexData);
+                        uint8Data = new Uint8Array(vertexData);
+                        var lastPosition = reader.pos;
+                        reader.pos = vbStart;
+                        for (var j = 0; j < vertexCount; j++) {
+                            var subOffset;
+                            var verOffset = j * vertexStride;
+                            for (var k = 0; k < subVertexCount; k++) {
+                                switch (subVertexFlags[k]) {
+                                    case "POSITION":
+                                        subOffset = verOffset / 4;
+                                        floatData[subOffset] = HalfFloatUtils.convertToNumber(reader.getUint16());
+                                        floatData[subOffset + 1] = HalfFloatUtils.convertToNumber(reader.getUint16());
+                                        floatData[subOffset + 2] = HalfFloatUtils.convertToNumber(reader.getUint16());
+                                        verOffset += 12;
+                                        break;
+                                    case "NORMAL":
+                                        subOffset = verOffset / 4;
+                                        floatData[subOffset] = reader.getUint8() / 127.5 - 1;
+                                        floatData[subOffset + 1] = reader.getUint8() / 127.5 - 1;
+                                        floatData[subOffset + 2] = reader.getUint8() / 127.5 - 1;
+                                        verOffset += 12;
+                                        break;
+                                    case "COLOR":
+                                        subOffset = verOffset / 4;
+                                        floatData[subOffset] = reader.getUint8() / 255;
+                                        floatData[subOffset + 1] = reader.getUint8() / 255;
+                                        floatData[subOffset + 2] = reader.getUint8() / 255;
+                                        floatData[subOffset + 3] = reader.getUint8() / 255;
+                                        verOffset += 16;
+                                        break;
+                                    case "UV":
+                                        subOffset = verOffset / 4;
+                                        floatData[subOffset] = HalfFloatUtils.convertToNumber(reader.getUint16());
+                                        floatData[subOffset + 1] = HalfFloatUtils.convertToNumber(reader.getUint16());
+                                        verOffset += 8;
+                                        break;
+                                    case "UV1":
+                                        subOffset = verOffset / 4;
+                                        floatData[subOffset] = HalfFloatUtils.convertToNumber(reader.getUint16());
+                                        floatData[subOffset + 1] = HalfFloatUtils.convertToNumber(reader.getUint16());
+                                        verOffset += 8;
+                                        break;
+                                    case "BLENDWEIGHT":
+                                        subOffset = verOffset / 4;
+                                        floatData[subOffset] = reader.getUint8() / 255;
+                                        floatData[subOffset + 1] = reader.getUint8() / 255;
+                                        floatData[subOffset + 2] = reader.getUint8() / 255;
+                                        floatData[subOffset + 3] = reader.getUint8() / 255;
+                                        verOffset += 16;
+                                        break;
+                                    case "BLENDINDICES":
+                                        uint8Data[verOffset] = reader.getUint8();
+                                        uint8Data[verOffset + 1] = reader.getUint8();
+                                        uint8Data[verOffset + 2] = reader.getUint8();
+                                        uint8Data[verOffset + 3] = reader.getUint8();
+                                        verOffset += 4;
+                                        break;
+                                    case "TANGENT":
+                                        subOffset = verOffset / 4;
+                                        floatData[subOffset] = reader.getUint8() / 127.5 - 1;
+                                        floatData[subOffset + 1] = reader.getUint8() / 127.5 - 1;
+                                        floatData[subOffset + 2] = reader.getUint8() / 127.5 - 1;
+                                        floatData[subOffset + 3] = reader.getUint8() / 127.5 - 1;
+                                        verOffset += 16;
+                                        break;
+                                }
+                            }
+                        }
+                        reader.pos = lastPosition;
+                        break;
+                }
+                var vertexBuffer = new VertexBuffer3D(vertexData.byteLength, gl.STATIC_DRAW, true);
+                vertexBuffer.vertexDeclaration = vertexDeclaration;
+                vertexBuffer.setData(vertexData);
+                var vertexCount = vertexBuffer._byteLength / vertexDeclaration.vertexStride;
+                if (vertexCount > 65535)
+                    mesh._indexFormat = IndexFormat.UInt32;
+                else
+                    mesh._indexFormat = IndexFormat.UInt16;
+                mesh._vertexBuffer = vertexBuffer;
+                mesh._vertexCount += vertexCount;
+                memorySize += floatData.length * 4;
+            }
+            var ibStart = offset + reader.getUint32();
+            var ibLength = reader.getUint32();
+            var ibDatas;
+            if (mesh.indexFormat == IndexFormat.UInt32)
+                ibDatas = new Uint32Array(arrayBuffer.slice(ibStart, ibStart + ibLength));
+            else
+                ibDatas = new Uint16Array(arrayBuffer.slice(ibStart, ibStart + ibLength));
+            var indexBuffer = new IndexBuffer3D(mesh.indexFormat, ibDatas.length, gl.STATIC_DRAW, true);
+            indexBuffer.setData(ibDatas);
+            mesh._indexBuffer = indexBuffer;
+            mesh._setBuffer(mesh._vertexBuffer, indexBuffer);
+            memorySize += indexBuffer.indexCount * 2;
+            mesh._setCPUMemory(memorySize);
+            mesh._setGPUMemory(memorySize);
+            var boneNames = mesh._boneNames = [];
+            var boneCount = reader.getUint16();
+            boneNames.length = boneCount;
+            for (i = 0; i < boneCount; i++)
+                boneNames[i] = GPUSkiningLoadModelV05._strings[reader.getUint16()];
+            var bindPoseDataStart = reader.getUint32();
+            var bindPoseDataLength = reader.getUint32();
+            var bindPoseDatas = new Float32Array(arrayBuffer.slice(offset + bindPoseDataStart, offset + bindPoseDataStart + bindPoseDataLength));
+            var bindPoseFloatCount = bindPoseDatas.length;
+            var bindPoseBuffer = mesh._inverseBindPosesBuffer = new ArrayBuffer(bindPoseFloatCount * 4);
+            mesh._inverseBindPoses = [];
+            for (i = 0; i < bindPoseFloatCount; i += 16) {
+                var inverseGlobalBindPose = new Matrix4x4(bindPoseDatas[i + 0], bindPoseDatas[i + 1], bindPoseDatas[i + 2], bindPoseDatas[i + 3], bindPoseDatas[i + 4], bindPoseDatas[i + 5], bindPoseDatas[i + 6], bindPoseDatas[i + 7], bindPoseDatas[i + 8], bindPoseDatas[i + 9], bindPoseDatas[i + 10], bindPoseDatas[i + 11], bindPoseDatas[i + 12], bindPoseDatas[i + 13], bindPoseDatas[i + 14], bindPoseDatas[i + 15], new Float32Array(bindPoseBuffer, i * 4, 16));
+                mesh._inverseBindPoses[i / 16] = inverseGlobalBindPose;
+            }
+            return true;
         }
-        get _ColorRange() {
-            return this._shaderValues.getNumber(Cartoon2Material.COLOR_RANGE);
+        static READ_SUBMESH() {
+            var reader = GPUSkiningLoadModelV05._readData;
+            var arrayBuffer = reader.__getBuffer();
+            var subMesh = new SubMesh(GPUSkiningLoadModelV05._mesh);
+            reader.getInt16();
+            var ibStart = reader.getUint32();
+            var ibCount = reader.getUint32();
+            var indexBuffer = GPUSkiningLoadModelV05._mesh._indexBuffer;
+            subMesh._indexBuffer = indexBuffer;
+            subMesh._setIndexRange(ibStart, ibCount);
+            var vertexBuffer = GPUSkiningLoadModelV05._mesh._vertexBuffer;
+            subMesh._vertexBuffer = vertexBuffer;
+            var offset = GPUSkiningLoadModelV05._DATA.offset;
+            var subIndexBufferStart = subMesh._subIndexBufferStart;
+            var subIndexBufferCount = subMesh._subIndexBufferCount;
+            var boneIndicesList = subMesh._boneIndicesList;
+            var drawCount = reader.getUint16();
+            subIndexBufferStart.length = drawCount;
+            subIndexBufferCount.length = drawCount;
+            boneIndicesList.length = drawCount;
+            var pathMarks = GPUSkiningLoadModelV05._mesh._skinDataPathMarks;
+            var bindPoseIndices = GPUSkiningLoadModelV05._bindPoseIndices;
+            var subMeshIndex = GPUSkiningLoadModelV05._subMeshes.length;
+            for (var i = 0; i < drawCount; i++) {
+                subIndexBufferStart[i] = reader.getUint32();
+                subIndexBufferCount[i] = reader.getUint32();
+                var boneDicofs = reader.getUint32();
+                var boneDicCount = reader.getUint32();
+                var boneIndices = boneIndicesList[i] = new Uint16Array(arrayBuffer.slice(offset + boneDicofs, offset + boneDicofs + boneDicCount));
+                for (var j = 0, m = boneIndices.length; j < m; j++) {
+                    var index = boneIndices[j];
+                    var combineIndex = bindPoseIndices.indexOf(index);
+                    if (combineIndex === -1) {
+                        boneIndices[j] = bindPoseIndices.length;
+                        bindPoseIndices.push(index);
+                        pathMarks.push([subMeshIndex, i, j]);
+                    }
+                    else {
+                        boneIndices[j] = combineIndex;
+                    }
+                }
+            }
+            GPUSkiningLoadModelV05._subMeshes.push(subMesh);
+            return true;
         }
-        set _ColorRange(value) {
-            value = Math.max(-1.0, Math.min(100.0, value));
-            this._shaderValues.setNumber(Cartoon2Material.COLOR_RANGE, value);
-        }
-        get _ColorDeep() {
-            return this._shaderValues.getNumber(Cartoon2Material.COLOR_DEEP);
-        }
-        set _ColorDeep(value) {
-            value = Math.max(0.0, Math.min(2, value));
-            this._shaderValues.setNumber(Cartoon2Material.COLOR_DEEP, value);
-        }
-        get _OutlineWidth() {
-            return this._shaderValues.getNumber(Cartoon2Material.OUTLINE_WIDTH);
-        }
-        set _OutlineWidth(value) {
-            this._shaderValues.setNumber(Cartoon2Material.OUTLINE_WIDTH, value);
-        }
-        get _MainTex_STX() {
-            return this._shaderValues.getVector(Cartoon2Material.TILINGOFFSET).x;
-        }
-        set _MainTex_STX(x) {
-            var tilOff = this._shaderValues.getVector(Cartoon2Material.TILINGOFFSET);
-            tilOff.x = x;
-            this.tilingOffset = tilOff;
-        }
-        get _MainTex_STY() {
-            return this._shaderValues.getVector(Cartoon2Material.TILINGOFFSET).y;
-        }
-        set _MainTex_STY(y) {
-            var tilOff = this._shaderValues.getVector(Cartoon2Material.TILINGOFFSET);
-            tilOff.y = y;
-            this.tilingOffset = tilOff;
-        }
-        get _MainTex_STZ() {
-            return this._shaderValues.getVector(Cartoon2Material.TILINGOFFSET).z;
-        }
-        set _MainTex_STZ(z) {
-            var tilOff = this._shaderValues.getVector(Cartoon2Material.TILINGOFFSET);
-            tilOff.z = z;
-            this.tilingOffset = tilOff;
-        }
-        get _MainTex_STW() {
-            return this._shaderValues.getVector(Cartoon2Material.TILINGOFFSET).w;
-        }
-        set _MainTex_STW(w) {
-            var tilOff = this._shaderValues.getVector(Cartoon2Material.TILINGOFFSET);
-            tilOff.w = w;
-            this.tilingOffset = tilOff;
-        }
-        get _Cutoff() {
-            return this.alphaTestValue;
-        }
-        set _Cutoff(value) {
-            this.alphaTestValue = value;
-        }
-        set renderMode(value) {
-            switch (value) {
-                case Cartoon2Material.RENDERMODE_OPAQUE:
-                    this.alphaTest = false;
-                    this.renderQueue = BaseMaterial.RENDERQUEUE_OPAQUE;
-                    this.depthWrite = true;
-                    this.cull = RenderState.CULL_BACK;
-                    this.blend = RenderState.BLEND_DISABLE;
-                    this.depthTest = RenderState.DEPTHTEST_LESS;
-                    break;
-                case Cartoon2Material.RENDERMODE_CUTOUT:
-                    this.renderQueue = BaseMaterial.RENDERQUEUE_ALPHATEST;
-                    this.alphaTest = true;
-                    this.depthWrite = true;
-                    this.cull = RenderState.CULL_BACK;
-                    this.blend = RenderState.BLEND_DISABLE;
-                    this.depthTest = RenderState.DEPTHTEST_LESS;
-                    break;
-                case Cartoon2Material.RENDERMODE_TRANSPARENT:
-                    this.renderQueue = BaseMaterial.RENDERQUEUE_TRANSPARENT;
-                    this.alphaTest = false;
-                    this.depthWrite = false;
-                    this.cull = RenderState.CULL_BACK;
-                    this.blend = RenderState.BLEND_ENABLE_ALL;
-                    this.blendSrc = RenderState.BLENDPARAM_SRC_ALPHA;
-                    this.blendDst = RenderState.BLENDPARAM_ONE_MINUS_SRC_ALPHA;
-                    this.depthTest = RenderState.DEPTHTEST_LESS;
+    }
+    GPUSkiningLoadModelV05._BLOCK = { count: 0 };
+    GPUSkiningLoadModelV05._DATA = { offset: 0, size: 0 };
+    GPUSkiningLoadModelV05._strings = [];
+    GPUSkiningLoadModelV05._bindPoseIndices = [];
+
+    var Byte = Laya.Byte;
+    class GPUSkiningMeshReader {
+        static read(data, mesh, subMeshes) {
+            var readData = new Byte(data);
+            readData.pos = 0;
+            var version = readData.readUTFString();
+            var boundsMin;
+            var boundsMax;
+            if (version == "LAYAMODEL:GPUSkining_06") {
+                boundsMin = new Laya.Vector3();
+                boundsMax = new Laya.Vector3();
+                boundsMin.x = readData.readFloat32();
+                boundsMin.y = readData.readFloat32();
+                boundsMin.z = readData.readFloat32();
+                boundsMax.x = readData.readFloat32();
+                boundsMax.y = readData.readFloat32();
+                boundsMax.z = readData.readFloat32();
+            }
+            switch (version) {
+                case "LAYAMODEL:GPUSkining_05":
+                case "LAYAMODEL:GPUSkining_06":
+                    GPUSkiningLoadModelV05.parse(readData, version, mesh, subMeshes);
                     break;
                 default:
-                    throw new Error("Material:renderMode value error.");
+                    throw new Error("MeshReader: unknown mesh version.");
             }
-        }
-        get enableVertexColor() {
-            return this._enableVertexColor;
-        }
-        set enableVertexColor(value) {
-            this._enableVertexColor = value;
-            if (value)
-                this._shaderValues.addDefine(Cartoon2Material.SHADERDEFINE_ENABLEVERTEXCOLOR);
-            else
-                this._shaderValues.removeDefine(Cartoon2Material.SHADERDEFINE_ENABLEVERTEXCOLOR);
-        }
-        get tilingOffsetX() {
-            return this._MainTex_STX;
-        }
-        set tilingOffsetX(x) {
-            this._MainTex_STX = x;
-        }
-        get tilingOffsetY() {
-            return this._MainTex_STY;
-        }
-        set tilingOffsetY(y) {
-            this._MainTex_STY = y;
-        }
-        get tilingOffsetZ() {
-            return this._MainTex_STZ;
-        }
-        set tilingOffsetZ(z) {
-            this._MainTex_STZ = z;
-        }
-        get tilingOffsetW() {
-            return this._MainTex_STW;
-        }
-        set tilingOffsetW(w) {
-            this._MainTex_STW = w;
-        }
-        get tilingOffset() {
-            return this._shaderValues.getVector(Cartoon2Material.TILINGOFFSET);
-        }
-        set tilingOffset(value) {
-            if (value) {
-                if (value.x != 1 || value.y != 1 || value.z != 0 || value.w != 0)
-                    this._shaderValues.addDefine(Cartoon2Material.SHADERDEFINE_TILINGOFFSET);
-                else
-                    this._shaderValues.removeDefine(Cartoon2Material.SHADERDEFINE_TILINGOFFSET);
+            if (version == "LAYAMODEL:GPUSkining_06") {
+                mesh._needUpdateBounds = false;
+                mesh.bounds.setMin(boundsMin);
+                mesh.bounds.setMin(boundsMax);
             }
-            else {
-                this._shaderValues.removeDefine(Cartoon2Material.SHADERDEFINE_TILINGOFFSET);
-            }
-            this._shaderValues.setVector(Cartoon2Material.TILINGOFFSET, value);
+            mesh._setSubMeshes(subMeshes);
         }
-        get albedoColorR() {
-            return this._ColorR;
+    }
+
+    class GPUSkiningMesh extends Laya.Mesh {
+        static _parse(data, propertyParams = null, constructParams = null) {
+            var mesh = new GPUSkiningMesh();
+            GPUSkiningMeshReader.read(data, mesh, mesh._subMeshes);
+            return mesh;
         }
-        set albedoColorR(value) {
-            this._ColorR = value;
+        static LoadAsync(path) {
+            return new Promise((resolve) => {
+                this.Load(path, (data) => {
+                    resolve(data);
+                });
+            });
         }
-        get albedoColorG() {
-            return this._ColorG;
-        }
-        set albedoColorG(value) {
-            this._ColorG = value;
-        }
-        get albedoColorB() {
-            return this._ColorB;
-        }
-        set albedoColorB(value) {
-            this._ColorB = value;
-        }
-        get albedoColorA() {
-            return this._ColorA;
-        }
-        set albedoColorA(value) {
-            this._ColorA = value;
-        }
-        get albedoColor() {
-            return this._albedoColor;
-        }
-        set albedoColor(value) {
-            var finalAlbedo = this._shaderValues.getVector(Cartoon2Material.ALBEDOCOLOR);
-            Vector4.scale(value, this._albedoIntensity, finalAlbedo);
-            this._albedoColor = value;
-            this._shaderValues.setVector(Cartoon2Material.ALBEDOCOLOR, finalAlbedo);
-        }
-        get shadowColor() {
-            return this._shadowColor;
-        }
-        set shadowColor(value) {
-            this._albedoColor = value;
-            this._shaderValues.setVector(Cartoon2Material.ALBEDOCOLOR, value);
-        }
-        get albedoIntensity() {
-            return this._albedoIntensity;
-        }
-        set albedoIntensity(value) {
-            this._AlbedoIntensity = value;
-        }
-        get specularColorR() {
-            return this._SpecColorR;
-        }
-        set specularColorR(value) {
-            this._SpecColorR = value;
-        }
-        get specularColorG() {
-            return this._SpecColorG;
-        }
-        set specularColorG(value) {
-            this._SpecColorG = value;
-        }
-        get specularColorB() {
-            return this._SpecColorB;
-        }
-        set specularColorB(value) {
-            this._SpecColorB = value;
-        }
-        get specularColorA() {
-            return this._SpecColorA;
-        }
-        set specularColorA(value) {
-            this._SpecColorA = value;
-        }
-        get specularColor() {
-            return this._shaderValues.getVector(Cartoon2Material.MATERIALSPECULAR);
-        }
-        set specularColor(value) {
-            this._shaderValues.setVector(Cartoon2Material.MATERIALSPECULAR, value);
-        }
-        get shininess() {
-            return this._Shininess;
-        }
-        set shininess(value) {
-            this._Shininess = value;
-        }
-        get albedoTexture() {
-            return this._shaderValues.getTexture(Cartoon2Material.ALBEDOTEXTURE);
-        }
-        set albedoTexture(value) {
-            if (value)
-                this._shaderValues.addDefine(Cartoon2Material.SHADERDEFINE_DIFFUSEMAP);
-            else
-                this._shaderValues.removeDefine(Cartoon2Material.SHADERDEFINE_DIFFUSEMAP);
-            this._shaderValues.setTexture(Cartoon2Material.ALBEDOTEXTURE, value);
-        }
-        get normalTexture() {
-            return this._shaderValues.getTexture(Cartoon2Material.NORMALTEXTURE);
-        }
-        set normalTexture(value) {
-            if (value)
-                this._shaderValues.addDefine(Cartoon2Material.SHADERDEFINE_NORMALMAP);
-            else
-                this._shaderValues.removeDefine(Cartoon2Material.SHADERDEFINE_NORMALMAP);
-            this._shaderValues.setTexture(Cartoon2Material.NORMALTEXTURE, value);
-        }
-        get specularTexture() {
-            return this._shaderValues.getTexture(Cartoon2Material.SPECULARTEXTURE);
-        }
-        set specularTexture(value) {
-            if (value)
-                this._shaderValues.addDefine(Cartoon2Material.SHADERDEFINE_SPECULARMAP);
-            else
-                this._shaderValues.removeDefine(Cartoon2Material.SHADERDEFINE_SPECULARMAP);
-            this._shaderValues.setTexture(Cartoon2Material.SPECULARTEXTURE, value);
-        }
-        get enableLighting() {
-            return this._enableLighting;
-        }
-        set enableLighting(value) {
-            if (this._enableLighting !== value) {
-                if (value) {
-                    this._disablePublicDefineDatas.remove(Scene3DShaderDeclaration.SHADERDEFINE_POINTLIGHT);
-                    this._disablePublicDefineDatas.remove(Scene3DShaderDeclaration.SHADERDEFINE_SPOTLIGHT);
-                    this._disablePublicDefineDatas.remove(Scene3DShaderDeclaration.SHADERDEFINE_DIRECTIONLIGHT);
+        static Load(path, callback) {
+            Laya.loader.load(path, Laya.Handler.create(this, (data) => {
+                if (data instanceof ArrayBuffer) {
+                    var mesh = GPUSkiningMesh._parse(data);
+                    mesh._url = Laya.URL.formatURL(path);
+                    Laya.Loader.clearRes(path);
+                    Laya.Loader.cacheRes(path, mesh);
+                    callback(mesh);
                 }
                 else {
-                    this._disablePublicDefineDatas.add(Scene3DShaderDeclaration.SHADERDEFINE_POINTLIGHT);
-                    this._disablePublicDefineDatas.add(Scene3DShaderDeclaration.SHADERDEFINE_SPOTLIGHT);
-                    this._disablePublicDefineDatas.add(Scene3DShaderDeclaration.SHADERDEFINE_DIRECTIONLIGHT);
+                    callback(data);
                 }
-                this._enableLighting = value;
-            }
+            }), null, Laya.Loader.BUFFER);
         }
-        set depthWrite(value) {
-            this._shaderValues.setBool(Cartoon2Material.DEPTH_WRITE, value);
-        }
-        get depthWrite() {
-            return this._shaderValues.getBool(Cartoon2Material.DEPTH_WRITE);
-        }
-        set cull(value) {
-            this._shaderValues.setInt(Cartoon2Material.CULL, value);
-        }
-        get cull() {
-            return this._shaderValues.getInt(Cartoon2Material.CULL);
-        }
-        set blend(value) {
-            this._shaderValues.setInt(Cartoon2Material.BLEND, value);
-        }
-        get blend() {
-            return this._shaderValues.getInt(Cartoon2Material.BLEND);
-        }
-        set blendSrc(value) {
-            this._shaderValues.setInt(Cartoon2Material.BLEND_SRC, value);
-        }
-        get blendSrc() {
-            return this._shaderValues.getInt(Cartoon2Material.BLEND_SRC);
-        }
-        set blendDst(value) {
-            this._shaderValues.setInt(Cartoon2Material.BLEND_DST, value);
-        }
-        get blendDst() {
-            return this._shaderValues.getInt(Cartoon2Material.BLEND_DST);
-        }
-        set depthTest(value) {
-            this._shaderValues.setInt(Cartoon2Material.DEPTH_TEST, value);
-        }
-        get depthTest() {
-            return this._shaderValues.getInt(Cartoon2Material.DEPTH_TEST);
-        }
-        clone() {
-            var dest = new Cartoon2Material();
-            this.cloneTo(dest);
-            return dest;
-        }
-        cloneTo(destObject) {
-            super.cloneTo(destObject);
-            var destMaterial = destObject;
-            destMaterial._enableLighting = this._enableLighting;
-            destMaterial._albedoIntensity = this._albedoIntensity;
-            destMaterial._enableVertexColor = this._enableVertexColor;
-            this._albedoColor.cloneTo(destMaterial._albedoColor);
+        destroy() {
+            super.destroy();
         }
     }
-    Cartoon2Material.shaderName = "Cartoon2Shader";
-    Cartoon2Material.RENDERMODE_OPAQUE = 0;
-    Cartoon2Material.RENDERMODE_CUTOUT = 1;
-    Cartoon2Material.RENDERMODE_TRANSPARENT = 2;
-    Cartoon2Material.ALBEDOTEXTURE = Shader3D.propertyNameToID("u_DiffuseTexture");
-    Cartoon2Material.NORMALTEXTURE = Shader3D.propertyNameToID("u_NormalTexture");
-    Cartoon2Material.SPECULARTEXTURE = Shader3D.propertyNameToID("u_SpecularTexture");
-    Cartoon2Material.ALBEDOCOLOR = Shader3D.propertyNameToID("u_DiffuseColor");
-    Cartoon2Material.SHADOWCOLOR = Shader3D.propertyNameToID("u_ShadowColor");
-    Cartoon2Material.MATERIALSPECULAR = Shader3D.propertyNameToID("u_MaterialSpecular");
-    Cartoon2Material.SHININESS = Shader3D.propertyNameToID("u_Shininess");
-    Cartoon2Material.COLOR_RANGE = Shader3D.propertyNameToID("u_ColorRange");
-    Cartoon2Material.COLOR_DEEP = Shader3D.propertyNameToID("u_ColorDeep");
-    Cartoon2Material.OUTLINE_WIDTH = Shader3D.propertyNameToID("u_OutlineWidth");
-    Cartoon2Material.TILINGOFFSET = Shader3D.propertyNameToID("u_TilingOffset");
-    Cartoon2Material.CULL = Shader3D.propertyNameToID("s_Cull");
-    Cartoon2Material.BLEND = Shader3D.propertyNameToID("s_Blend");
-    Cartoon2Material.BLEND_SRC = Shader3D.propertyNameToID("s_BlendSrc");
-    Cartoon2Material.BLEND_DST = Shader3D.propertyNameToID("s_BlendDst");
-    Cartoon2Material.DEPTH_TEST = Shader3D.propertyNameToID("s_DepthTest");
-    Cartoon2Material.DEPTH_WRITE = Shader3D.propertyNameToID("s_DepthWrite");
 
-    var Shader3D$1 = Laya.Shader3D;
-    class MaterialInstall {
-        static async install() {
-            await Cartoon2Material.install();
+    var Bounds = Laya.Bounds;
+    var Vector3$1 = Laya.Vector3;
+    var Quaternion = Laya.Quaternion;
+    var Matrix4x4$1 = Laya.Matrix4x4;
+    class ByteReadUtil {
+        static ReadQuaternion(b) {
+            var v = new Quaternion();
+            v.x = b.readFloat32();
+            v.y = b.readFloat32();
+            v.z = b.readFloat32();
+            v.w = b.readFloat32();
+            return v;
         }
-        static async initShader() {
+        static ReadVector3(b) {
+            var v = new Vector3$1();
+            v.x = b.readFloat32() * -1;
+            v.y = b.readFloat32();
+            v.z = b.readFloat32();
+            return v;
         }
-        static exportShaderVariantCollection() {
-            let shaderObj = {};
-            let arr;
-            for (let i = 0; i < Shader3D$1.debugShaderVariantCollection.variantCount; i++) {
-                let shadervariant = Shader3D$1.debugShaderVariantCollection.getByIndex(i);
-                let shaderName = shadervariant.shader.name;
-                if (!shaderObj[shaderName])
-                    shaderObj[shaderName] = [];
-                arr = shaderObj[shaderName];
-                let obj = {};
-                obj.defineNames = shadervariant.defineNames;
-                obj.passIndex = shadervariant.passIndex;
-                obj.subShaderIndex = shadervariant.subShaderIndex;
-                arr.push(obj);
-            }
-            let json = JSON.stringify(shaderObj, null, 4);
-            console.log(json);
+        static ReadBounds(b) {
+            var min = this.ReadVector3(b);
+            var max = this.ReadVector3(b);
+            var v = new Bounds(min, max);
+            return v;
+        }
+        static ReadMatrix4x4(b) {
+            var m00 = b.readFloat32();
+            var m01 = b.readFloat32();
+            var m02 = b.readFloat32();
+            var m03 = b.readFloat32();
+            var m10 = b.readFloat32();
+            var m11 = b.readFloat32();
+            var m12 = b.readFloat32();
+            var m13 = b.readFloat32();
+            var m20 = b.readFloat32();
+            var m21 = b.readFloat32();
+            var m22 = b.readFloat32();
+            var m23 = b.readFloat32();
+            var m30 = b.readFloat32();
+            var m31 = b.readFloat32();
+            var m32 = b.readFloat32();
+            var m33 = b.readFloat32();
+            var v2 = new Matrix4x4$1(m00, m01, m02, m03, m10, m11, m12, m13, m20, m21, m22, m23, m30, m31, m32, m33);
+            var v = new Matrix4x4$1();
+            Matrix4x4$1.multiply(this.mm, v2, v);
+            return v;
         }
     }
-    window['MaterialInstall'] = MaterialInstall;
+    ByteReadUtil.mm = new Matrix4x4$1(-1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0);
+
+    var Matrix4x4$2 = Laya.Matrix4x4;
+    class GPUSkinningBone {
+        constructor() {
+            this.boneIndex = -1;
+            this.parentBoneIndex = -1;
+            this._bindposeInvInit = false;
+        }
+        get BindposeInv() {
+            if (!this._bindposeInv) {
+                this._bindposeInv = new Matrix4x4$2();
+                this.bindpose.invert(this._bindposeInv);
+                this._bindposeInvInit = true;
+            }
+            return this._bindposeInv;
+        }
+        FromBytes(data) {
+            var b = new Laya.Byte(data);
+            this.name = b.readUTFString();
+            this.guid = b.readUTFString();
+            this.isExposed = b.readByte() != 0;
+            this.boneIndex = b.readInt32();
+            this.parentBoneIndex = b.readInt32();
+            this.bindpose = ByteReadUtil.ReadMatrix4x4(b);
+        }
+        static CreateFromBytes(data) {
+            var obj = new GPUSkinningBone();
+            obj.FromBytes(data);
+            return obj;
+        }
+    }
+
+    var GPUSkinningWrapMode;
+    (function (GPUSkinningWrapMode) {
+        GPUSkinningWrapMode[GPUSkinningWrapMode["Once"] = 0] = "Once";
+        GPUSkinningWrapMode[GPUSkinningWrapMode["Loop"] = 1] = "Loop";
+    })(GPUSkinningWrapMode || (GPUSkinningWrapMode = {}));
+
+    class GPUSkinningAnimEvent {
+        constructor() {
+            this.frameIndex = 0;
+            this.eventId = 0;
+        }
+        CompareTo(other) {
+            return this.frameIndex > other.frameIndex ? -1 : 1;
+        }
+        FromBytes(data) {
+            var b = new Laya.Byte(data);
+            this.frameIndex = b.readInt32();
+            this.eventId = b.readInt32();
+        }
+        static CreateFromBytes(data) {
+            var obj = new GPUSkinningAnimEvent();
+            obj.FromBytes(data);
+            return obj;
+        }
+    }
+
+    var Matrix4x4$3 = Laya.Matrix4x4;
+    class GPUSkinningFrame {
+        constructor() {
+            this.rootMotionInvInit = false;
+        }
+        RootMotionInv(rootBoneIndex) {
+            if (!this.rootMotionInvInit) {
+                let m = this.matrices[rootBoneIndex];
+                this.rootMotionInv = new Matrix4x4$3();
+                m.invert(this.rootMotionInv);
+                this.rootMotionInvInit = true;
+            }
+            return this.rootMotionInv;
+        }
+        FromBytes(data, rootMotionEnabled) {
+            var b = new Laya.Byte(data);
+            if (rootMotionEnabled) {
+                this.rootMotionDeltaPositionL = b.readFloat32();
+                this.rootMotionDeltaPositionQ = ByteReadUtil.ReadQuaternion(b);
+                this.rootMotionDeltaRotation = ByteReadUtil.ReadQuaternion(b);
+            }
+            var matricesCount = b.readUint32();
+            this.matrices = [];
+            for (var i = 0; i < matricesCount; i++) {
+                var m = ByteReadUtil.ReadMatrix4x4(b);
+                this.matrices.push(m);
+            }
+        }
+        static CreateFromBytes(data, rootMotionEnabled) {
+            var obj = new GPUSkinningFrame();
+            obj.FromBytes(data, rootMotionEnabled);
+            return obj;
+        }
+    }
+
+    var Byte$1 = Laya.Byte;
+    class GPUSkinningClip {
+        constructor() {
+            this.length = 0.0;
+            this.fps = 0;
+            this.wrapMode = GPUSkinningWrapMode.Once;
+            this.pixelSegmentation = 0;
+            this.rootMotionEnabled = false;
+            this.individualDifferenceEnabled = false;
+            this.frameCount = 0;
+            this.frameLastIndex = 0;
+        }
+        FromBytes(data) {
+            var b = new Byte$1(data);
+            b.pos = 0;
+            this.name = b.readUTFString();
+            this.length = b.readFloat32();
+            this.fps = b.readUint32();
+            this.wrapMode = b.readInt32();
+            this.pixelSegmentation = b.readUint32();
+            this.rootMotionEnabled = b.readByte() != 0;
+            this.individualDifferenceEnabled = b.readByte() != 0;
+            var frameCount = b.readUint32();
+            var eventCount = b.readUint32();
+            var framePosLengthList = [];
+            for (var i = 0; i < frameCount; i++) {
+                var info = [];
+                info[0] = b.readUint32();
+                info[1] = b.readUint32();
+                framePosLengthList.push(info);
+            }
+            var eventPosLengthList = [];
+            for (var i = 0; i < eventCount; i++) {
+                var info = [];
+                info[0] = b.readUint32();
+                info[1] = b.readUint32();
+                eventPosLengthList.push(info);
+            }
+            var frameList = [];
+            this.frames = frameList;
+            for (var i = 0; i < frameCount; i++) {
+                var itemInfo = framePosLengthList[i];
+                var pos = itemInfo[0];
+                var len = itemInfo[1];
+                b.pos = pos;
+                var itemBuffer = b.readArrayBuffer(len);
+                var item = GPUSkinningFrame.CreateFromBytes(itemBuffer, this.rootMotionEnabled);
+                frameList.push(item);
+            }
+            var eventList = [];
+            this.events = eventList;
+            for (var i = 0; i < eventCount; i++) {
+                var itemInfo = eventPosLengthList[i];
+                var pos = itemInfo[0];
+                var len = itemInfo[1];
+                b.pos = pos;
+                var itemBuffer = b.readArrayBuffer(len);
+                var item = GPUSkinningAnimEvent.CreateFromBytes(itemBuffer);
+                eventList.push(item);
+            }
+            this.frameCount = Math.floor(this.length * this.fps);
+            this.frameLastIndex = this.frameCount - 1;
+        }
+        static CreateFromBytes(data) {
+            var obj = new GPUSkinningClip();
+            obj.FromBytes(data);
+            return obj;
+        }
+    }
+
+    var GPUSkinningQuality;
+    (function (GPUSkinningQuality) {
+        GPUSkinningQuality[GPUSkinningQuality["Bone1"] = 0] = "Bone1";
+        GPUSkinningQuality[GPUSkinningQuality["Bone2"] = 1] = "Bone2";
+        GPUSkinningQuality[GPUSkinningQuality["Bone4"] = 2] = "Bone4";
+    })(GPUSkinningQuality || (GPUSkinningQuality = {}));
+
+    var Byte$2 = Laya.Byte;
+    class GPUSkinningAnimation extends Laya.Resource {
+        constructor() {
+            super(...arguments);
+            this.bonesCount = 67;
+            this.rootBoneIndex = 0;
+            this.textureWidth = 0;
+            this.textureHeight = 0;
+            this.sphereRadius = 1.0;
+            this.skinQuality = GPUSkinningQuality.Bone4;
+        }
+        FromBytes(arrayBuffer) {
+            var b = new Byte$2(arrayBuffer);
+            b.pos = 0;
+            this.guid = b.readUTFString();
+            this.name = b.readUTFString();
+            this.rootBoneIndex = b.readInt16();
+            this.textureWidth = b.readUint32();
+            this.textureHeight = b.readUint32();
+            this.sphereRadius = b.readFloat32();
+            this.skinQuality = b.readInt32();
+            this.bonesCount = b.readUint32();
+            this.bounds = ByteReadUtil.ReadBounds(b);
+            var clipCount = b.readUint32();
+            var boneCount = b.readUint32();
+            var clipPosLengthList = [];
+            for (var i = 0; i < clipCount; i++) {
+                var info = [];
+                info[0] = b.readUint32();
+                info[1] = b.readUint32();
+                clipPosLengthList.push(info);
+            }
+            var bonePosLengthList = [];
+            for (var i = 0; i < boneCount; i++) {
+                var info = [];
+                info[0] = b.readUint32();
+                info[1] = b.readUint32();
+                bonePosLengthList.push(info);
+            }
+            var clipList = [];
+            this.clips = clipList;
+            for (var i = 0; i < clipCount; i++) {
+                var itemInfo = clipPosLengthList[i];
+                var pos = itemInfo[0];
+                var len = itemInfo[1];
+                b.pos = pos;
+                var itemBuffer = b.readArrayBuffer(len);
+                var item = GPUSkinningClip.CreateFromBytes(itemBuffer);
+                clipList.push(item);
+            }
+            var boneList = [];
+            this.bones = boneList;
+            for (var i = 0; i < boneCount; i++) {
+                var itemInfo = bonePosLengthList[i];
+                var pos = itemInfo[0];
+                var len = itemInfo[1];
+                b.pos = pos;
+                b.pos = pos;
+                var itemBuffer = b.readArrayBuffer(len);
+                var item = GPUSkinningBone.CreateFromBytes(itemBuffer);
+                boneList.push(item);
+            }
+        }
+        static CreateFromBytes(data) {
+            var b = new Byte$2(data);
+            b.pos = 0;
+            var version = b.readUTFString();
+            var len = b.readUint32();
+            var arrayBuffer = b.readArrayBuffer(len);
+            var obj = new GPUSkinningAnimation();
+            obj.version = version;
+            obj.FromBytes(arrayBuffer);
+            return obj;
+        }
+        static async LoadAsync(path) {
+            return new Promise((resolve) => {
+                this.Load(path, (anim) => {
+                    resolve(anim);
+                });
+            });
+        }
+        static Load(path, callback) {
+            Laya.loader.load(path, Laya.Handler.create(this, (data) => {
+                if (data == null) {
+                    console.error("加载资源失败", path);
+                    callback(null);
+                    return;
+                }
+                var anim;
+                if (data instanceof ArrayBuffer) {
+                    anim = GPUSkinningAnimation.CreateFromBytes(data);
+                    anim._url = Laya.URL.formatURL(path);
+                    Laya.Loader.clearRes(path);
+                    Laya.Loader.cacheRes(path, anim);
+                }
+                else {
+                    anim = data;
+                }
+                if (callback) {
+                    callback(anim);
+                }
+            }), null, Laya.Loader.BUFFER);
+        }
+        _disposeResource() {
+            super._disposeResource();
+        }
+        destroy() {
+            super.destroy();
+        }
+    }
 
     var GPUSKinningCullingMode;
     (function (GPUSKinningCullingMode) {
@@ -784,17 +954,10 @@
         MaterialState[MaterialState["Count"] = 6] = "Count";
     })(MaterialState || (MaterialState = {}));
 
-    var GPUSkinningQuality;
-    (function (GPUSkinningQuality) {
-        GPUSkinningQuality[GPUSkinningQuality["Bone1"] = 0] = "Bone1";
-        GPUSkinningQuality[GPUSkinningQuality["Bone2"] = 1] = "Bone2";
-        GPUSkinningQuality[GPUSkinningQuality["Bone4"] = 2] = "Bone4";
-    })(GPUSkinningQuality || (GPUSkinningQuality = {}));
-
     var BoundSphere = Laya.BoundSphere;
     var Vector4$1 = Laya.Vector4;
-    var Vector3$1 = Laya.Vector3;
-    var Shader3D$2 = Laya.Shader3D;
+    var Vector3$2 = Laya.Vector3;
+    var Shader3D$1 = Laya.Shader3D;
     class GPUSkinningPlayerResources {
         constructor() {
             this.anim = null;
@@ -818,17 +981,17 @@
                 return;
             this._isInited = true;
             for (let key of this.keywords) {
-                this.keywordDefines.push(Shader3D$2.getDefineByName(key));
+                this.keywordDefines.push(Shader3D$1.getDefineByName(key));
             }
-            this.ShaderDefine_SKIN_1 = Shader3D$2.getDefineByName("SKIN_1");
-            this.ShaderDefine_SKIN_2 = Shader3D$2.getDefineByName("SKIN_2");
-            this.ShaderDefine_SKIN_4 = Shader3D$2.getDefineByName("SKIN_4");
-            this.shaderPropID_GPUSkinning_TextureMatrix = Shader3D$2.propertyNameToID("u_GPUSkinning_TextureMatrix");
-            this.shaderPropID_GPUSkinning_TextureSize_NumPixelsPerFrame = Shader3D$2.propertyNameToID("u_GPUSkinning_TextureSize_NumPixelsPerFrame");
-            this.shaderPorpID_GPUSkinning_FrameIndex_PixelSegmentation = Shader3D$2.propertyNameToID("u_GPUSkinning_FrameIndex_PixelSegmentation");
-            this.shaderPropID_GPUSkinning_RootMotion = Shader3D$2.propertyNameToID("u_GPUSkinning_RootMotion");
-            this.shaderPorpID_GPUSkinning_FrameIndex_PixelSegmentation_Blend_CrossFade = Shader3D$2.propertyNameToID("u_GPUSkinning_FrameIndex_PixelSegmentation_Blend_CrossFade");
-            this.shaderPropID_GPUSkinning_RootMotion_CrossFade = Shader3D$2.propertyNameToID("u_GPUSkinning_RootMotion_CrossFade");
+            this.ShaderDefine_SKIN_1 = Shader3D$1.getDefineByName("SKIN_1");
+            this.ShaderDefine_SKIN_2 = Shader3D$1.getDefineByName("SKIN_2");
+            this.ShaderDefine_SKIN_4 = Shader3D$1.getDefineByName("SKIN_4");
+            this.shaderPropID_GPUSkinning_TextureMatrix = Shader3D$1.propertyNameToID("u_GPUSkinning_TextureMatrix");
+            this.shaderPropID_GPUSkinning_TextureSize_NumPixelsPerFrame = Shader3D$1.propertyNameToID("u_GPUSkinning_TextureSize_NumPixelsPerFrame");
+            this.shaderPorpID_GPUSkinning_FrameIndex_PixelSegmentation = Shader3D$1.propertyNameToID("u_GPUSkinning_FrameIndex_PixelSegmentation");
+            this.shaderPropID_GPUSkinning_RootMotion = Shader3D$1.propertyNameToID("u_GPUSkinning_RootMotion");
+            this.shaderPorpID_GPUSkinning_FrameIndex_PixelSegmentation_Blend_CrossFade = Shader3D$1.propertyNameToID("u_GPUSkinning_FrameIndex_PixelSegmentation_Blend_CrossFade");
+            this.shaderPropID_GPUSkinning_RootMotion_CrossFade = Shader3D$1.propertyNameToID("u_GPUSkinning_RootMotion_CrossFade");
         }
         Destroy() {
             if (this.anim != null) {
@@ -856,7 +1019,7 @@
             }
         }
         AddCullingBounds() {
-            this.cullingBounds.Add(new BoundSphere(new Vector3$1(0, 0, 0), 0));
+            this.cullingBounds.Add(new BoundSphere(new Vector3$2(0, 0, 0), 0));
         }
         RemoveCullingBounds(index) {
             this.cullingBounds.RemoveAt(index);
@@ -1102,14 +1265,8 @@
         }
     }
 
-    var GPUSkinningWrapMode;
-    (function (GPUSkinningWrapMode) {
-        GPUSkinningWrapMode[GPUSkinningWrapMode["Once"] = 0] = "Once";
-        GPUSkinningWrapMode[GPUSkinningWrapMode["Loop"] = 1] = "Loop";
-    })(GPUSkinningWrapMode || (GPUSkinningWrapMode = {}));
-
-    var Vector3$2 = Laya.Vector3;
-    var Matrix4x4 = Laya.Matrix4x4;
+    var Vector3$3 = Laya.Vector3;
+    var Matrix4x4$4 = Laya.Matrix4x4;
     class GPUSkinningPlayer {
         constructor(go, res) {
             this.time = 0;
@@ -1187,10 +1344,10 @@
             return this.playingClip == null ? null : this.playingClip.name;
         }
         get Position() {
-            return this.transform == null ? new Vector3$2() : this.transform.position;
+            return this.transform == null ? new Vector3$3() : this.transform.position;
         }
         get LocalPosition() {
-            return this.transform == null ? new Vector3$2() : this.transform.localPosition;
+            return this.transform == null ? new Vector3$3() : this.transform.localPosition;
         }
         get Joints() {
             return this.joints;
@@ -1388,8 +1545,8 @@
                 if (!inTheExistingJoints) {
                     let joinGO = new Laya.Sprite3D(bone.name);
                     this.go.addChild(joinGO);
-                    joinGO.transform.localPosition = new Vector3$2();
-                    joinGO.transform.localScale = new Vector3$2(1, 1, 1);
+                    joinGO.transform.localPosition = new Vector3$3();
+                    joinGO.transform.localScale = new Vector3$3(1, 1, 1);
                     let join = joinGO.addComponent(GPUSkinningPlayerJoint);
                     join.onAwake();
                     joints.push(join);
@@ -1409,7 +1566,7 @@
                     for (let j = joinGO.numChildren - 1; j >= 0; j--) {
                         let child = joinGO.getChildAt(j);
                         this.go.addChild(child);
-                        child.transform.localPosition = new Vector3$2();
+                        child.transform.localPosition = new Vector3$3();
                     }
                     joinGO.removeSelf();
                     joinGO.destroy();
@@ -1604,11 +1761,11 @@
                 let joint = joints[i];
                 let jointTransform = joint.Transform;
                 if (jointTransform != null) {
-                    var jointMatrix = new Matrix4x4();
-                    Matrix4x4.multiply(frame.matrices[joint.index], bones[joint.index].BindposeInv, jointMatrix);
+                    var jointMatrix = new Matrix4x4$4();
+                    Matrix4x4$4.multiply(frame.matrices[joint.index], bones[joint.index].BindposeInv, jointMatrix);
                     if (playingClip.rootMotionEnabled && this.rootMotionEnabled) {
-                        let outM = new Matrix4x4();
-                        Matrix4x4.multiply(frame.RootMotionInv(res.anim.rootBoneIndex), jointMatrix, outM);
+                        let outM = new Matrix4x4$4();
+                        Matrix4x4$4.multiply(frame.RootMotionInv(res.anim.rootBoneIndex), jointMatrix, outM);
                         jointMatrix = outM;
                     }
                     jointTransform.localMatrix = jointMatrix;
@@ -1642,719 +1799,147 @@
     }
     GPUSkinningPlayer._ShaderUID = 0;
 
-    var VertexMesh$1 = Laya.VertexMesh;
-    var VertexDeclaration = Laya.VertexDeclaration;
-    var VertexElement = Laya.VertexElement;
-    var VertexElementFormat = Laya.VertexElementFormat;
-    class GPUSkiningVertexMesh extends VertexMesh$1 {
-        static getVertexDeclaration(vertexFlag, compatible = true) {
-            var verDec = this._declarationMap[vertexFlag + (compatible ? "_0" : "_1")];
-            if (!verDec) {
-                var subFlags = vertexFlag.split(",");
-                var offset = 0;
-                var elements = [];
-                for (var i = 0, n = subFlags.length; i < n; i++) {
-                    var element;
-                    switch (subFlags[i]) {
-                        case "POSITION":
-                            element = new VertexElement(offset, VertexElementFormat.Vector3, this.MESH_POSITION0);
-                            offset += 12;
-                            break;
-                        case "NORMAL":
-                            element = new VertexElement(offset, VertexElementFormat.Vector3, this.MESH_NORMAL0);
-                            offset += 12;
-                            break;
-                        case "COLOR":
-                            element = new VertexElement(offset, VertexElementFormat.Vector4, this.MESH_COLOR0);
-                            offset += 16;
-                            break;
-                        case "UV":
-                            element = new VertexElement(offset, VertexElementFormat.Vector2, this.MESH_TEXTURECOORDINATE0);
-                            offset += 8;
-                            break;
-                        case "UV1":
-                            element = new VertexElement(offset, VertexElementFormat.Vector4, this.MESH_TEXTURECOORDINATE1);
-                            offset += 16;
-                            break;
-                        case "UV2":
-                            element = new VertexElement(offset, VertexElementFormat.Vector4, this.MESH_TEXTURECOORDINATE2);
-                            offset += 16;
-                            break;
-                        case "BLENDWEIGHT":
-                            element = new VertexElement(offset, VertexElementFormat.Vector4, this.MESH_BLENDWEIGHT0);
-                            offset += 16;
-                            break;
-                        case "BLENDINDICES":
-                            if (compatible) {
-                                element = new VertexElement(offset, VertexElementFormat.Vector4, this.MESH_BLENDINDICES0);
-                                offset += 16;
-                            }
-                            else {
-                                element = new VertexElement(offset, VertexElementFormat.Byte4, this.MESH_BLENDINDICES0);
-                                offset += 4;
-                            }
-                            break;
-                        case "TANGENT":
-                            element = new VertexElement(offset, VertexElementFormat.Vector4, this.MESH_TANGENT0);
-                            offset += 16;
-                            console.log("TANGENT", element);
-                            break;
-                        default:
-                            throw "VertexMesh: unknown vertex flag.";
-                    }
-                    elements.push(element);
-                }
-                verDec = new VertexDeclaration(offset, elements);
-                this._declarationMap[vertexFlag + (compatible ? "_0" : "_1")] = verDec;
-            }
-            return verDec;
-        }
-    }
-    GPUSkiningVertexMesh.MESH_TEXTURECOORDINATE2 = 6;
-    GPUSkiningVertexMesh._declarationMap = {};
-
-    var IndexBuffer3D = Laya.IndexBuffer3D;
-    var VertexBuffer3D = Laya.VertexBuffer3D;
-    var HalfFloatUtils = Laya.HalfFloatUtils;
-    var Matrix4x4$1 = Laya.Matrix4x4;
-    var SubMesh = Laya.SubMesh;
-    var IndexFormat = Laya.IndexFormat;
-    var LayaGL = Laya.LayaGL;
-    class GPUSkiningLoadModelV05 {
-        static parse(readData, version, mesh, subMeshes) {
-            GPUSkiningLoadModelV05._mesh = mesh;
-            GPUSkiningLoadModelV05._subMeshes = subMeshes;
-            GPUSkiningLoadModelV05._version = version;
-            GPUSkiningLoadModelV05._readData = readData;
-            GPUSkiningLoadModelV05.READ_DATA();
-            GPUSkiningLoadModelV05.READ_BLOCK();
-            GPUSkiningLoadModelV05.READ_STRINGS();
-            for (var i = 0, n = GPUSkiningLoadModelV05._BLOCK.count; i < n; i++) {
-                GPUSkiningLoadModelV05._readData.pos = GPUSkiningLoadModelV05._BLOCK.blockStarts[i];
-                var index = GPUSkiningLoadModelV05._readData.getUint16();
-                var blockName = GPUSkiningLoadModelV05._strings[index];
-                var fn = GPUSkiningLoadModelV05["READ_" + blockName];
-                if (fn == null)
-                    throw new Error("model file err,no this function:" + index + " " + blockName);
-                else
-                    fn.call(null);
-            }
-            GPUSkiningLoadModelV05._mesh._bindPoseIndices = new Uint16Array(GPUSkiningLoadModelV05._bindPoseIndices);
-            GPUSkiningLoadModelV05._bindPoseIndices.length = 0;
-            GPUSkiningLoadModelV05._strings.length = 0;
-            GPUSkiningLoadModelV05._readData = null;
-            GPUSkiningLoadModelV05._version = null;
-            GPUSkiningLoadModelV05._mesh = null;
-            GPUSkiningLoadModelV05._subMeshes = null;
-        }
-        static _readString() {
-            return GPUSkiningLoadModelV05._strings[GPUSkiningLoadModelV05._readData.getUint16()];
-        }
-        static READ_DATA() {
-            GPUSkiningLoadModelV05._DATA.offset = GPUSkiningLoadModelV05._readData.getUint32();
-            GPUSkiningLoadModelV05._DATA.size = GPUSkiningLoadModelV05._readData.getUint32();
-        }
-        static READ_BLOCK() {
-            var count = GPUSkiningLoadModelV05._BLOCK.count = GPUSkiningLoadModelV05._readData.getUint16();
-            var blockStarts = GPUSkiningLoadModelV05._BLOCK.blockStarts = [];
-            var blockLengths = GPUSkiningLoadModelV05._BLOCK.blockLengths = [];
-            for (var i = 0; i < count; i++) {
-                blockStarts.push(GPUSkiningLoadModelV05._readData.getUint32());
-                blockLengths.push(GPUSkiningLoadModelV05._readData.getUint32());
-            }
-        }
-        static READ_STRINGS() {
-            var offset = GPUSkiningLoadModelV05._readData.getUint32();
-            var count = GPUSkiningLoadModelV05._readData.getUint16();
-            var prePos = GPUSkiningLoadModelV05._readData.pos;
-            GPUSkiningLoadModelV05._readData.pos = offset + GPUSkiningLoadModelV05._DATA.offset;
-            for (var i = 0; i < count; i++)
-                GPUSkiningLoadModelV05._strings[i] = GPUSkiningLoadModelV05._readData.readUTFString();
-            GPUSkiningLoadModelV05._readData.pos = prePos;
-        }
-        static READ_MESH() {
-            var gl = LayaGL.instance;
-            var i;
-            var memorySize = 0;
-            var name = GPUSkiningLoadModelV05._readString();
-            var reader = GPUSkiningLoadModelV05._readData;
-            var arrayBuffer = reader.__getBuffer();
-            var vertexBufferCount = reader.getInt16();
-            var offset = GPUSkiningLoadModelV05._DATA.offset;
-            for (i = 0; i < vertexBufferCount; i++) {
-                var vbStart = offset + reader.getUint32();
-                var vertexCount = reader.getUint32();
-                var vertexFlag = GPUSkiningLoadModelV05._readString();
-                var vertexDeclaration = GPUSkiningVertexMesh.getVertexDeclaration(vertexFlag, false);
-                var vertexStride = vertexDeclaration.vertexStride;
-                var vertexData;
-                var floatData;
-                var uint8Data;
-                var subVertexFlags = vertexFlag.split(",");
-                var subVertexCount = subVertexFlags.length;
-                var mesh = GPUSkiningLoadModelV05._mesh;
-                switch (GPUSkiningLoadModelV05._version) {
-                    case "LAYAMODEL:05":
-                    case "LAYAMODEL:GPUSkining_05":
-                    case "LAYAMODEL:GPUSkining_06":
-                        vertexData = arrayBuffer.slice(vbStart, vbStart + vertexCount * vertexStride);
-                        floatData = new Float32Array(vertexData);
-                        uint8Data = new Uint8Array(vertexData);
-                        break;
-                    case "LAYAMODEL:COMPRESSION_05":
-                        vertexData = new ArrayBuffer(vertexStride * vertexCount);
-                        floatData = new Float32Array(vertexData);
-                        uint8Data = new Uint8Array(vertexData);
-                        var lastPosition = reader.pos;
-                        reader.pos = vbStart;
-                        for (var j = 0; j < vertexCount; j++) {
-                            var subOffset;
-                            var verOffset = j * vertexStride;
-                            for (var k = 0; k < subVertexCount; k++) {
-                                switch (subVertexFlags[k]) {
-                                    case "POSITION":
-                                        subOffset = verOffset / 4;
-                                        floatData[subOffset] = HalfFloatUtils.convertToNumber(reader.getUint16());
-                                        floatData[subOffset + 1] = HalfFloatUtils.convertToNumber(reader.getUint16());
-                                        floatData[subOffset + 2] = HalfFloatUtils.convertToNumber(reader.getUint16());
-                                        verOffset += 12;
-                                        break;
-                                    case "NORMAL":
-                                        subOffset = verOffset / 4;
-                                        floatData[subOffset] = reader.getUint8() / 127.5 - 1;
-                                        floatData[subOffset + 1] = reader.getUint8() / 127.5 - 1;
-                                        floatData[subOffset + 2] = reader.getUint8() / 127.5 - 1;
-                                        verOffset += 12;
-                                        break;
-                                    case "COLOR":
-                                        subOffset = verOffset / 4;
-                                        floatData[subOffset] = reader.getUint8() / 255;
-                                        floatData[subOffset + 1] = reader.getUint8() / 255;
-                                        floatData[subOffset + 2] = reader.getUint8() / 255;
-                                        floatData[subOffset + 3] = reader.getUint8() / 255;
-                                        verOffset += 16;
-                                        break;
-                                    case "UV":
-                                        subOffset = verOffset / 4;
-                                        floatData[subOffset] = HalfFloatUtils.convertToNumber(reader.getUint16());
-                                        floatData[subOffset + 1] = HalfFloatUtils.convertToNumber(reader.getUint16());
-                                        verOffset += 8;
-                                        break;
-                                    case "UV1":
-                                        subOffset = verOffset / 4;
-                                        floatData[subOffset] = HalfFloatUtils.convertToNumber(reader.getUint16());
-                                        floatData[subOffset + 1] = HalfFloatUtils.convertToNumber(reader.getUint16());
-                                        verOffset += 8;
-                                        break;
-                                    case "BLENDWEIGHT":
-                                        subOffset = verOffset / 4;
-                                        floatData[subOffset] = reader.getUint8() / 255;
-                                        floatData[subOffset + 1] = reader.getUint8() / 255;
-                                        floatData[subOffset + 2] = reader.getUint8() / 255;
-                                        floatData[subOffset + 3] = reader.getUint8() / 255;
-                                        verOffset += 16;
-                                        break;
-                                    case "BLENDINDICES":
-                                        uint8Data[verOffset] = reader.getUint8();
-                                        uint8Data[verOffset + 1] = reader.getUint8();
-                                        uint8Data[verOffset + 2] = reader.getUint8();
-                                        uint8Data[verOffset + 3] = reader.getUint8();
-                                        verOffset += 4;
-                                        break;
-                                    case "TANGENT":
-                                        subOffset = verOffset / 4;
-                                        floatData[subOffset] = reader.getUint8() / 127.5 - 1;
-                                        floatData[subOffset + 1] = reader.getUint8() / 127.5 - 1;
-                                        floatData[subOffset + 2] = reader.getUint8() / 127.5 - 1;
-                                        floatData[subOffset + 3] = reader.getUint8() / 127.5 - 1;
-                                        verOffset += 16;
-                                        break;
-                                }
-                            }
-                        }
-                        reader.pos = lastPosition;
-                        break;
-                }
-                var vertexBuffer = new VertexBuffer3D(vertexData.byteLength, gl.STATIC_DRAW, true);
-                vertexBuffer.vertexDeclaration = vertexDeclaration;
-                vertexBuffer.setData(vertexData);
-                var vertexCount = vertexBuffer._byteLength / vertexDeclaration.vertexStride;
-                if (vertexCount > 65535)
-                    mesh._indexFormat = IndexFormat.UInt32;
-                else
-                    mesh._indexFormat = IndexFormat.UInt16;
-                mesh._vertexBuffer = vertexBuffer;
-                mesh._vertexCount += vertexCount;
-                memorySize += floatData.length * 4;
-            }
-            var ibStart = offset + reader.getUint32();
-            var ibLength = reader.getUint32();
-            var ibDatas;
-            if (mesh.indexFormat == IndexFormat.UInt32)
-                ibDatas = new Uint32Array(arrayBuffer.slice(ibStart, ibStart + ibLength));
-            else
-                ibDatas = new Uint16Array(arrayBuffer.slice(ibStart, ibStart + ibLength));
-            var indexBuffer = new IndexBuffer3D(mesh.indexFormat, ibDatas.length, gl.STATIC_DRAW, true);
-            indexBuffer.setData(ibDatas);
-            mesh._indexBuffer = indexBuffer;
-            mesh._setBuffer(mesh._vertexBuffer, indexBuffer);
-            memorySize += indexBuffer.indexCount * 2;
-            mesh._setCPUMemory(memorySize);
-            mesh._setGPUMemory(memorySize);
-            var boneNames = mesh._boneNames = [];
-            var boneCount = reader.getUint16();
-            boneNames.length = boneCount;
-            for (i = 0; i < boneCount; i++)
-                boneNames[i] = GPUSkiningLoadModelV05._strings[reader.getUint16()];
-            var bindPoseDataStart = reader.getUint32();
-            var bindPoseDataLength = reader.getUint32();
-            var bindPoseDatas = new Float32Array(arrayBuffer.slice(offset + bindPoseDataStart, offset + bindPoseDataStart + bindPoseDataLength));
-            var bindPoseFloatCount = bindPoseDatas.length;
-            var bindPoseBuffer = mesh._inverseBindPosesBuffer = new ArrayBuffer(bindPoseFloatCount * 4);
-            mesh._inverseBindPoses = [];
-            for (i = 0; i < bindPoseFloatCount; i += 16) {
-                var inverseGlobalBindPose = new Matrix4x4$1(bindPoseDatas[i + 0], bindPoseDatas[i + 1], bindPoseDatas[i + 2], bindPoseDatas[i + 3], bindPoseDatas[i + 4], bindPoseDatas[i + 5], bindPoseDatas[i + 6], bindPoseDatas[i + 7], bindPoseDatas[i + 8], bindPoseDatas[i + 9], bindPoseDatas[i + 10], bindPoseDatas[i + 11], bindPoseDatas[i + 12], bindPoseDatas[i + 13], bindPoseDatas[i + 14], bindPoseDatas[i + 15], new Float32Array(bindPoseBuffer, i * 4, 16));
-                mesh._inverseBindPoses[i / 16] = inverseGlobalBindPose;
-            }
-            return true;
-        }
-        static READ_SUBMESH() {
-            var reader = GPUSkiningLoadModelV05._readData;
-            var arrayBuffer = reader.__getBuffer();
-            var subMesh = new SubMesh(GPUSkiningLoadModelV05._mesh);
-            reader.getInt16();
-            var ibStart = reader.getUint32();
-            var ibCount = reader.getUint32();
-            var indexBuffer = GPUSkiningLoadModelV05._mesh._indexBuffer;
-            subMesh._indexBuffer = indexBuffer;
-            subMesh._setIndexRange(ibStart, ibCount);
-            var vertexBuffer = GPUSkiningLoadModelV05._mesh._vertexBuffer;
-            subMesh._vertexBuffer = vertexBuffer;
-            var offset = GPUSkiningLoadModelV05._DATA.offset;
-            var subIndexBufferStart = subMesh._subIndexBufferStart;
-            var subIndexBufferCount = subMesh._subIndexBufferCount;
-            var boneIndicesList = subMesh._boneIndicesList;
-            var drawCount = reader.getUint16();
-            subIndexBufferStart.length = drawCount;
-            subIndexBufferCount.length = drawCount;
-            boneIndicesList.length = drawCount;
-            var pathMarks = GPUSkiningLoadModelV05._mesh._skinDataPathMarks;
-            var bindPoseIndices = GPUSkiningLoadModelV05._bindPoseIndices;
-            var subMeshIndex = GPUSkiningLoadModelV05._subMeshes.length;
-            for (var i = 0; i < drawCount; i++) {
-                subIndexBufferStart[i] = reader.getUint32();
-                subIndexBufferCount[i] = reader.getUint32();
-                var boneDicofs = reader.getUint32();
-                var boneDicCount = reader.getUint32();
-                var boneIndices = boneIndicesList[i] = new Uint16Array(arrayBuffer.slice(offset + boneDicofs, offset + boneDicofs + boneDicCount));
-                for (var j = 0, m = boneIndices.length; j < m; j++) {
-                    var index = boneIndices[j];
-                    var combineIndex = bindPoseIndices.indexOf(index);
-                    if (combineIndex === -1) {
-                        boneIndices[j] = bindPoseIndices.length;
-                        bindPoseIndices.push(index);
-                        pathMarks.push([subMeshIndex, i, j]);
-                    }
-                    else {
-                        boneIndices[j] = combineIndex;
-                    }
-                }
-            }
-            GPUSkiningLoadModelV05._subMeshes.push(subMesh);
-            return true;
-        }
-    }
-    GPUSkiningLoadModelV05._BLOCK = { count: 0 };
-    GPUSkiningLoadModelV05._DATA = { offset: 0, size: 0 };
-    GPUSkiningLoadModelV05._strings = [];
-    GPUSkiningLoadModelV05._bindPoseIndices = [];
-
-    var Byte = Laya.Byte;
-    class GPUSkiningMeshReader {
-        static read(data, mesh, subMeshes) {
-            var readData = new Byte(data);
-            readData.pos = 0;
-            var version = readData.readUTFString();
-            var boundsMin;
-            var boundsMax;
-            if (version == "LAYAMODEL:GPUSkining_06") {
-                boundsMin = new Laya.Vector3();
-                boundsMax = new Laya.Vector3();
-                boundsMin.x = readData.readFloat32();
-                boundsMin.y = readData.readFloat32();
-                boundsMin.z = readData.readFloat32();
-                boundsMax.x = readData.readFloat32();
-                boundsMax.y = readData.readFloat32();
-                boundsMax.z = readData.readFloat32();
-            }
-            switch (version) {
-                case "LAYAMODEL:GPUSkining_05":
-                case "LAYAMODEL:GPUSkining_06":
-                    GPUSkiningLoadModelV05.parse(readData, version, mesh, subMeshes);
-                    break;
-                default:
-                    throw new Error("MeshReader: unknown mesh version.");
-            }
-            if (version == "LAYAMODEL:GPUSkining_06") {
-                mesh._needUpdateBounds = false;
-                mesh.bounds.setMin(boundsMin);
-                mesh.bounds.setMin(boundsMax);
-            }
-            mesh._setSubMeshes(subMeshes);
-        }
-    }
-
-    class GPUSkiningMesh extends Laya.Mesh {
-        static _parse(data, propertyParams = null, constructParams = null) {
-            var mesh = new GPUSkiningMesh();
-            GPUSkiningMeshReader.read(data, mesh, mesh._subMeshes);
-            return mesh;
-        }
-        static LoadAsync(path) {
-            return new Promise((resolve) => {
-                this.Load(path, (data) => {
-                    resolve(data);
-                });
-            });
-        }
-        static Load(path, callback) {
-            Laya.loader.load(path, Laya.Handler.create(this, (data) => {
-                if (data instanceof ArrayBuffer) {
-                    var mesh = GPUSkiningMesh._parse(data);
-                    mesh._url = Laya.URL.formatURL(path);
-                    Laya.Loader.clearRes(path);
-                    Laya.Loader.cacheRes(path, mesh);
-                    callback(mesh);
-                }
-                else {
-                    callback(data);
-                }
-            }), null, Laya.Loader.BUFFER);
-        }
-        destroy() {
-            super.destroy();
-        }
-    }
-
-    var Bounds = Laya.Bounds;
-    var Vector3$3 = Laya.Vector3;
-    var Quaternion = Laya.Quaternion;
-    var Matrix4x4$2 = Laya.Matrix4x4;
-    class ByteReadUtil {
-        static ReadQuaternion(b) {
-            var v = new Quaternion();
-            v.x = b.readFloat32();
-            v.y = b.readFloat32();
-            v.z = b.readFloat32();
-            v.w = b.readFloat32();
-            return v;
-        }
-        static ReadVector3(b) {
-            var v = new Vector3$3();
-            v.x = b.readFloat32() * -1;
-            v.y = b.readFloat32();
-            v.z = b.readFloat32();
-            return v;
-        }
-        static ReadBounds(b) {
-            var min = this.ReadVector3(b);
-            var max = this.ReadVector3(b);
-            var v = new Bounds(min, max);
-            return v;
-        }
-        static ReadMatrix4x4(b) {
-            var m00 = b.readFloat32();
-            var m01 = b.readFloat32();
-            var m02 = b.readFloat32();
-            var m03 = b.readFloat32();
-            var m10 = b.readFloat32();
-            var m11 = b.readFloat32();
-            var m12 = b.readFloat32();
-            var m13 = b.readFloat32();
-            var m20 = b.readFloat32();
-            var m21 = b.readFloat32();
-            var m22 = b.readFloat32();
-            var m23 = b.readFloat32();
-            var m30 = b.readFloat32();
-            var m31 = b.readFloat32();
-            var m32 = b.readFloat32();
-            var m33 = b.readFloat32();
-            var v2 = new Matrix4x4$2(m00, m01, m02, m03, m10, m11, m12, m13, m20, m21, m22, m23, m30, m31, m32, m33);
-            var v = new Matrix4x4$2();
-            Matrix4x4$2.multiply(this.mm, v2, v);
-            return v;
-        }
-    }
-    ByteReadUtil.mm = new Matrix4x4$2(-1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0);
-
-    var Matrix4x4$3 = Laya.Matrix4x4;
-    class GPUSkinningBone {
-        constructor() {
-            this.boneIndex = -1;
-            this.parentBoneIndex = -1;
-            this._bindposeInvInit = false;
-        }
-        get BindposeInv() {
-            if (!this._bindposeInv) {
-                this._bindposeInv = new Matrix4x4$3();
-                this.bindpose.invert(this._bindposeInv);
-                this._bindposeInvInit = true;
-            }
-            return this._bindposeInv;
-        }
-        FromBytes(data) {
-            var b = new Laya.Byte(data);
-            this.name = b.readUTFString();
-            this.guid = b.readUTFString();
-            this.isExposed = b.readByte() != 0;
-            this.boneIndex = b.readInt32();
-            this.parentBoneIndex = b.readInt32();
-            this.bindpose = ByteReadUtil.ReadMatrix4x4(b);
-        }
-        static CreateFromBytes(data) {
-            var obj = new GPUSkinningBone();
-            obj.FromBytes(data);
-            return obj;
-        }
-    }
-
-    class GPUSkinningAnimEvent {
-        constructor() {
-            this.frameIndex = 0;
-            this.eventId = 0;
-        }
-        CompareTo(other) {
-            return this.frameIndex > other.frameIndex ? -1 : 1;
-        }
-        FromBytes(data) {
-            var b = new Laya.Byte(data);
-            this.frameIndex = b.readInt32();
-            this.eventId = b.readInt32();
-        }
-        static CreateFromBytes(data) {
-            var obj = new GPUSkinningAnimEvent();
-            obj.FromBytes(data);
-            return obj;
-        }
-    }
-
-    var Matrix4x4$4 = Laya.Matrix4x4;
-    class GPUSkinningFrame {
-        constructor() {
-            this.rootMotionInvInit = false;
-        }
-        RootMotionInv(rootBoneIndex) {
-            if (!this.rootMotionInvInit) {
-                let m = this.matrices[rootBoneIndex];
-                this.rootMotionInv = new Matrix4x4$4();
-                m.invert(this.rootMotionInv);
-                this.rootMotionInvInit = true;
-            }
-            return this.rootMotionInv;
-        }
-        FromBytes(data, rootMotionEnabled) {
-            var b = new Laya.Byte(data);
-            if (rootMotionEnabled) {
-                this.rootMotionDeltaPositionL = b.readFloat32();
-                this.rootMotionDeltaPositionQ = ByteReadUtil.ReadQuaternion(b);
-                this.rootMotionDeltaRotation = ByteReadUtil.ReadQuaternion(b);
-            }
-            var matricesCount = b.readUint32();
-            this.matrices = [];
-            for (var i = 0; i < matricesCount; i++) {
-                var m = ByteReadUtil.ReadMatrix4x4(b);
-                this.matrices.push(m);
-            }
-        }
-        static CreateFromBytes(data, rootMotionEnabled) {
-            var obj = new GPUSkinningFrame();
-            obj.FromBytes(data, rootMotionEnabled);
-            return obj;
-        }
-    }
-
-    var Byte$1 = Laya.Byte;
-    class GPUSkinningClip {
-        constructor() {
-            this.length = 0.0;
-            this.fps = 0;
-            this.wrapMode = GPUSkinningWrapMode.Once;
-            this.pixelSegmentation = 0;
-            this.rootMotionEnabled = false;
-            this.individualDifferenceEnabled = false;
-            this.frameCount = 0;
-            this.frameLastIndex = 0;
-        }
-        FromBytes(data) {
-            var b = new Byte$1(data);
-            b.pos = 0;
-            this.name = b.readUTFString();
-            this.length = b.readFloat32();
-            this.fps = b.readUint32();
-            this.wrapMode = b.readInt32();
-            this.pixelSegmentation = b.readUint32();
-            this.rootMotionEnabled = b.readByte() != 0;
-            this.individualDifferenceEnabled = b.readByte() != 0;
-            var frameCount = b.readUint32();
-            var eventCount = b.readUint32();
-            var framePosLengthList = [];
-            for (var i = 0; i < frameCount; i++) {
-                var info = [];
-                info[0] = b.readUint32();
-                info[1] = b.readUint32();
-                framePosLengthList.push(info);
-            }
-            var eventPosLengthList = [];
-            for (var i = 0; i < eventCount; i++) {
-                var info = [];
-                info[0] = b.readUint32();
-                info[1] = b.readUint32();
-                eventPosLengthList.push(info);
-            }
-            var frameList = [];
-            this.frames = frameList;
-            for (var i = 0; i < frameCount; i++) {
-                var itemInfo = framePosLengthList[i];
-                var pos = itemInfo[0];
-                var len = itemInfo[1];
-                b.pos = pos;
-                var itemBuffer = b.readArrayBuffer(len);
-                var item = GPUSkinningFrame.CreateFromBytes(itemBuffer, this.rootMotionEnabled);
-                frameList.push(item);
-            }
-            var eventList = [];
-            this.events = eventList;
-            for (var i = 0; i < eventCount; i++) {
-                var itemInfo = eventPosLengthList[i];
-                var pos = itemInfo[0];
-                var len = itemInfo[1];
-                b.pos = pos;
-                var itemBuffer = b.readArrayBuffer(len);
-                var item = GPUSkinningAnimEvent.CreateFromBytes(itemBuffer);
-                eventList.push(item);
-            }
-            this.frameCount = Math.floor(this.length * this.fps);
-            this.frameLastIndex = this.frameCount - 1;
-        }
-        static CreateFromBytes(data) {
-            var obj = new GPUSkinningClip();
-            obj.FromBytes(data);
-            return obj;
-        }
-    }
-
-    var Byte$2 = Laya.Byte;
-    class GPUSkinningAnimation extends Laya.Resource {
+    class GPUSkinningPlayerMono extends Laya.Script3D {
         constructor() {
             super(...arguments);
-            this.bonesCount = 67;
-            this.rootBoneIndex = 0;
-            this.textureWidth = 0;
-            this.textureHeight = 0;
-            this.sphereRadius = 1.0;
-            this.skinQuality = GPUSkinningQuality.Bone4;
+            this.isEnable = false;
+            this.defaultPlayingClipIndex = 0;
+            this.rootMotionEnabled = false;
+            this.lodEnabled = true;
+            this.cullingMode = GPUSKinningCullingMode.CullUpdateTransforms;
         }
-        FromBytes(arrayBuffer) {
-            var b = new Byte$2(arrayBuffer);
-            b.pos = 0;
-            this.guid = b.readUTFString();
-            this.name = b.readUTFString();
-            this.rootBoneIndex = b.readInt16();
-            this.textureWidth = b.readUint32();
-            this.textureHeight = b.readUint32();
-            this.sphereRadius = b.readFloat32();
-            this.skinQuality = b.readInt32();
-            this.bonesCount = b.readUint32();
-            this.bounds = ByteReadUtil.ReadBounds(b);
-            var clipCount = b.readUint32();
-            var boneCount = b.readUint32();
-            var clipPosLengthList = [];
-            for (var i = 0; i < clipCount; i++) {
-                var info = [];
-                info[0] = b.readUint32();
-                info[1] = b.readUint32();
-                clipPosLengthList.push(info);
+        get Player() {
+            return this.player;
+        }
+        FindJointGameObject(boneName) {
+            if (this.player) {
+                return this.player.FindJointGameObject(boneName);
             }
-            var bonePosLengthList = [];
-            for (var i = 0; i < boneCount; i++) {
-                var info = [];
-                info[0] = b.readUint32();
-                info[1] = b.readUint32();
-                bonePosLengthList.push(info);
-            }
-            var clipList = [];
-            this.clips = clipList;
-            for (var i = 0; i < clipCount; i++) {
-                var itemInfo = clipPosLengthList[i];
-                var pos = itemInfo[0];
-                var len = itemInfo[1];
-                b.pos = pos;
-                var itemBuffer = b.readArrayBuffer(len);
-                var item = GPUSkinningClip.CreateFromBytes(itemBuffer);
-                clipList.push(item);
-            }
-            var boneList = [];
-            this.bones = boneList;
-            for (var i = 0; i < boneCount; i++) {
-                var itemInfo = bonePosLengthList[i];
-                var pos = itemInfo[0];
-                var len = itemInfo[1];
-                b.pos = pos;
-                b.pos = pos;
-                var itemBuffer = b.readArrayBuffer(len);
-                var item = GPUSkinningBone.CreateFromBytes(itemBuffer);
-                boneList.push(item);
+            else {
+                return null;
             }
         }
-        static CreateFromBytes(data) {
-            var b = new Byte$2(data);
-            b.pos = 0;
-            var version = b.readUTFString();
-            var len = b.readUint32();
-            var arrayBuffer = b.readArrayBuffer(len);
-            var obj = new GPUSkinningAnimation();
-            obj.version = version;
-            obj.FromBytes(arrayBuffer);
-            return obj;
-        }
-        static async LoadAsync(path) {
-            return new Promise((resolve) => {
-                this.Load(path, (anim) => {
-                    resolve(anim);
-                });
-            });
-        }
-        static Load(path, callback) {
-            Laya.loader.load(path, Laya.Handler.create(this, (data) => {
-                if (data == null) {
-                    console.error("加载资源失败", path);
-                    callback(null);
-                    return;
-                }
-                var anim;
-                if (data instanceof ArrayBuffer) {
-                    anim = GPUSkinningAnimation.CreateFromBytes(data);
-                    anim._url = Laya.URL.formatURL(path);
-                    Laya.Loader.clearRes(path);
-                    Laya.Loader.cacheRes(path, anim);
+        _cloneTo(dest) {
+            dest.anim = this.anim;
+            dest.mesh = this.mesh;
+            dest.mtrl = this.mtrl;
+            dest.textureRawData = this.textureRawData;
+            dest.Init();
+            if (dest.anim.name == "Monster_2012_Laohu_Skin1") {
+                console.log("GPUSkinningPlayerMono _cloneTo", dest.anim.name);
+            }
+            if (dest.player) {
+                if (dest.player.__mname) {
+                    console.warn(dest.player.__mname);
                 }
                 else {
-                    anim = data;
+                    dest.player.__mname = dest.anim.name + " _cloneTo Set";
                 }
-                if (callback) {
-                    callback(anim);
+            }
+        }
+        onAwake() {
+        }
+        onEnable() {
+            var preHasPlayer = this.player != null;
+            this.Init();
+            if (!preHasPlayer && this.player) {
+                if (this.player.__mname) {
+                    console.warn(this.player.__mname);
                 }
-            }), null, Laya.Loader.BUFFER);
+                else {
+                    this.player.__mname = this.anim.name + " onEnable Set";
+                }
+            }
+            this.isEnable = true;
         }
-        _disposeResource() {
-            super._disposeResource();
+        onStart() {
         }
-        destroy() {
-            super.destroy();
+        onUpdate() {
+            if (GPUSkining.IsPauseAll) {
+                return;
+            }
+            if (this.player != null) {
+                this.player.Update(Laya.timer.delta / 1000);
+            }
+        }
+        onPreRender() {
+        }
+        onDisable() {
+            this.isEnable = false;
+        }
+        onDestroy() {
+            GPUSkinningPlayerMono.playerManager.Unregister(this);
+            this.anim = null;
+            this.mesh = null;
+            this.mtrl = null;
+            this.textureRawData = null;
+            if (this.player) {
+                this.player.onDestroy();
+                this.player = null;
+            }
+        }
+        SetData(anim, mesh, mtrl, textureRawData) {
+            if (this.player != null) {
+                return;
+            }
+            this.anim = anim;
+            this.mesh = mesh;
+            this.mtrl = mtrl;
+            this.textureRawData = textureRawData;
+            this.Init();
+            if (this.player) {
+                if (this.player.__mname) {
+                    console.warn(this.player.__mname);
+                }
+                else {
+                    this.player.__mname = anim.name + " SetData Set";
+                }
+            }
+        }
+        Init() {
+            this.gameObject = this.owner;
+            if (this.player != null) {
+                return;
+            }
+            let anim = this.anim;
+            let mesh = this.mesh;
+            let mtrl = this.mtrl;
+            let textureRawData = this.textureRawData;
+            if (anim != null && mesh != null && mtrl != null && textureRawData != null) {
+                let res = GPUSkinningPlayerMono.playerManager.Register(anim, mesh, mtrl, textureRawData, this);
+                let player = new GPUSkinningPlayer(this.gameObject, res);
+                player.RootMotionEnabled = this.rootMotionEnabled;
+                player.LODEnabled = this.lodEnabled;
+                player.CullingMode = this.cullingMode;
+                this.player = player;
+                if (anim != null && anim.clips != null && anim.clips.length > 0) {
+                    player.Play(anim.clips[Mathf.clamp(this.defaultPlayingClipIndex, 0, anim.clips.length)].name);
+                }
+            }
+        }
+        initRender(renderer) {
+            var r = renderer;
+            if (!r._renderUpdate__MeshRenderer__Source) {
+                r._renderUpdate__MeshRenderer__Source = r._renderUpdate;
+            }
+            r._renderUpdate = this._renderUpdate;
+            r.onRenderUpdate = this.onRenderUpdate.bind(this);
+        }
+        onRenderUpdate(context, transform, render) {
+            if (this.player != null) {
+                this.player.onRenderUpdate(context, transform, render);
+            }
+        }
+        _renderUpdate(context, transform) {
+            this.onRenderUpdate(context, transform, this);
+            this._renderUpdate__MeshRenderer__Source(context, transform);
+        }
+        _renderUpdate__MeshRenderer__Source(context, transform) {
         }
     }
+    GPUSkinningPlayerMono.playerManager = new GPUSkinningPlayerMonoManager();
 
-    var Shader3D$3 = Laya.Shader3D;
+    var Shader3D$2 = Laya.Shader3D;
     class GPUSkinningBaseMaterial extends Laya.Material {
         static getShaderVS(filename) {
             return this.SHADER_PATH_ROOT + filename + ".vs";
@@ -2385,7 +1970,7 @@
             });
         }
         static __initDefine__() {
-            this.SHADERDEFINE_GPUSKINING_MATRIX_TEXTURE = Shader3D$3.getDefineByName("GPUSKINING_MATRIX_TEXTURE");
+            this.SHADERDEFINE_GPUSKINING_MATRIX_TEXTURE = Shader3D$2.getDefineByName("GPUSKINING_MATRIX_TEXTURE");
         }
         get GPUSkinning_TextureMatrix() {
             return this._shaderValues.getTexture(GPUSkinningBaseMaterial.GPUSKINING_MATRIX_TEXTURE);
@@ -2399,13 +1984,13 @@
         }
     }
     GPUSkinningBaseMaterial.SHADER_PATH_ROOT = "res/shaders/GPUSkinning/";
-    GPUSkinningBaseMaterial.GPUSKINING_MATRIX_TEXTURE = Shader3D$3.propertyNameToID("u_GPUSkinning_TextureMatrix");
+    GPUSkinningBaseMaterial.GPUSKINING_MATRIX_TEXTURE = Shader3D$2.propertyNameToID("u_GPUSkinning_TextureMatrix");
 
-    var Shader3D$4 = Laya.Shader3D;
-    var SubShader$1 = Laya.SubShader;
-    var VertexMesh$2 = Laya.VertexMesh;
+    var Shader3D$3 = Laya.Shader3D;
+    var SubShader = Laya.SubShader;
+    var VertexMesh$1 = Laya.VertexMesh;
     var Vector4$2 = Laya.Vector4;
-    var RenderState$1 = Laya.RenderState;
+    var RenderState = Laya.RenderState;
     var Material = Laya.Material;
     class GPUSkinningUnlitMaterial extends GPUSkinningBaseMaterial {
         constructor() {
@@ -2437,48 +2022,48 @@
             var subShader;
             attributeMap =
                 {
-                    'a_Position': VertexMesh$2.MESH_POSITION0,
-                    'a_Color': VertexMesh$2.MESH_COLOR0,
-                    'a_Texcoord0': VertexMesh$2.MESH_TEXTURECOORDINATE0,
-                    'a_Texcoord1': VertexMesh$2.MESH_TEXTURECOORDINATE1,
+                    'a_Position': VertexMesh$1.MESH_POSITION0,
+                    'a_Color': VertexMesh$1.MESH_COLOR0,
+                    'a_Texcoord0': VertexMesh$1.MESH_TEXTURECOORDINATE0,
+                    'a_Texcoord1': VertexMesh$1.MESH_TEXTURECOORDINATE1,
                     'a_Texcoord2': GPUSkiningVertexMesh.MESH_TEXTURECOORDINATE2,
-                    'a_MvpMatrix': VertexMesh$2.MESH_MVPMATRIX_ROW0
+                    'a_MvpMatrix': VertexMesh$1.MESH_MVPMATRIX_ROW0
                 };
             uniformMap =
                 {
-                    'u_GPUSkinning_TextureMatrix': Shader3D$4.PERIOD_MATERIAL,
-                    'u_GPUSkinning_TextureSize_NumPixelsPerFrame': Shader3D$4.PERIOD_MATERIAL,
-                    'u_GPUSkinning_RootMotion': Shader3D$4.PERIOD_MATERIAL,
-                    'u_GPUSkinning_RootMotion_CrossFade': Shader3D$4.PERIOD_MATERIAL,
-                    'u_GPUSkinning_FrameIndex_PixelSegmentation': Shader3D$4.PERIOD_SPRITE,
-                    'u_GPUSkinning_FrameIndex_PixelSegmentation_Blend_CrossFade': Shader3D$4.PERIOD_SPRITE,
-                    'u_AlbedoTexture': Shader3D$4.PERIOD_MATERIAL,
-                    'u_AlbedoColor': Shader3D$4.PERIOD_MATERIAL,
-                    'u_TilingOffset': Shader3D$4.PERIOD_MATERIAL,
-                    'u_AlphaTestValue': Shader3D$4.PERIOD_MATERIAL,
-                    'u_MvpMatrix': Shader3D$4.PERIOD_SPRITE,
-                    'u_FogStart': Shader3D$4.PERIOD_SCENE,
-                    'u_FogRange': Shader3D$4.PERIOD_SCENE,
-                    'u_FogColor': Shader3D$4.PERIOD_SCENE
+                    'u_GPUSkinning_TextureMatrix': Shader3D$3.PERIOD_MATERIAL,
+                    'u_GPUSkinning_TextureSize_NumPixelsPerFrame': Shader3D$3.PERIOD_MATERIAL,
+                    'u_GPUSkinning_RootMotion': Shader3D$3.PERIOD_MATERIAL,
+                    'u_GPUSkinning_RootMotion_CrossFade': Shader3D$3.PERIOD_MATERIAL,
+                    'u_GPUSkinning_FrameIndex_PixelSegmentation': Shader3D$3.PERIOD_SPRITE,
+                    'u_GPUSkinning_FrameIndex_PixelSegmentation_Blend_CrossFade': Shader3D$3.PERIOD_SPRITE,
+                    'u_AlbedoTexture': Shader3D$3.PERIOD_MATERIAL,
+                    'u_AlbedoColor': Shader3D$3.PERIOD_MATERIAL,
+                    'u_TilingOffset': Shader3D$3.PERIOD_MATERIAL,
+                    'u_AlphaTestValue': Shader3D$3.PERIOD_MATERIAL,
+                    'u_MvpMatrix': Shader3D$3.PERIOD_SPRITE,
+                    'u_FogStart': Shader3D$3.PERIOD_SCENE,
+                    'u_FogRange': Shader3D$3.PERIOD_SCENE,
+                    'u_FogColor': Shader3D$3.PERIOD_SCENE
                 };
             stateMap =
                 {
-                    's_Cull': Shader3D$4.RENDER_STATE_CULL,
-                    's_Blend': Shader3D$4.RENDER_STATE_BLEND,
-                    's_BlendSrc': Shader3D$4.RENDER_STATE_BLEND_SRC,
-                    's_BlendDst': Shader3D$4.RENDER_STATE_BLEND_DST,
-                    's_DepthTest': Shader3D$4.RENDER_STATE_DEPTH_TEST,
-                    's_DepthWrite': Shader3D$4.RENDER_STATE_DEPTH_WRITE
+                    's_Cull': Shader3D$3.RENDER_STATE_CULL,
+                    's_Blend': Shader3D$3.RENDER_STATE_BLEND,
+                    's_BlendSrc': Shader3D$3.RENDER_STATE_BLEND_SRC,
+                    's_BlendDst': Shader3D$3.RENDER_STATE_BLEND_DST,
+                    's_DepthTest': Shader3D$3.RENDER_STATE_DEPTH_TEST,
+                    's_DepthWrite': Shader3D$3.RENDER_STATE_DEPTH_WRITE
                 };
-            shader = Shader3D$4.add(GPUSkinningUnlitMaterial.shaderName, null, null, true);
-            subShader = new SubShader$1(attributeMap, uniformMap);
+            shader = Shader3D$3.add(GPUSkinningUnlitMaterial.shaderName, null, null, true);
+            subShader = new SubShader(attributeMap, uniformMap);
             shader.addSubShader(subShader);
             var mainPass = subShader.addShaderPass(vs, ps, stateMap);
         }
         static __initDefine__() {
-            GPUSkinningUnlitMaterial.SHADERDEFINE_ALBEDOTEXTURE = Shader3D$4.getDefineByName("ALBEDOTEXTURE");
-            GPUSkinningUnlitMaterial.SHADERDEFINE_TILINGOFFSET = Shader3D$4.getDefineByName("TILINGOFFSET");
-            GPUSkinningUnlitMaterial.SHADERDEFINE_ENABLEVERTEXCOLOR = Shader3D$4.getDefineByName("ENABLEVERTEXCOLOR");
+            GPUSkinningUnlitMaterial.SHADERDEFINE_ALBEDOTEXTURE = Shader3D$3.getDefineByName("ALBEDOTEXTURE");
+            GPUSkinningUnlitMaterial.SHADERDEFINE_TILINGOFFSET = Shader3D$3.getDefineByName("TILINGOFFSET");
+            GPUSkinningUnlitMaterial.SHADERDEFINE_ENABLEVERTEXCOLOR = Shader3D$3.getDefineByName("ENABLEVERTEXCOLOR");
         }
         get _ColorR() {
             return this._albedoColor.x;
@@ -2661,27 +2246,27 @@
                     this.alphaTest = false;
                     this.renderQueue = Material.RENDERQUEUE_OPAQUE;
                     this.depthWrite = true;
-                    this.cull = RenderState$1.CULL_BACK;
-                    this.blend = RenderState$1.BLEND_DISABLE;
-                    this.depthTest = RenderState$1.DEPTHTEST_LESS;
+                    this.cull = RenderState.CULL_BACK;
+                    this.blend = RenderState.BLEND_DISABLE;
+                    this.depthTest = RenderState.DEPTHTEST_LESS;
                     break;
                 case GPUSkinningUnlitMaterial.RENDERMODE_CUTOUT:
                     this.renderQueue = Material.RENDERQUEUE_ALPHATEST;
                     this.alphaTest = true;
                     this.depthWrite = true;
-                    this.cull = RenderState$1.CULL_BACK;
-                    this.blend = RenderState$1.BLEND_DISABLE;
-                    this.depthTest = RenderState$1.DEPTHTEST_LESS;
+                    this.cull = RenderState.CULL_BACK;
+                    this.blend = RenderState.BLEND_DISABLE;
+                    this.depthTest = RenderState.DEPTHTEST_LESS;
                     break;
                 case GPUSkinningUnlitMaterial.RENDERMODE_TRANSPARENT:
                     this.renderQueue = Material.RENDERQUEUE_TRANSPARENT;
                     this.alphaTest = false;
                     this.depthWrite = false;
-                    this.cull = RenderState$1.CULL_BACK;
-                    this.blend = RenderState$1.BLEND_ENABLE_ALL;
-                    this.blendSrc = RenderState$1.BLENDPARAM_SRC_ALPHA;
-                    this.blendDst = RenderState$1.BLENDPARAM_ONE_MINUS_SRC_ALPHA;
-                    this.depthTest = RenderState$1.DEPTHTEST_LESS;
+                    this.cull = RenderState.CULL_BACK;
+                    this.blend = RenderState.BLEND_ENABLE_ALL;
+                    this.blendSrc = RenderState.BLENDPARAM_SRC_ALPHA;
+                    this.blendDst = RenderState.BLENDPARAM_ONE_MINUS_SRC_ALPHA;
+                    this.depthTest = RenderState.DEPTHTEST_LESS;
                     break;
                 default:
                     throw new Error("GPUSkinningUnlitMaterial : renderMode value error.");
@@ -2738,450 +2323,15 @@
     GPUSkinningUnlitMaterial.RENDERMODE_CUTOUT = 1;
     GPUSkinningUnlitMaterial.RENDERMODE_TRANSPARENT = 2;
     GPUSkinningUnlitMaterial.RENDERMODE_ADDTIVE = 3;
-    GPUSkinningUnlitMaterial.ALBEDOTEXTURE = Shader3D$4.propertyNameToID("u_AlbedoTexture");
-    GPUSkinningUnlitMaterial.ALBEDOCOLOR = Shader3D$4.propertyNameToID("u_AlbedoColor");
-    GPUSkinningUnlitMaterial.TILINGOFFSET = Shader3D$4.propertyNameToID("u_TilingOffset");
-    GPUSkinningUnlitMaterial.CULL = Shader3D$4.propertyNameToID("s_Cull");
-    GPUSkinningUnlitMaterial.BLEND = Shader3D$4.propertyNameToID("s_Blend");
-    GPUSkinningUnlitMaterial.BLEND_SRC = Shader3D$4.propertyNameToID("s_BlendSrc");
-    GPUSkinningUnlitMaterial.BLEND_DST = Shader3D$4.propertyNameToID("s_BlendDst");
-    GPUSkinningUnlitMaterial.DEPTH_TEST = Shader3D$4.propertyNameToID("s_DepthTest");
-    GPUSkinningUnlitMaterial.DEPTH_WRITE = Shader3D$4.propertyNameToID("s_DepthWrite");
-
-    var Shader3D$5 = Laya.Shader3D;
-    var SubShader$2 = Laya.SubShader;
-    var VertexMesh$3 = Laya.VertexMesh;
-    var Vector4$3 = Laya.Vector4;
-    var RenderState$2 = Laya.RenderState;
-    var Scene3DShaderDeclaration$1 = Laya.Scene3DShaderDeclaration;
-    var Material$1 = Laya.Material;
-    class GPUSkinningCartoonMaterial extends GPUSkinningBaseMaterial {
-        constructor() {
-            super();
-            this._albedoColor = new Vector4$3(1.0, 1.0, 1.0, 1.0);
-            this._albedoIntensity = 1.0;
-            this._enableVertexColor = false;
-            this.setShaderName(GPUSkinningCartoonMaterial.shaderName);
-            this._albedoIntensity = 1.0;
-            this._shaderValues.setVector(GPUSkinningCartoonMaterial.ALBEDOCOLOR, new Vector4$3(1.0, 1.0, 1.0, 1.0));
-            this._shaderValues.setVector(GPUSkinningCartoonMaterial.TILINGOFFSET, new Vector4$3(1.0, 1.0, 0.0, 0.0));
-            this.CartoonShadowColor = new Vector4$3(0.1764706, 0.1764706, 0.1764706, 1.0);
-            this.CartoonColorRange = 0.08;
-            this.CartoonColorDeep = 88.4;
-            this.CartoonOutlineWidth = 0.004;
-            this._shaderValues.setNumber(Material$1.ALPHATESTVALUE, 0.5);
-            this._enableLighting = true;
-            this.renderMode = GPUSkinningCartoonMaterial.RENDERMODE_OPAQUE;
-        }
-        static async install() {
-            if (this._isInstalled) {
-                return;
-            }
-            this._isInstalled = true;
-            GPUSkinningCartoonMaterial.__initDefine__();
-            await GPUSkinningCartoonMaterial.initShader();
-            GPUSkinningCartoonMaterial.defaultMaterial = new GPUSkinningCartoonMaterial();
-            GPUSkinningCartoonMaterial.defaultMaterial.lock = true;
-        }
-        static async initShader() {
-            var outlineVS = await this.loadShaderVSAsync(GPUSkinningCartoonMaterial.outlinePass);
-            var outlinePS = await this.loadShaderPSAsync(GPUSkinningCartoonMaterial.outlinePass);
-            var vs = await GPUSkinningCartoonMaterial.loadShaderVSAsync(GPUSkinningCartoonMaterial.shaderName);
-            var ps = await GPUSkinningCartoonMaterial.loadShaderPSAsync(GPUSkinningCartoonMaterial.shaderName);
-            var attributeMap;
-            var uniformMap;
-            var stateMap;
-            var shader;
-            var subShader;
-            attributeMap =
-                {
-                    'a_Position': VertexMesh$3.MESH_POSITION0,
-                    'a_Color': VertexMesh$3.MESH_COLOR0,
-                    'a_Normal': VertexMesh$3.MESH_NORMAL0,
-                    'a_Texcoord0': VertexMesh$3.MESH_TEXTURECOORDINATE0,
-                    'a_Texcoord1': VertexMesh$3.MESH_TEXTURECOORDINATE1,
-                    'a_Texcoord2': GPUSkiningVertexMesh.MESH_TEXTURECOORDINATE2,
-                    'a_MvpMatrix': VertexMesh$3.MESH_MVPMATRIX_ROW0,
-                    'a_WorldMat': VertexMesh$3.MESH_WORLDMATRIX_ROW0
-                };
-            uniformMap =
-                {
-                    'u_GPUSkinning_TextureMatrix': Shader3D$5.PERIOD_MATERIAL,
-                    'u_GPUSkinning_TextureSize_NumPixelsPerFrame': Shader3D$5.PERIOD_MATERIAL,
-                    'u_GPUSkinning_RootMotion': Shader3D$5.PERIOD_MATERIAL,
-                    'u_GPUSkinning_RootMotion_CrossFade': Shader3D$5.PERIOD_MATERIAL,
-                    'u_GPUSkinning_FrameIndex_PixelSegmentation': Shader3D$5.PERIOD_SPRITE,
-                    'u_GPUSkinning_FrameIndex_PixelSegmentation_Blend_CrossFade': Shader3D$5.PERIOD_SPRITE,
-                    'u_CartoonShadowColor': Shader3D$5.PERIOD_MATERIAL,
-                    'u_CartoonColorRange': Shader3D$5.PERIOD_MATERIAL,
-                    'u_CartoonColorDeep': Shader3D$5.PERIOD_MATERIAL,
-                    'u_CartoonOutlineWidth': Shader3D$5.PERIOD_MATERIAL,
-                    'u_AlbedoTexture': Shader3D$5.PERIOD_MATERIAL,
-                    'u_AlbedoColor': Shader3D$5.PERIOD_MATERIAL,
-                    'u_TilingOffset': Shader3D$5.PERIOD_MATERIAL,
-                    'u_AlphaTestValue': Shader3D$5.PERIOD_MATERIAL,
-                    'u_WorldMat': Shader3D$5.PERIOD_SPRITE,
-                    'u_MvpMatrix': Shader3D$5.PERIOD_SPRITE,
-                    'u_FogStart': Shader3D$5.PERIOD_SCENE,
-                    'u_FogRange': Shader3D$5.PERIOD_SCENE,
-                    'u_FogColor': Shader3D$5.PERIOD_SCENE,
-                    'u_DirationLightCount': Shader3D$5.PERIOD_SCENE,
-                    'u_LightBuffer': Shader3D$5.PERIOD_SCENE,
-                    'u_LightClusterBuffer': Shader3D$5.PERIOD_SCENE,
-                    'u_AmbientColor': Shader3D$5.PERIOD_SCENE,
-                    'u_DirectionLight.color': Shader3D$5.PERIOD_SCENE,
-                    'u_DirectionLight.direction': Shader3D$5.PERIOD_SCENE,
-                    'u_PointLight.position': Shader3D$5.PERIOD_SCENE,
-                    'u_PointLight.range': Shader3D$5.PERIOD_SCENE,
-                    'u_PointLight.color': Shader3D$5.PERIOD_SCENE,
-                    'u_SpotLight.position': Shader3D$5.PERIOD_SCENE,
-                    'u_SpotLight.direction': Shader3D$5.PERIOD_SCENE,
-                    'u_SpotLight.range': Shader3D$5.PERIOD_SCENE,
-                    'u_SpotLight.spot': Shader3D$5.PERIOD_SCENE,
-                    'u_SpotLight.color': Shader3D$5.PERIOD_SCENE,
-                    'u_CameraPos': Shader3D$5.PERIOD_CAMERA
-                };
-            stateMap =
-                {
-                    's_Cull': Shader3D$5.RENDER_STATE_CULL,
-                    's_Blend': Shader3D$5.RENDER_STATE_BLEND,
-                    's_BlendSrc': Shader3D$5.RENDER_STATE_BLEND_SRC,
-                    's_BlendDst': Shader3D$5.RENDER_STATE_BLEND_DST,
-                    's_DepthTest': Shader3D$5.RENDER_STATE_DEPTH_TEST,
-                    's_DepthWrite': Shader3D$5.RENDER_STATE_DEPTH_WRITE
-                };
-            shader = Shader3D$5.add(GPUSkinningCartoonMaterial.shaderName, null, null, true);
-            subShader = new SubShader$2(attributeMap, uniformMap);
-            shader.addSubShader(subShader);
-            var outlinePass = subShader.addShaderPass(outlineVS, outlinePS);
-            outlinePass.renderState.cull = Laya.RenderState.CULL_FRONT;
-            var mainPass = subShader.addShaderPass(vs, ps, stateMap);
-        }
-        static __initDefine__() {
-            GPUSkinningCartoonMaterial.SHADERDEFINE_ALBEDOTEXTURE = Shader3D$5.getDefineByName("ALBEDOTEXTURE");
-            GPUSkinningCartoonMaterial.SHADERDEFINE_TILINGOFFSET = Shader3D$5.getDefineByName("TILINGOFFSET");
-            GPUSkinningCartoonMaterial.SHADERDEFINE_ENABLEVERTEXCOLOR = Shader3D$5.getDefineByName("ENABLEVERTEXCOLOR");
-        }
-        get _ColorR() {
-            return this._albedoColor.x;
-        }
-        set _ColorR(value) {
-            this._albedoColor.x = value;
-            this.albedoColor = this._albedoColor;
-        }
-        get _ColorG() {
-            return this._albedoColor.y;
-        }
-        set _ColorG(value) {
-            this._albedoColor.y = value;
-            this.albedoColor = this._albedoColor;
-        }
-        get _ColorB() {
-            return this._albedoColor.z;
-        }
-        set _ColorB(value) {
-            this._albedoColor.z = value;
-            this.albedoColor = this._albedoColor;
-        }
-        get _ColorA() {
-            return this._albedoColor.w;
-        }
-        set _ColorA(value) {
-            this._albedoColor.w = value;
-            this.albedoColor = this._albedoColor;
-        }
-        get _AlbedoIntensity() {
-            return this._albedoIntensity;
-        }
-        set _AlbedoIntensity(value) {
-            if (this._albedoIntensity !== value) {
-                var finalAlbedo = this._shaderValues.getVector(GPUSkinningCartoonMaterial.ALBEDOCOLOR);
-                Vector4$3.scale(this._albedoColor, value, finalAlbedo);
-                this._albedoIntensity = value;
-                this._shaderValues.setVector(GPUSkinningCartoonMaterial.ALBEDOCOLOR, finalAlbedo);
-            }
-        }
-        get _MainTex_STX() {
-            return this._shaderValues.getVector(GPUSkinningCartoonMaterial.TILINGOFFSET).x;
-        }
-        set _MainTex_STX(x) {
-            var tilOff = this._shaderValues.getVector(GPUSkinningCartoonMaterial.TILINGOFFSET);
-            tilOff.x = x;
-            this.tilingOffset = tilOff;
-        }
-        get _MainTex_STY() {
-            return this._shaderValues.getVector(GPUSkinningCartoonMaterial.TILINGOFFSET).y;
-        }
-        set _MainTex_STY(y) {
-            var tilOff = this._shaderValues.getVector(GPUSkinningCartoonMaterial.TILINGOFFSET);
-            tilOff.y = y;
-            this.tilingOffset = tilOff;
-        }
-        get _MainTex_STZ() {
-            return this._shaderValues.getVector(GPUSkinningCartoonMaterial.TILINGOFFSET).z;
-        }
-        set _MainTex_STZ(z) {
-            var tilOff = this._shaderValues.getVector(GPUSkinningCartoonMaterial.TILINGOFFSET);
-            tilOff.z = z;
-            this.tilingOffset = tilOff;
-        }
-        get _MainTex_STW() {
-            return this._shaderValues.getVector(GPUSkinningCartoonMaterial.TILINGOFFSET).w;
-        }
-        set _MainTex_STW(w) {
-            var tilOff = this._shaderValues.getVector(GPUSkinningCartoonMaterial.TILINGOFFSET);
-            tilOff.w = w;
-            this.tilingOffset = tilOff;
-        }
-        get _Cutoff() {
-            return this.alphaTestValue;
-        }
-        set _Cutoff(value) {
-            this.alphaTestValue = value;
-        }
-        get albedoColorR() {
-            return this._ColorR;
-        }
-        set albedoColorR(value) {
-            this._ColorR = value;
-        }
-        get albedoColorG() {
-            return this._ColorG;
-        }
-        set albedoColorG(value) {
-            this._ColorG = value;
-        }
-        get albedoColorB() {
-            return this._ColorB;
-        }
-        set albedoColorB(value) {
-            this._ColorB = value;
-        }
-        get albedoColorA() {
-            return this._ColorA;
-        }
-        set albedoColorA(value) {
-            this._ColorA = value;
-        }
-        get albedoColor() {
-            return this._albedoColor;
-        }
-        set albedoColor(value) {
-            var finalAlbedo = this._shaderValues.getVector(GPUSkinningCartoonMaterial.ALBEDOCOLOR);
-            Vector4$3.scale(value, this._albedoIntensity, finalAlbedo);
-            this._albedoColor = value;
-            this._shaderValues.setVector(GPUSkinningCartoonMaterial.ALBEDOCOLOR, finalAlbedo);
-        }
-        get albedoIntensity() {
-            return this._albedoIntensity;
-        }
-        set albedoIntensity(value) {
-            this._AlbedoIntensity = value;
-        }
-        get albedoTexture() {
-            return this._shaderValues.getTexture(GPUSkinningCartoonMaterial.ALBEDOTEXTURE);
-        }
-        set albedoTexture(value) {
-            if (value)
-                this._shaderValues.addDefine(GPUSkinningCartoonMaterial.SHADERDEFINE_ALBEDOTEXTURE);
-            else
-                this._shaderValues.removeDefine(GPUSkinningCartoonMaterial.SHADERDEFINE_ALBEDOTEXTURE);
-            this._shaderValues.setTexture(GPUSkinningCartoonMaterial.ALBEDOTEXTURE, value);
-        }
-        get tilingOffsetX() {
-            return this._MainTex_STX;
-        }
-        set tilingOffsetX(x) {
-            this._MainTex_STX = x;
-        }
-        get tilingOffsetY() {
-            return this._MainTex_STY;
-        }
-        set tilingOffsetY(y) {
-            this._MainTex_STY = y;
-        }
-        get tilingOffsetZ() {
-            return this._MainTex_STZ;
-        }
-        set tilingOffsetZ(z) {
-            this._MainTex_STZ = z;
-        }
-        get tilingOffsetW() {
-            return this._MainTex_STW;
-        }
-        set tilingOffsetW(w) {
-            this._MainTex_STW = w;
-        }
-        get tilingOffset() {
-            return this._shaderValues.getVector(GPUSkinningCartoonMaterial.TILINGOFFSET);
-        }
-        set tilingOffset(value) {
-            if (value) {
-                if (value.x != 1 || value.y != 1 || value.z != 0 || value.w != 0)
-                    this._shaderValues.addDefine(GPUSkinningCartoonMaterial.SHADERDEFINE_TILINGOFFSET);
-                else
-                    this._shaderValues.removeDefine(GPUSkinningCartoonMaterial.SHADERDEFINE_TILINGOFFSET);
-            }
-            else {
-                this._shaderValues.removeDefine(GPUSkinningCartoonMaterial.SHADERDEFINE_TILINGOFFSET);
-            }
-            this._shaderValues.setVector(GPUSkinningCartoonMaterial.TILINGOFFSET, value);
-        }
-        get enableVertexColor() {
-            return this._enableVertexColor;
-        }
-        set enableVertexColor(value) {
-            this._enableVertexColor = value;
-            if (value)
-                this._shaderValues.addDefine(GPUSkinningCartoonMaterial.SHADERDEFINE_ENABLEVERTEXCOLOR);
-            else
-                this._shaderValues.removeDefine(GPUSkinningCartoonMaterial.SHADERDEFINE_ENABLEVERTEXCOLOR);
-        }
-        set renderMode(value) {
-            switch (value) {
-                case GPUSkinningCartoonMaterial.RENDERMODE_OPAQUE:
-                    this.alphaTest = false;
-                    this.renderQueue = Material$1.RENDERQUEUE_OPAQUE;
-                    this.depthWrite = true;
-                    this.cull = RenderState$2.CULL_BACK;
-                    this.blend = RenderState$2.BLEND_DISABLE;
-                    this.depthTest = RenderState$2.DEPTHTEST_LESS;
-                    break;
-                case GPUSkinningCartoonMaterial.RENDERMODE_CUTOUT:
-                    this.renderQueue = Material$1.RENDERQUEUE_ALPHATEST;
-                    this.alphaTest = true;
-                    this.depthWrite = true;
-                    this.cull = RenderState$2.CULL_BACK;
-                    this.blend = RenderState$2.BLEND_DISABLE;
-                    this.depthTest = RenderState$2.DEPTHTEST_LESS;
-                    break;
-                case GPUSkinningCartoonMaterial.RENDERMODE_TRANSPARENT:
-                    this.renderQueue = Material$1.RENDERQUEUE_TRANSPARENT;
-                    this.alphaTest = false;
-                    this.depthWrite = false;
-                    this.cull = RenderState$2.CULL_BACK;
-                    this.blend = RenderState$2.BLEND_ENABLE_ALL;
-                    this.blendSrc = RenderState$2.BLENDPARAM_SRC_ALPHA;
-                    this.blendDst = RenderState$2.BLENDPARAM_ONE_MINUS_SRC_ALPHA;
-                    this.depthTest = RenderState$2.DEPTHTEST_LESS;
-                    break;
-                default:
-                    throw new Error("GPUSkinningCartoonMaterial : renderMode value error.");
-            }
-        }
-        get depthWrite() {
-            return this._shaderValues.getBool(GPUSkinningCartoonMaterial.DEPTH_WRITE);
-        }
-        set depthWrite(value) {
-            this._shaderValues.setBool(GPUSkinningCartoonMaterial.DEPTH_WRITE, value);
-        }
-        get cull() {
-            return this._shaderValues.getInt(GPUSkinningCartoonMaterial.CULL);
-        }
-        set cull(value) {
-            this._shaderValues.setInt(GPUSkinningCartoonMaterial.CULL, value);
-        }
-        get blend() {
-            return this._shaderValues.getInt(GPUSkinningCartoonMaterial.BLEND);
-        }
-        set blend(value) {
-            this._shaderValues.setInt(GPUSkinningCartoonMaterial.BLEND, value);
-        }
-        get blendSrc() {
-            return this._shaderValues.getInt(GPUSkinningCartoonMaterial.BLEND_SRC);
-        }
-        set blendSrc(value) {
-            this._shaderValues.setInt(GPUSkinningCartoonMaterial.BLEND_SRC, value);
-        }
-        get blendDst() {
-            return this._shaderValues.getInt(GPUSkinningCartoonMaterial.BLEND_DST);
-        }
-        set blendDst(value) {
-            this._shaderValues.setInt(GPUSkinningCartoonMaterial.BLEND_DST, value);
-        }
-        get depthTest() {
-            return this._shaderValues.getInt(GPUSkinningCartoonMaterial.DEPTH_TEST);
-        }
-        set depthTest(value) {
-            this._shaderValues.setInt(GPUSkinningCartoonMaterial.DEPTH_TEST, value);
-        }
-        get enableLighting() {
-            return this._enableLighting;
-        }
-        set enableLighting(value) {
-            if (this._enableLighting !== value) {
-                if (value) {
-                    this._shaderValues.removeDefine(Scene3DShaderDeclaration$1.SHADERDEFINE_POINTLIGHT);
-                }
-                else {
-                    this._shaderValues.addDefine(Scene3DShaderDeclaration$1.SHADERDEFINE_POINTLIGHT);
-                }
-                this._enableLighting = value;
-            }
-        }
-        get CartoonShadowColor() {
-            return this._cartoonShadowColor;
-        }
-        set CartoonShadowColor(value) {
-            this._cartoonShadowColor = value;
-            this._shaderValues.setVector(GPUSkinningCartoonMaterial.CARTOON_SHADOWCOLOR, value);
-        }
-        get CartoonColorRange() {
-            return this._shaderValues.getNumber(GPUSkinningCartoonMaterial.CARTOON_CORLORRANGE);
-        }
-        set CartoonColorRange(value) {
-            value = Math.max(0.0, Math.min(2, value));
-            this._shaderValues.setNumber(GPUSkinningCartoonMaterial.CARTOON_CORLORRANGE, value);
-        }
-        get CartoonColorDeep() {
-            return this._shaderValues.getNumber(GPUSkinningCartoonMaterial.CARTOON_CORLORDEEP);
-        }
-        set CartoonColorDeep(value) {
-            value = Math.max(-1.0, Math.min(100.0, value));
-            this._shaderValues.setNumber(GPUSkinningCartoonMaterial.CARTOON_CORLORDEEP, value);
-        }
-        get CartoonOutlineWidth() {
-            return this._shaderValues.getNumber(GPUSkinningCartoonMaterial.CARTOON_OUTLINEWIDTH);
-        }
-        set CartoonOutlineWidth(value) {
-            this._shaderValues.setNumber(GPUSkinningCartoonMaterial.CARTOON_OUTLINEWIDTH, value);
-        }
-        clone() {
-            var dest = new GPUSkinningCartoonMaterial();
-            this.cloneTo(dest);
-            this._albedoColor.cloneTo(dest._albedoColor);
-            return dest;
-        }
-        cloneTo(destObject) {
-            super.cloneTo(destObject);
-            var destMaterial = destObject;
-            destMaterial._enableLighting = this._enableLighting;
-            destMaterial._albedoIntensity = this._albedoIntensity;
-            destMaterial._enableVertexColor = this._enableVertexColor;
-            this._albedoColor.cloneTo(destMaterial._albedoColor);
-            this._cartoonShadowColor.cloneTo(destMaterial._cartoonShadowColor);
-        }
-    }
-    GPUSkinningCartoonMaterial.shaderName = "GPUSkinningCartoon";
-    GPUSkinningCartoonMaterial.outlinePass = "GPUSkinningCartoonOutline";
-    GPUSkinningCartoonMaterial._isInstalled = false;
-    GPUSkinningCartoonMaterial.RENDERMODE_OPAQUE = 0;
-    GPUSkinningCartoonMaterial.RENDERMODE_CUTOUT = 1;
-    GPUSkinningCartoonMaterial.RENDERMODE_TRANSPARENT = 2;
-    GPUSkinningCartoonMaterial.RENDERMODE_ADDTIVE = 3;
-    GPUSkinningCartoonMaterial.CARTOON_SHADOWCOLOR = Shader3D$5.propertyNameToID("u_CartoonShadowColor");
-    GPUSkinningCartoonMaterial.CARTOON_CORLORRANGE = Shader3D$5.propertyNameToID("u_CartoonColorRange");
-    GPUSkinningCartoonMaterial.CARTOON_CORLORDEEP = Shader3D$5.propertyNameToID("u_CartoonColorDeep");
-    GPUSkinningCartoonMaterial.CARTOON_OUTLINEWIDTH = Shader3D$5.propertyNameToID("u_CartoonOutlineWidth");
-    GPUSkinningCartoonMaterial.ALBEDOTEXTURE = Shader3D$5.propertyNameToID("u_AlbedoTexture");
-    GPUSkinningCartoonMaterial.ALBEDOCOLOR = Shader3D$5.propertyNameToID("u_AlbedoColor");
-    GPUSkinningCartoonMaterial.TILINGOFFSET = Shader3D$5.propertyNameToID("u_TilingOffset");
-    GPUSkinningCartoonMaterial.CULL = Shader3D$5.propertyNameToID("s_Cull");
-    GPUSkinningCartoonMaterial.BLEND = Shader3D$5.propertyNameToID("s_Blend");
-    GPUSkinningCartoonMaterial.BLEND_SRC = Shader3D$5.propertyNameToID("s_BlendSrc");
-    GPUSkinningCartoonMaterial.BLEND_DST = Shader3D$5.propertyNameToID("s_BlendDst");
-    GPUSkinningCartoonMaterial.DEPTH_TEST = Shader3D$5.propertyNameToID("s_DepthTest");
-    GPUSkinningCartoonMaterial.DEPTH_WRITE = Shader3D$5.propertyNameToID("s_DepthWrite");
+    GPUSkinningUnlitMaterial.ALBEDOTEXTURE = Shader3D$3.propertyNameToID("u_AlbedoTexture");
+    GPUSkinningUnlitMaterial.ALBEDOCOLOR = Shader3D$3.propertyNameToID("u_AlbedoColor");
+    GPUSkinningUnlitMaterial.TILINGOFFSET = Shader3D$3.propertyNameToID("u_TilingOffset");
+    GPUSkinningUnlitMaterial.CULL = Shader3D$3.propertyNameToID("s_Cull");
+    GPUSkinningUnlitMaterial.BLEND = Shader3D$3.propertyNameToID("s_Blend");
+    GPUSkinningUnlitMaterial.BLEND_SRC = Shader3D$3.propertyNameToID("s_BlendSrc");
+    GPUSkinningUnlitMaterial.BLEND_DST = Shader3D$3.propertyNameToID("s_BlendDst");
+    GPUSkinningUnlitMaterial.DEPTH_TEST = Shader3D$3.propertyNameToID("s_DepthTest");
+    GPUSkinningUnlitMaterial.DEPTH_WRITE = Shader3D$3.propertyNameToID("s_DepthWrite");
 
     class LayaUtil {
         static GetComponentsInChildren(go, componentType, outComponents) {
@@ -3223,10 +2373,472 @@
     }
     LayaExtends_Node.isInited = false;
 
+    var Shader3D$4 = Laya.Shader3D;
+    var SubShader$1 = Laya.SubShader;
+    var VertexMesh$2 = Laya.VertexMesh;
+    var Vector4$3 = Laya.Vector4;
+    var RenderState$1 = Laya.RenderState;
+    var Scene3DShaderDeclaration = Laya.Scene3DShaderDeclaration;
+    var Material$1 = Laya.Material;
+    class GPUSkinningCartoon2TextureMaterial extends GPUSkinningBaseMaterial {
+        constructor() {
+            super();
+            this._albedoColor = new Vector4$3(1.0, 1.0, 1.0, 1.0);
+            this._albedoIntensity = 1.0;
+            this._enableVertexColor = false;
+            this.setShaderName(GPUSkinningCartoon2TextureMaterial.shaderName);
+            this._albedoIntensity = 1.0;
+            this._shaderValues.setVector(GPUSkinningCartoon2TextureMaterial.ALBEDOCOLOR, new Vector4$3(1.0, 1.0, 1.0, 1.0));
+            this._shaderValues.setVector(GPUSkinningCartoon2TextureMaterial.TILINGOFFSET, new Vector4$3(1.0, 1.0, 0.0, 0.0));
+            this.CartoonShadowColor = new Vector4$3(0.1764706, 0.1764706, 0.1764706, 1.0);
+            this.CartoonColorRange = 0.08;
+            this.CartoonColorDeep = 88.4;
+            this.CartoonOutlineWidth = 0.004;
+            this._shaderValues.setNumber(Material$1.ALPHATESTVALUE, 0.5);
+            this._enableLighting = true;
+            this.renderMode = GPUSkinningCartoon2TextureMaterial.RENDERMODE_OPAQUE;
+        }
+        static async install() {
+            if (this._isInstalled) {
+                return;
+            }
+            this._isInstalled = true;
+            GPUSkinningCartoon2TextureMaterial.__initDefine__();
+            await GPUSkinningCartoon2TextureMaterial.initShader();
+            GPUSkinningCartoon2TextureMaterial.defaultMaterial = new GPUSkinningCartoon2TextureMaterial();
+            GPUSkinningCartoon2TextureMaterial.defaultMaterial.lock = true;
+        }
+        static async initShader() {
+            var outlineVS = await this.loadShaderVSAsync(GPUSkinningCartoon2TextureMaterial.outlinePass);
+            var outlinePS = await this.loadShaderPSAsync(GPUSkinningCartoon2TextureMaterial.outlinePass);
+            var vs = await GPUSkinningCartoon2TextureMaterial.loadShaderVSAsync(GPUSkinningCartoon2TextureMaterial.shaderName);
+            var ps = await GPUSkinningCartoon2TextureMaterial.loadShaderPSAsync(GPUSkinningCartoon2TextureMaterial.shaderName);
+            var attributeMap;
+            var uniformMap;
+            var stateMap;
+            var shader;
+            var subShader;
+            attributeMap =
+                {
+                    'a_Position': VertexMesh$2.MESH_POSITION0,
+                    'a_Color': VertexMesh$2.MESH_COLOR0,
+                    'a_Normal': VertexMesh$2.MESH_NORMAL0,
+                    'a_Texcoord0': VertexMesh$2.MESH_TEXTURECOORDINATE0,
+                    'a_Texcoord1': VertexMesh$2.MESH_TEXTURECOORDINATE1,
+                    'a_Texcoord2': GPUSkiningVertexMesh.MESH_TEXTURECOORDINATE2,
+                    'a_MvpMatrix': VertexMesh$2.MESH_MVPMATRIX_ROW0,
+                    'a_WorldMat': VertexMesh$2.MESH_WORLDMATRIX_ROW0
+                };
+            uniformMap =
+                {
+                    'u_GPUSkinning_TextureMatrix': Shader3D$4.PERIOD_MATERIAL,
+                    'u_GPUSkinning_TextureSize_NumPixelsPerFrame': Shader3D$4.PERIOD_MATERIAL,
+                    'u_GPUSkinning_RootMotion': Shader3D$4.PERIOD_MATERIAL,
+                    'u_GPUSkinning_RootMotion_CrossFade': Shader3D$4.PERIOD_MATERIAL,
+                    'u_GPUSkinning_FrameIndex_PixelSegmentation': Shader3D$4.PERIOD_SPRITE,
+                    'u_GPUSkinning_FrameIndex_PixelSegmentation_Blend_CrossFade': Shader3D$4.PERIOD_SPRITE,
+                    'u_CartoonShadowColor': Shader3D$4.PERIOD_MATERIAL,
+                    'u_CartoonColorRange': Shader3D$4.PERIOD_MATERIAL,
+                    'u_CartoonColorDeep': Shader3D$4.PERIOD_MATERIAL,
+                    'u_CartoonOutlineWidth': Shader3D$4.PERIOD_MATERIAL,
+                    'u_ShadowTexture': Shader3D$4.PERIOD_MATERIAL,
+                    'u_SceneLightingTexture': Shader3D$4.PERIOD_SCENE,
+                    'u_SceneLightingSize': Shader3D$4.PERIOD_SCENE,
+                    'u_AlbedoTexture': Shader3D$4.PERIOD_MATERIAL,
+                    'u_AlbedoColor': Shader3D$4.PERIOD_MATERIAL,
+                    'u_TilingOffset': Shader3D$4.PERIOD_MATERIAL,
+                    'u_AlphaTestValue': Shader3D$4.PERIOD_MATERIAL,
+                    'u_WorldMat': Shader3D$4.PERIOD_SPRITE,
+                    'u_MvpMatrix': Shader3D$4.PERIOD_SPRITE,
+                    'u_FogStart': Shader3D$4.PERIOD_SCENE,
+                    'u_FogRange': Shader3D$4.PERIOD_SCENE,
+                    'u_FogColor': Shader3D$4.PERIOD_SCENE,
+                    'u_DirationLightCount': Shader3D$4.PERIOD_SCENE,
+                    'u_LightBuffer': Shader3D$4.PERIOD_SCENE,
+                    'u_LightClusterBuffer': Shader3D$4.PERIOD_SCENE,
+                    'u_AmbientColor': Shader3D$4.PERIOD_SCENE,
+                    'u_DirectionLight.color': Shader3D$4.PERIOD_SCENE,
+                    'u_DirectionLight.direction': Shader3D$4.PERIOD_SCENE,
+                    'u_PointLight.position': Shader3D$4.PERIOD_SCENE,
+                    'u_PointLight.range': Shader3D$4.PERIOD_SCENE,
+                    'u_PointLight.color': Shader3D$4.PERIOD_SCENE,
+                    'u_SpotLight.position': Shader3D$4.PERIOD_SCENE,
+                    'u_SpotLight.direction': Shader3D$4.PERIOD_SCENE,
+                    'u_SpotLight.range': Shader3D$4.PERIOD_SCENE,
+                    'u_SpotLight.spot': Shader3D$4.PERIOD_SCENE,
+                    'u_SpotLight.color': Shader3D$4.PERIOD_SCENE,
+                    'u_CameraPos': Shader3D$4.PERIOD_CAMERA
+                };
+            stateMap =
+                {
+                    's_Cull': Shader3D$4.RENDER_STATE_CULL,
+                    's_Blend': Shader3D$4.RENDER_STATE_BLEND,
+                    's_BlendSrc': Shader3D$4.RENDER_STATE_BLEND_SRC,
+                    's_BlendDst': Shader3D$4.RENDER_STATE_BLEND_DST,
+                    's_DepthTest': Shader3D$4.RENDER_STATE_DEPTH_TEST,
+                    's_DepthWrite': Shader3D$4.RENDER_STATE_DEPTH_WRITE
+                };
+            shader = Shader3D$4.add(GPUSkinningCartoon2TextureMaterial.shaderName, null, null, true);
+            subShader = new SubShader$1(attributeMap, uniformMap);
+            shader.addSubShader(subShader);
+            var outlinePass = subShader.addShaderPass(outlineVS, outlinePS);
+            outlinePass.renderState.cull = Laya.RenderState.CULL_FRONT;
+            var mainPass = subShader.addShaderPass(vs, ps, stateMap);
+        }
+        static __initDefine__() {
+            GPUSkinningCartoon2TextureMaterial.SHADERDEFINE_ALBEDOTEXTURE = Shader3D$4.getDefineByName("ALBEDOTEXTURE");
+            GPUSkinningCartoon2TextureMaterial.SHADERDEFINE_SHADOWTEXTURE = Shader3D$4.getDefineByName("SHADOWTEXTURE");
+            GPUSkinningCartoon2TextureMaterial.SHADERDEFINE_SCENELIGHTINGTEXTURE = Shader3D$4.getDefineByName("SCENELIGHTING");
+            GPUSkinningCartoon2TextureMaterial.SHADERDEFINE_TILINGOFFSET = Shader3D$4.getDefineByName("TILINGOFFSET");
+            GPUSkinningCartoon2TextureMaterial.SHADERDEFINE_ENABLEVERTEXCOLOR = Shader3D$4.getDefineByName("ENABLEVERTEXCOLOR");
+        }
+        get _ColorR() {
+            return this._albedoColor.x;
+        }
+        set _ColorR(value) {
+            this._albedoColor.x = value;
+            this.albedoColor = this._albedoColor;
+        }
+        get _ColorG() {
+            return this._albedoColor.y;
+        }
+        set _ColorG(value) {
+            this._albedoColor.y = value;
+            this.albedoColor = this._albedoColor;
+        }
+        get _ColorB() {
+            return this._albedoColor.z;
+        }
+        set _ColorB(value) {
+            this._albedoColor.z = value;
+            this.albedoColor = this._albedoColor;
+        }
+        get _ColorA() {
+            return this._albedoColor.w;
+        }
+        set _ColorA(value) {
+            this._albedoColor.w = value;
+            this.albedoColor = this._albedoColor;
+        }
+        get _AlbedoIntensity() {
+            return this._albedoIntensity;
+        }
+        set _AlbedoIntensity(value) {
+            if (this._albedoIntensity !== value) {
+                var finalAlbedo = this._shaderValues.getVector(GPUSkinningCartoon2TextureMaterial.ALBEDOCOLOR);
+                Vector4$3.scale(this._albedoColor, value, finalAlbedo);
+                this._albedoIntensity = value;
+                this._shaderValues.setVector(GPUSkinningCartoon2TextureMaterial.ALBEDOCOLOR, finalAlbedo);
+            }
+        }
+        get _MainTex_STX() {
+            return this._shaderValues.getVector(GPUSkinningCartoon2TextureMaterial.TILINGOFFSET).x;
+        }
+        set _MainTex_STX(x) {
+            var tilOff = this._shaderValues.getVector(GPUSkinningCartoon2TextureMaterial.TILINGOFFSET);
+            tilOff.x = x;
+            this.tilingOffset = tilOff;
+        }
+        get _MainTex_STY() {
+            return this._shaderValues.getVector(GPUSkinningCartoon2TextureMaterial.TILINGOFFSET).y;
+        }
+        set _MainTex_STY(y) {
+            var tilOff = this._shaderValues.getVector(GPUSkinningCartoon2TextureMaterial.TILINGOFFSET);
+            tilOff.y = y;
+            this.tilingOffset = tilOff;
+        }
+        get _MainTex_STZ() {
+            return this._shaderValues.getVector(GPUSkinningCartoon2TextureMaterial.TILINGOFFSET).z;
+        }
+        set _MainTex_STZ(z) {
+            var tilOff = this._shaderValues.getVector(GPUSkinningCartoon2TextureMaterial.TILINGOFFSET);
+            tilOff.z = z;
+            this.tilingOffset = tilOff;
+        }
+        get _MainTex_STW() {
+            return this._shaderValues.getVector(GPUSkinningCartoon2TextureMaterial.TILINGOFFSET).w;
+        }
+        set _MainTex_STW(w) {
+            var tilOff = this._shaderValues.getVector(GPUSkinningCartoon2TextureMaterial.TILINGOFFSET);
+            tilOff.w = w;
+            this.tilingOffset = tilOff;
+        }
+        get _Cutoff() {
+            return this.alphaTestValue;
+        }
+        set _Cutoff(value) {
+            this.alphaTestValue = value;
+        }
+        get albedoColorR() {
+            return this._ColorR;
+        }
+        set albedoColorR(value) {
+            this._ColorR = value;
+        }
+        get albedoColorG() {
+            return this._ColorG;
+        }
+        set albedoColorG(value) {
+            this._ColorG = value;
+        }
+        get albedoColorB() {
+            return this._ColorB;
+        }
+        set albedoColorB(value) {
+            this._ColorB = value;
+        }
+        get albedoColorA() {
+            return this._ColorA;
+        }
+        set albedoColorA(value) {
+            this._ColorA = value;
+        }
+        get albedoColor() {
+            return this._albedoColor;
+        }
+        set albedoColor(value) {
+            var finalAlbedo = this._shaderValues.getVector(GPUSkinningCartoon2TextureMaterial.ALBEDOCOLOR);
+            Vector4$3.scale(value, this._albedoIntensity, finalAlbedo);
+            this._albedoColor = value;
+            this._shaderValues.setVector(GPUSkinningCartoon2TextureMaterial.ALBEDOCOLOR, finalAlbedo);
+        }
+        get albedoIntensity() {
+            return this._albedoIntensity;
+        }
+        set albedoIntensity(value) {
+            this._AlbedoIntensity = value;
+        }
+        get albedoTexture() {
+            return this._shaderValues.getTexture(GPUSkinningCartoon2TextureMaterial.ALBEDOTEXTURE);
+        }
+        set albedoTexture(value) {
+            if (value)
+                this._shaderValues.addDefine(GPUSkinningCartoon2TextureMaterial.SHADERDEFINE_ALBEDOTEXTURE);
+            else
+                this._shaderValues.removeDefine(GPUSkinningCartoon2TextureMaterial.SHADERDEFINE_ALBEDOTEXTURE);
+            this._shaderValues.setTexture(GPUSkinningCartoon2TextureMaterial.ALBEDOTEXTURE, value);
+        }
+        get shadowTexture() {
+            return this._shaderValues.getTexture(GPUSkinningCartoon2TextureMaterial.SHADOWTEXTURE);
+        }
+        set shadowTexture(value) {
+            if (value)
+                this._shaderValues.addDefine(GPUSkinningCartoon2TextureMaterial.SHADERDEFINE_SHADOWTEXTURE);
+            else
+                this._shaderValues.removeDefine(GPUSkinningCartoon2TextureMaterial.SHADERDEFINE_SHADOWTEXTURE);
+            this._shaderValues.setTexture(GPUSkinningCartoon2TextureMaterial.SHADOWTEXTURE, value);
+        }
+        get sceneLightingTexture() {
+            return this._shaderValues.getTexture(GPUSkinningCartoon2TextureMaterial.SCENELIGHTINGTEXTURE);
+        }
+        set sceneLightingTexture(value) {
+            if (value)
+                this._shaderValues.addDefine(GPUSkinningCartoon2TextureMaterial.SHADERDEFINE_SCENELIGHTINGTEXTURE);
+            else
+                this._shaderValues.removeDefine(GPUSkinningCartoon2TextureMaterial.SHADERDEFINE_SCENELIGHTINGTEXTURE);
+            this._shaderValues.setTexture(GPUSkinningCartoon2TextureMaterial.SCENELIGHTINGTEXTURE, value);
+        }
+        get tilingOffsetX() {
+            return this._MainTex_STX;
+        }
+        set tilingOffsetX(x) {
+            this._MainTex_STX = x;
+        }
+        get tilingOffsetY() {
+            return this._MainTex_STY;
+        }
+        set tilingOffsetY(y) {
+            this._MainTex_STY = y;
+        }
+        get tilingOffsetZ() {
+            return this._MainTex_STZ;
+        }
+        set tilingOffsetZ(z) {
+            this._MainTex_STZ = z;
+        }
+        get tilingOffsetW() {
+            return this._MainTex_STW;
+        }
+        set tilingOffsetW(w) {
+            this._MainTex_STW = w;
+        }
+        get tilingOffset() {
+            return this._shaderValues.getVector(GPUSkinningCartoon2TextureMaterial.TILINGOFFSET);
+        }
+        set tilingOffset(value) {
+            if (value) {
+                if (value.x != 1 || value.y != 1 || value.z != 0 || value.w != 0)
+                    this._shaderValues.addDefine(GPUSkinningCartoon2TextureMaterial.SHADERDEFINE_TILINGOFFSET);
+                else
+                    this._shaderValues.removeDefine(GPUSkinningCartoon2TextureMaterial.SHADERDEFINE_TILINGOFFSET);
+            }
+            else {
+                this._shaderValues.removeDefine(GPUSkinningCartoon2TextureMaterial.SHADERDEFINE_TILINGOFFSET);
+            }
+            this._shaderValues.setVector(GPUSkinningCartoon2TextureMaterial.TILINGOFFSET, value);
+        }
+        get enableVertexColor() {
+            return this._enableVertexColor;
+        }
+        set enableVertexColor(value) {
+            this._enableVertexColor = value;
+            if (value)
+                this._shaderValues.addDefine(GPUSkinningCartoon2TextureMaterial.SHADERDEFINE_ENABLEVERTEXCOLOR);
+            else
+                this._shaderValues.removeDefine(GPUSkinningCartoon2TextureMaterial.SHADERDEFINE_ENABLEVERTEXCOLOR);
+        }
+        set renderMode(value) {
+            switch (value) {
+                case GPUSkinningCartoon2TextureMaterial.RENDERMODE_OPAQUE:
+                    this.alphaTest = false;
+                    this.renderQueue = Material$1.RENDERQUEUE_OPAQUE;
+                    this.depthWrite = true;
+                    this.cull = RenderState$1.CULL_BACK;
+                    this.blend = RenderState$1.BLEND_DISABLE;
+                    this.depthTest = RenderState$1.DEPTHTEST_LESS;
+                    break;
+                case GPUSkinningCartoon2TextureMaterial.RENDERMODE_CUTOUT:
+                    this.renderQueue = Material$1.RENDERQUEUE_ALPHATEST;
+                    this.alphaTest = true;
+                    this.depthWrite = true;
+                    this.cull = RenderState$1.CULL_BACK;
+                    this.blend = RenderState$1.BLEND_DISABLE;
+                    this.depthTest = RenderState$1.DEPTHTEST_LESS;
+                    break;
+                case GPUSkinningCartoon2TextureMaterial.RENDERMODE_TRANSPARENT:
+                    this.renderQueue = Material$1.RENDERQUEUE_TRANSPARENT;
+                    this.alphaTest = false;
+                    this.depthWrite = false;
+                    this.cull = RenderState$1.CULL_BACK;
+                    this.blend = RenderState$1.BLEND_ENABLE_ALL;
+                    this.blendSrc = RenderState$1.BLENDPARAM_SRC_ALPHA;
+                    this.blendDst = RenderState$1.BLENDPARAM_ONE_MINUS_SRC_ALPHA;
+                    this.depthTest = RenderState$1.DEPTHTEST_LESS;
+                    break;
+                default:
+                    throw new Error("GPUSkinningCartoon2TextureMaterial : renderMode value error.");
+            }
+        }
+        get depthWrite() {
+            return this._shaderValues.getBool(GPUSkinningCartoon2TextureMaterial.DEPTH_WRITE);
+        }
+        set depthWrite(value) {
+            this._shaderValues.setBool(GPUSkinningCartoon2TextureMaterial.DEPTH_WRITE, value);
+        }
+        get cull() {
+            return this._shaderValues.getInt(GPUSkinningCartoon2TextureMaterial.CULL);
+        }
+        set cull(value) {
+            this._shaderValues.setInt(GPUSkinningCartoon2TextureMaterial.CULL, value);
+        }
+        get blend() {
+            return this._shaderValues.getInt(GPUSkinningCartoon2TextureMaterial.BLEND);
+        }
+        set blend(value) {
+            this._shaderValues.setInt(GPUSkinningCartoon2TextureMaterial.BLEND, value);
+        }
+        get blendSrc() {
+            return this._shaderValues.getInt(GPUSkinningCartoon2TextureMaterial.BLEND_SRC);
+        }
+        set blendSrc(value) {
+            this._shaderValues.setInt(GPUSkinningCartoon2TextureMaterial.BLEND_SRC, value);
+        }
+        get blendDst() {
+            return this._shaderValues.getInt(GPUSkinningCartoon2TextureMaterial.BLEND_DST);
+        }
+        set blendDst(value) {
+            this._shaderValues.setInt(GPUSkinningCartoon2TextureMaterial.BLEND_DST, value);
+        }
+        get depthTest() {
+            return this._shaderValues.getInt(GPUSkinningCartoon2TextureMaterial.DEPTH_TEST);
+        }
+        set depthTest(value) {
+            this._shaderValues.setInt(GPUSkinningCartoon2TextureMaterial.DEPTH_TEST, value);
+        }
+        get enableLighting() {
+            return this._enableLighting;
+        }
+        set enableLighting(value) {
+            if (this._enableLighting !== value) {
+                if (value) {
+                    this._shaderValues.removeDefine(Scene3DShaderDeclaration.SHADERDEFINE_POINTLIGHT);
+                }
+                else {
+                    this._shaderValues.addDefine(Scene3DShaderDeclaration.SHADERDEFINE_POINTLIGHT);
+                }
+                this._enableLighting = value;
+            }
+        }
+        get CartoonShadowColor() {
+            return this._cartoonShadowColor;
+        }
+        set CartoonShadowColor(value) {
+            this._cartoonShadowColor = value;
+            this._shaderValues.setVector(GPUSkinningCartoon2TextureMaterial.CARTOON_SHADOWCOLOR, value);
+        }
+        get CartoonColorRange() {
+            return this._shaderValues.getNumber(GPUSkinningCartoon2TextureMaterial.CARTOON_CORLORRANGE);
+        }
+        set CartoonColorRange(value) {
+            value = Math.max(0.0, Math.min(2, value));
+            this._shaderValues.setNumber(GPUSkinningCartoon2TextureMaterial.CARTOON_CORLORRANGE, value);
+        }
+        get CartoonColorDeep() {
+            return this._shaderValues.getNumber(GPUSkinningCartoon2TextureMaterial.CARTOON_CORLORDEEP);
+        }
+        set CartoonColorDeep(value) {
+            value = Math.max(-1.0, Math.min(100.0, value));
+            this._shaderValues.setNumber(GPUSkinningCartoon2TextureMaterial.CARTOON_CORLORDEEP, value);
+        }
+        get CartoonOutlineWidth() {
+            return this._shaderValues.getNumber(GPUSkinningCartoon2TextureMaterial.CARTOON_OUTLINEWIDTH);
+        }
+        set CartoonOutlineWidth(value) {
+            this._shaderValues.setNumber(GPUSkinningCartoon2TextureMaterial.CARTOON_OUTLINEWIDTH, value);
+        }
+        clone() {
+            var dest = new GPUSkinningCartoon2TextureMaterial();
+            this.cloneTo(dest);
+            this._albedoColor.cloneTo(dest._albedoColor);
+            return dest;
+        }
+        cloneTo(destObject) {
+            super.cloneTo(destObject);
+            var destMaterial = destObject;
+            destMaterial._enableLighting = this._enableLighting;
+            destMaterial._albedoIntensity = this._albedoIntensity;
+            destMaterial._enableVertexColor = this._enableVertexColor;
+            this._albedoColor.cloneTo(destMaterial._albedoColor);
+            this._cartoonShadowColor.cloneTo(destMaterial._cartoonShadowColor);
+        }
+    }
+    GPUSkinningCartoon2TextureMaterial.shaderName = "GPUSkinningCartoon2Texture";
+    GPUSkinningCartoon2TextureMaterial.outlinePass = "GPUSkinningCartoon2TextureOutline";
+    GPUSkinningCartoon2TextureMaterial._isInstalled = false;
+    GPUSkinningCartoon2TextureMaterial.RENDERMODE_OPAQUE = 0;
+    GPUSkinningCartoon2TextureMaterial.RENDERMODE_CUTOUT = 1;
+    GPUSkinningCartoon2TextureMaterial.RENDERMODE_TRANSPARENT = 2;
+    GPUSkinningCartoon2TextureMaterial.RENDERMODE_ADDTIVE = 3;
+    GPUSkinningCartoon2TextureMaterial.CARTOON_SHADOWCOLOR = Shader3D$4.propertyNameToID("u_CartoonShadowColor");
+    GPUSkinningCartoon2TextureMaterial.CARTOON_CORLORRANGE = Shader3D$4.propertyNameToID("u_CartoonColorRange");
+    GPUSkinningCartoon2TextureMaterial.CARTOON_CORLORDEEP = Shader3D$4.propertyNameToID("u_CartoonColorDeep");
+    GPUSkinningCartoon2TextureMaterial.CARTOON_OUTLINEWIDTH = Shader3D$4.propertyNameToID("u_CartoonOutlineWidth");
+    GPUSkinningCartoon2TextureMaterial.SCENELIGHTINGTEXTURE = Shader3D$4.propertyNameToID("u_SceneLightingTexture");
+    GPUSkinningCartoon2TextureMaterial.SHADOWTEXTURE = Shader3D$4.propertyNameToID("u_ShadowTexture");
+    GPUSkinningCartoon2TextureMaterial.ALBEDOTEXTURE = Shader3D$4.propertyNameToID("u_AlbedoTexture");
+    GPUSkinningCartoon2TextureMaterial.ALBEDOCOLOR = Shader3D$4.propertyNameToID("u_AlbedoColor");
+    GPUSkinningCartoon2TextureMaterial.TILINGOFFSET = Shader3D$4.propertyNameToID("u_TilingOffset");
+    GPUSkinningCartoon2TextureMaterial.CULL = Shader3D$4.propertyNameToID("s_Cull");
+    GPUSkinningCartoon2TextureMaterial.BLEND = Shader3D$4.propertyNameToID("s_Blend");
+    GPUSkinningCartoon2TextureMaterial.BLEND_SRC = Shader3D$4.propertyNameToID("s_BlendSrc");
+    GPUSkinningCartoon2TextureMaterial.BLEND_DST = Shader3D$4.propertyNameToID("s_BlendDst");
+    GPUSkinningCartoon2TextureMaterial.DEPTH_TEST = Shader3D$4.propertyNameToID("s_DepthTest");
+    GPUSkinningCartoon2TextureMaterial.DEPTH_WRITE = Shader3D$4.propertyNameToID("s_DepthWrite");
+
     var LoaderManager = Laya.LoaderManager;
     var Loader = Laya.Loader;
     var Event = Laya.Event;
-    var Shader3D$6 = Laya.Shader3D;
+    var Shader3D$5 = Laya.Shader3D;
     class GPUSkining {
         static async InitAsync() {
             window['GPUSkining'] = GPUSkining;
@@ -3242,11 +2854,11 @@
             window['GPUSkinningUnlitMaterial'] = GPUSkinningUnlitMaterial;
             window['GPUSkinningAnimation'] = GPUSkinningAnimation;
             window['GPUSkinningClip'] = GPUSkinningClip;
+            window['SceneMaterial'] = SceneMaterial;
             var GPUSkinningIncludegGLSL = await GPUSkinningBaseMaterial.loadShaderGlslAsync("GPUSkinningInclude");
-            Shader3D$6.addInclude("GPUSkinningInclude.glsl", GPUSkinningIncludegGLSL);
+            Shader3D$5.addInclude("GPUSkinningInclude.glsl", GPUSkinningIncludegGLSL);
             GPUSkinningBaseMaterial.__initDefine__();
-            await GPUSkinningUnlitMaterial.install();
-            await GPUSkinningCartoonMaterial.install();
+            await GPUSkinningCartoon2TextureMaterial.install();
             LayaExtends_Node.Init();
             Laya3D.SKING_MESH = "SKING_MESH";
             var createMap = LoaderManager.createMap;
@@ -3274,6 +2886,9 @@
         }
         static GetMainTextureName(name) {
             return `GPUSKinning_${name}_MainTexture.png`;
+        }
+        static GetShadowTextureName(name) {
+            return `GPUSKinning_${name}_ShadowTexture.png`;
         }
         static GetPath(name) {
             return this.resRoot + name;
@@ -3323,33 +2938,7 @@
                 }), null, type);
             });
         }
-        static async CreateByNameAsync(name, isUnloadBin, mainTexturePath, materialCls) {
-            if (!materialCls) {
-                materialCls = GPUSkinningCartoonMaterial;
-            }
-            var animPath = this.GetPath(this.GetAnimName(name));
-            var meshPath = this.GetPath(this.GetMeshName(name));
-            var matrixTexturePath = this.GetPath(this.GetMatrixTextureName(name));
-            if (mainTexturePath == null || mainTexturePath == "") {
-                mainTexturePath = this.GetPath(this.GetMainTextureName(name));
-            }
-            var anim = await GPUSkinningAnimation.LoadAsync(animPath);
-            if (anim == null) {
-                console.error("GPUSkinning资源加载失败", name);
-                return;
-            }
-            var mesh = await GPUSkiningMesh.LoadAsync(meshPath);
-            var mainTexture = await this.Load3DAsync(mainTexturePath, Laya.Loader.TEXTURE2D);
-            var animTexture = await this.LoadAnimTextureAsync(matrixTexturePath, anim.textureWidth, anim.textureHeight);
-            var material = new materialCls();
-            material.albedoTexture = mainTexture;
-            material.GPUSkinning_TextureMatrix = animTexture;
-            var sprite = new Laya.MeshSprite3D();
-            var mono = sprite.addComponent(GPUSkinningPlayerMono);
-            mono.SetData(anim, mesh, material, animTexture);
-            return mono;
-        }
-        static GetLoadItemList(list, name, mainTexturePath) {
+        static GetLoadItemList(list, name, hasShadowTexture, mainTexturePath) {
             var animPath = this.GetPath(this.GetAnimName(name));
             var meshPath = this.GetPath(this.GetMeshName(name));
             var matrixTexturePath = this.GetPath(this.GetMatrixTextureName(name));
@@ -3359,20 +2948,29 @@
             if (!list) {
                 list = [];
             }
-            list.push();
             list.push({ url: animPath, type: Laya.Loader.BUFFER }, { url: meshPath, type: Laya.Loader.BUFFER }, { url: matrixTexturePath, type: Laya.Loader.BUFFER }, { url: mainTexturePath, type: Laya.Loader.TEXTURE2D });
+            if (hasShadowTexture) {
+                var shadowTexturePath = this.GetPath(this.GetShadowTextureName(name));
+                list.push({ url: shadowTexturePath, type: Laya.Loader.TEXTURE2D });
+            }
             return list;
         }
-        static CreateByName(name, callback, isUnloadBin, mainTexturePath, materialCls) {
+        static async CreateByNameAsync(name, hasShadowTexture, materialCls) {
+            return new Promise((resolve) => {
+                this.CreateByName(name, Laya.Handler.create(this, (mono) => {
+                    resolve(mono);
+                }), hasShadowTexture, materialCls);
+            });
+        }
+        static CreateByName(name, callback, hasShadowTexture, materialCls) {
             if (!materialCls) {
-                materialCls = GPUSkinningCartoonMaterial;
+                materialCls = GPUSkinningCartoon2TextureMaterial;
             }
             var animPath = this.GetPath(this.GetAnimName(name));
             var meshPath = this.GetPath(this.GetMeshName(name));
             var matrixTexturePath = this.GetPath(this.GetMatrixTextureName(name));
-            if (mainTexturePath == null || mainTexturePath == "") {
-                mainTexturePath = this.GetPath(this.GetMainTextureName(name));
-            }
+            var mainTexturePath = this.GetPath(this.GetMainTextureName(name));
+            var shadowTexturePath = this.GetPath(this.GetShadowTextureName(name));
             GPUSkinningAnimation.Load(animPath, (anim) => {
                 if (anim == null) {
                     console.error("GPUSkinning.CreateByName资源加载失败", animPath);
@@ -3394,14 +2992,27 @@
                             if (mainTexture == null) {
                                 console.error("GPUSkinning.CreateByName资源加载失败", mainTexturePath);
                             }
-                            var material = new materialCls();
-                            material.albedoTexture = mainTexture;
-                            material.GPUSkinning_TextureMatrix = animTexture;
-                            material.__mname = name + " prefab";
-                            var sprite = new Laya.MeshSprite3D();
-                            var mono = sprite.addComponent(GPUSkinningPlayerMono);
-                            mono.SetData(anim, mesh, material, animTexture);
-                            callback.runWith(mono);
+                            var createFun = (shadowTexture) => {
+                                var material = new materialCls();
+                                material.albedoTexture = mainTexture;
+                                material.GPUSkinning_TextureMatrix = animTexture;
+                                material.__mname = name + " prefab";
+                                if (shadowTexture) {
+                                    material.shadowTexture = shadowTexture;
+                                }
+                                var sprite = new Laya.MeshSprite3D();
+                                var mono = sprite.addComponent(GPUSkinningPlayerMono);
+                                mono.SetData(anim, mesh, material, animTexture);
+                                callback.runWith(mono);
+                            };
+                            if (hasShadowTexture) {
+                                Laya.loader.create(shadowTexturePath, Laya.Handler.create(this, (shadowTexture) => {
+                                    createFun(shadowTexture);
+                                }), null, Laya.Loader.TEXTURE2D);
+                            }
+                            else {
+                                createFun();
+                            }
                         }), null, Laya.Loader.TEXTURE2D);
                     });
                 });
@@ -3412,146 +3023,7 @@
     GPUSkining.EXT_SKING_MESH = "skinlm";
     GPUSkining.resRoot = "res3d/Conventional/";
     window['GPUSkining'] = GPUSkining;
-
-    class GPUSkinningPlayerMono extends Laya.Script3D {
-        constructor() {
-            super(...arguments);
-            this.isEnable = false;
-            this.defaultPlayingClipIndex = 0;
-            this.rootMotionEnabled = false;
-            this.lodEnabled = true;
-            this.cullingMode = GPUSKinningCullingMode.CullUpdateTransforms;
-        }
-        get Player() {
-            return this.player;
-        }
-        FindJointGameObject(boneName) {
-            if (this.player) {
-                return this.player.FindJointGameObject(boneName);
-            }
-            else {
-                return null;
-            }
-        }
-        _cloneTo(dest) {
-            dest.anim = this.anim;
-            dest.mesh = this.mesh;
-            dest.mtrl = this.mtrl;
-            dest.textureRawData = this.textureRawData;
-            dest.Init();
-            if (dest.anim.name == "Monster_2012_Laohu_Skin1") {
-                console.log("GPUSkinningPlayerMono _cloneTo", dest.anim.name);
-            }
-            if (dest.player) {
-                if (dest.player.__mname) {
-                    console.warn(dest.player.__mname);
-                }
-                else {
-                    dest.player.__mname = dest.anim.name + " _cloneTo Set";
-                }
-            }
-        }
-        onAwake() {
-        }
-        onEnable() {
-            var preHasPlayer = this.player != null;
-            this.Init();
-            if (!preHasPlayer && this.player) {
-                if (this.player.__mname) {
-                    console.warn(this.player.__mname);
-                }
-                else {
-                    this.player.__mname = this.anim.name + " onEnable Set";
-                }
-            }
-            this.isEnable = true;
-        }
-        onStart() {
-        }
-        onUpdate() {
-            if (GPUSkining.IsPauseAll) {
-                return;
-            }
-            if (this.player != null) {
-                this.player.Update(Laya.timer.delta / 1000);
-            }
-        }
-        onPreRender() {
-        }
-        onDisable() {
-            this.isEnable = false;
-        }
-        onDestroy() {
-            GPUSkinningPlayerMono.playerManager.Unregister(this);
-            this.anim = null;
-            this.mesh = null;
-            this.mtrl = null;
-            this.textureRawData = null;
-            if (this.player) {
-                this.player.onDestroy();
-                this.player = null;
-            }
-        }
-        SetData(anim, mesh, mtrl, textureRawData) {
-            if (this.player != null) {
-                return;
-            }
-            this.anim = anim;
-            this.mesh = mesh;
-            this.mtrl = mtrl;
-            this.textureRawData = textureRawData;
-            this.Init();
-            if (this.player) {
-                if (this.player.__mname) {
-                    console.warn(this.player.__mname);
-                }
-                else {
-                    this.player.__mname = anim.name + " SetData Set";
-                }
-            }
-        }
-        Init() {
-            this.gameObject = this.owner;
-            if (this.player != null) {
-                return;
-            }
-            let anim = this.anim;
-            let mesh = this.mesh;
-            let mtrl = this.mtrl;
-            let textureRawData = this.textureRawData;
-            if (anim != null && mesh != null && mtrl != null && textureRawData != null) {
-                let res = GPUSkinningPlayerMono.playerManager.Register(anim, mesh, mtrl, textureRawData, this);
-                let player = new GPUSkinningPlayer(this.gameObject, res);
-                player.RootMotionEnabled = this.rootMotionEnabled;
-                player.LODEnabled = this.lodEnabled;
-                player.CullingMode = this.cullingMode;
-                this.player = player;
-                if (anim != null && anim.clips != null && anim.clips.length > 0) {
-                    player.Play(anim.clips[Mathf.clamp(this.defaultPlayingClipIndex, 0, anim.clips.length)].name);
-                }
-            }
-        }
-        initRender(renderer) {
-            var r = renderer;
-            if (!r._renderUpdate__MeshRenderer__Source) {
-                r._renderUpdate__MeshRenderer__Source = r._renderUpdate;
-            }
-            r._renderUpdate = this._renderUpdate;
-            r.onRenderUpdate = this.onRenderUpdate.bind(this);
-        }
-        onRenderUpdate(context, transform, render) {
-            if (this.player != null) {
-                this.player.onRenderUpdate(context, transform, render);
-            }
-        }
-        _renderUpdate(context, transform) {
-            this.onRenderUpdate(context, transform, this);
-            this._renderUpdate__MeshRenderer__Source(context, transform);
-        }
-        _renderUpdate__MeshRenderer__Source(context, transform) {
-        }
-    }
-    GPUSkinningPlayerMono.playerManager = new GPUSkinningPlayerMonoManager();
+    window['SceneMaterial'] = SceneMaterial;
 
     class TestShader {
         constructor() {
@@ -3562,10 +3034,6 @@
         async InitAsync() {
             GPUSkining.resRoot = "res3d/GPUSKinning-30/";
             await GPUSkining.InitAsync();
-            await MaterialInstall.install();
-            var box1 = new Laya.MeshSprite3D(Laya.PrimitiveMesh.createBox());
-            var box2 = new Laya.MeshSprite3D(Laya.PrimitiveMesh.createSphere());
-            var box3 = new Laya.MeshSprite3D(Laya.PrimitiveMesh.createBox());
             var nameList = [
                 "Hero_1004_Dongzhuo_Skin1",
             ];
@@ -3573,237 +3041,15 @@
                 var mono = await GPUSkining.CreateByNameAsync(nameList[j], true);
                 window['mono'] = mono;
                 mono.Player.Play("Idle");
-                for (var i = 0; i < mono.anim.clips.length; i++) {
-                    mono.anim.clips[i].wrapMode = GPUSkinningWrapMode.Loop;
-                    mono.anim.clips[i].individualDifferenceEnabled = true;
-                }
                 this.scene.addChild(mono.owner);
-                var sprite = mono.owner;
-                sprite.transform.localPositionX = 0;
-                sprite.transform.localPositionZ = 0;
-                sprite.transform.localPositionY = 0;
                 break;
             }
-            return;
-            var mono = await GPUSkining.CreateByNameAsync("MutantAnim2", true, "res/gpuskining/enemy_mutant_d.jpg");
-            this.scene.addChild(mono.owner);
-            var mono = await GPUSkining.CreateByNameAsync("Hero_1001_Dianguanglongqi_Skin1", true, "res/gpuskining/Hero_1001_Dianguanglongqi.jpg");
-            if (mono) {
-                mono.Player.Play("IDLE");
-                for (var i = 0; i < mono.anim.clips.length; i++) {
-                    mono.anim.clips[i].wrapMode = GPUSkinningWrapMode.Loop;
-                    mono.anim.clips[i].individualDifferenceEnabled = true;
-                }
-                this.scene.addChild(mono.owner);
-                var sprite = mono.owner;
-                window['sprite'] = sprite;
-                window['mono'] = mono;
-            }
-            return;
-        }
-        CloneMono(mono, nx = 10, ny = 10) {
-            var names = [];
-            for (var i = 0; i < mono.anim.clips.length; i++) {
-                mono.anim.clips[i].wrapMode = GPUSkinningWrapMode.Loop;
-                mono.anim.clips[i].individualDifferenceEnabled = true;
-                names[i] = mono.anim.clips[i].name;
-            }
-            var sprite = mono.owner;
-            for (var y = 0; y < ny; y++) {
-                for (var x = 0; x < nx; x++) {
-                    var c = sprite.clone();
-                    c.transform.localPositionX = x;
-                    c.transform.localPositionZ = -1;
-                    let cm = c.getComponent(GPUSkinningPlayerMono);
-                    cm.SetData(mono.anim, mono.mesh, mono.mtrl, mono.textureRawData);
-                    cm.Player.Play("IDLE");
-                    this.scene.addChild(c);
-                    let i = Random.range(0, mono.anim.clips.length - 1);
-                    i = Math.floor(i);
-                    cm.Player.Play(names[i]);
-                    cm.Player.Play("IDLE");
-                }
-            }
-        }
-        GetAnimTextureAsync() {
-            var pixelsF32 = new Float32Array(2 * 2 * 4);
-            window['pixelsF32'] = pixelsF32;
-            var i = 0;
-            pixelsF32[i + 0] = 1.0;
-            pixelsF32[i + 1] = 0.5;
-            pixelsF32[i + 2] = 100;
-            pixelsF32[i + 3] = 1.0;
-            var texture = new Laya.Texture2D(2, 2, Laya.TextureFormat.R32G32B32A32, false, false);
-            texture.wrapModeU = Laya.BaseTexture.WARPMODE_CLAMP;
-            texture.wrapModeV = Laya.BaseTexture.WARPMODE_CLAMP;
-            texture.filterMode = Laya.BaseTexture.FILTERMODE_POINT;
-            texture.anisoLevel = 0;
-            texture.lock = true;
-            texture.setSubPixels(0, 0, 2, 2, pixelsF32, 0);
-            return texture;
-        }
-        LoadAnimTextureAsync(path, width, height) {
-            return new Promise((resolve) => {
-                Laya.loader.load(path, Laya.Handler.create(this, (arrayBuffer) => {
-                    var f32 = new Float32Array(arrayBuffer);
-                    window['f32'] = f32;
-                    var texture = new Laya.Texture2D(width, height, Laya.TextureFormat.R32G32B32A32, false, false);
-                    texture.wrapModeU = Laya.BaseTexture.WARPMODE_CLAMP;
-                    texture.wrapModeV = Laya.BaseTexture.WARPMODE_CLAMP;
-                    texture.filterMode = Laya.BaseTexture.FILTERMODE_POINT;
-                    texture.anisoLevel = 0;
-                    texture.lock = true;
-                    texture.setSubPixels(0, 0, width, height, f32, 0);
-                    console.log(width, height);
-                    window['animBuffer2'] = arrayBuffer;
-                    window['animTexture2'] = texture;
-                    resolve(texture);
-                }), null, Laya.Loader.BUFFER);
-            });
-        }
-        LoadAnimTexture16Async(path, width, height) {
-            return new Promise((resolve) => {
-                Laya.loader.load(path, Laya.Handler.create(this, (arrayBuffer) => {
-                    var f32 = new Float32Array(arrayBuffer);
-                    window['f32'] = f32;
-                    var f16 = new Uint16Array(arrayBuffer);
-                    window['f16'] = f16;
-                    var texture = new Laya.Texture2D(width, height, Laya.TextureFormat.R32G32B32A32, false, false);
-                    texture.wrapModeU = Laya.BaseTexture.WARPMODE_CLAMP;
-                    texture.wrapModeV = Laya.BaseTexture.WARPMODE_CLAMP;
-                    texture.filterMode = Laya.BaseTexture.FILTERMODE_POINT;
-                    texture.anisoLevel = 0;
-                    texture.lock = true;
-                    texture.setSubPixels16(0, 0, width, height, f16, 0);
-                    console.log(width, height);
-                    window['animBuffer2'] = arrayBuffer;
-                    window['animTexture2'] = texture;
-                    resolve(texture);
-                }), null, Laya.Loader.BUFFER);
-            });
-        }
-        TestGPUSkining() {
-            var anim, mesh, mtrl, textureRawData;
-            var sprite = new Laya.MeshSprite3D();
-            var mono = sprite.addComponent(GPUSkinningPlayerMono);
-            mono.SetData(anim, mesh, mtrl, textureRawData);
-        }
-        TestPrefab() {
-            let box = new Laya.MeshSprite3D(Laya.PrimitiveMesh.createBox(1, 1, 1));
-            box.transform.rotate(new Laya.Vector3(0, 45, 0), false, false);
-            var meshRenderer = box.meshRenderer;
-            let material = new Cartoon2Material();
-            material.enableLighting = true;
-            meshRenderer.material = material;
-            this.scene.addChild(box);
-        }
-        async TestLoadCube() {
-            let prefabName = "Cube";
-            let path = this.GetPathByResId(prefabName);
-            let res = await this.Load3DAsync(path);
-            res.transform.localRotationEulerX = -90;
-            this.scene.addChild(res);
-            res.transform.position = new Laya.Vector3(0, 0, 0);
-            window['res'] = res;
-        }
-        GetPathByResId(resId) {
-            return TestShader.Res3DRoot + resId + ".lh";
-        }
-        async loadPrefab() {
-            await MaterialInstall.install();
-            let prefabName = "Hero_1001_Dianguanglongqi_Skin1";
-            let path = this.GetPathByResId(prefabName);
-            let res = await this.Load3DAsync(path);
-            let node1 = this.createRole(res);
-            let node2 = this.createRole(res);
-            node2.transform.localPositionX = 2;
-            node2.transform.localScaleX = -1;
-            var modelNode1 = node1.getChildByName("model");
-            var modelNode2 = node2.getChildByName("model");
-            let animator1 = modelNode1.getComponent(Laya.Animator);
-            let animator2 = modelNode2.getComponent(Laya.Animator);
-            Laya.timer.loop(3000, this, () => {
-                animator1.play(Math.random() > 0.5 ? "RUN" : "IDLE");
-                modelNode1.transform.localScaleX *= -1;
-            });
-            Laya.timer.loop(4000, this, () => {
-                modelNode2.transform.localScaleX *= -1;
-                animator2.play(Math.random() > 0.5 ? "RUN" : "IDLE");
-            });
-        }
-        createRole(res) {
-            let node = res.clone();
-            node.transform.position = new Laya.Vector3(0, 0, 0);
-            window['node'] = node;
-            var modelNode = node.getChildByName("model");
-            let animator = modelNode.getComponent(Laya.Animator);
-            let skinnedMeshSprite3D = (modelNode.getChildAt(1));
-            if (!(skinnedMeshSprite3D instanceof Laya.SkinnedMeshSprite3D)) {
-                skinnedMeshSprite3D = (modelNode.getChildAt(0));
-            }
-            let meshRenderer = skinnedMeshSprite3D.skinnedMeshRenderer;
-            let unlitMaterial = meshRenderer.material;
-            let material = new Cartoon2Material();
-            material.enableLighting = true;
-            material.albedoTexture = unlitMaterial.albedoTexture;
-            meshRenderer.material = material;
-            this.scene.addChild(node);
-            animator.play("IDLE");
-            return node;
-        }
-        async Load3DAsync(path) {
-            return new Promise((resolve) => {
-                Laya.loader.create(path, Laya.Handler.create(null, (res) => {
-                    resolve(res);
-                }));
-            });
-        }
-    }
-    TestShader.Res3DRoot = "res3d/Conventional/";
-
-    var REG = Laya.ClassUtils.regClass;
-    var ui;
-    (function (ui) {
-        var test;
-        (function (test) {
-            class TestSceneUI extends Laya.Scene {
-                constructor() { super(); }
-                createChildren() {
-                    super.createChildren();
-                    this.loadScene("test/TestScene");
-                }
-            }
-            test.TestSceneUI = TestSceneUI;
-            REG("ui.test.TestSceneUI", TestSceneUI);
-        })(test = ui.test || (ui.test = {}));
-    })(ui || (ui = {}));
-
-    class GameUI extends ui.test.TestSceneUI {
-        constructor() {
-            super();
-            var scene = Laya.stage.addChild(new Laya.Scene3D());
-            var camera = (scene.addChild(new Laya.Camera(0, 0.1, 100)));
-            camera.transform.translate(new Laya.Vector3(0, 3, 3));
-            camera.transform.rotate(new Laya.Vector3(-30, 0, 0), true, false);
-            camera.addComponent(GPUSkinningPlayerMono);
-            var directionLight = scene.addChild(new Laya.DirectionLight());
-            directionLight.color = new Laya.Vector3(0.6, 0.6, 0.6);
-            directionLight.transform.worldMatrix.setForward(new Laya.Vector3(1, -1, 0));
-            var box = scene.addChild(new Laya.MeshSprite3D(Laya.PrimitiveMesh.createBox(1, 1, 1)));
-            box.transform.rotate(new Laya.Vector3(0, 45, 0), false, false);
-            var material = new Laya.BlinnPhongMaterial();
-            Laya.Texture2D.load("res/layabox.png", Laya.Handler.create(null, function (tex) {
-                material.albedoTexture = tex;
-            }));
-            box.meshRenderer.material = material;
         }
     }
 
     class GameConfig {
         constructor() { }
         static init() {
-            var reg = Laya.ClassUtils.regClass;
-            reg("script/GameUI.ts", GameUI);
         }
     }
     GameConfig.width = 1334;

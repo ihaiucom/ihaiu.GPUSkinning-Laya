@@ -1,4 +1,5 @@
 import Vector3 = Laya.Vector3;
+import SceneMaterial from "../GPUSkinning/Material/SceneMaterial";
 export class TestScene extends Laya.Scene3D
 {
     static create(): TestScene
@@ -64,7 +65,7 @@ export class TestScene extends Laya.Scene3D
         
         //创建平行光
         let directionLight: Laya.DirectionLight =<Laya.DirectionLight> this.addChild(new Laya.DirectionLight());
-		directionLight.color = new Laya.Vector3(1, 1, 1);
+		directionLight.color = new Laya.Vector3(1, 1.0, 1.0);
 		this.lightRotaitonSrc= directionLight.transform.localRotationEuler = new Laya.Vector3(-45, 80, 0);
         this.directionLight = directionLight;
         directionLight.transform.rotationEuler = new Laya.Vector3(-20, 20, 0); 
@@ -74,6 +75,10 @@ export class TestScene extends Laya.Scene3D
         this.addChild(directionLight);
 
         // this.lightRotaitonStart();
+
+        SceneMaterial.Init(this);
+        // SceneMaterial.LoadSceneLightingTexture("res3d/GPUSKinning-30/scene_lighting.png"); 
+
         
     }
 

@@ -87,6 +87,8 @@ export class GPUSkinningCartoon2TextureMaterial extends GPUSkinningBaseMaterial
 			'u_ShadowTexture': Shader3D.PERIOD_MATERIAL,
 			// 卡通材质 -- 场景光照贴图
 			'u_SceneLightingTexture': Shader3D.PERIOD_SCENE,
+			// 卡通材质 -- 场景光照贴图映射世界坐标大小
+			'u_SceneLightingSize': Shader3D.PERIOD_SCENE,
 			
 			'u_AlbedoTexture': Shader3D.PERIOD_MATERIAL,
 			'u_AlbedoColor': Shader3D.PERIOD_MATERIAL,
