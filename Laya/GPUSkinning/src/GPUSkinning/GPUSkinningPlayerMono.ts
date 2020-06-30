@@ -70,10 +70,6 @@ export default class GPUSkinningPlayerMono extends Laya.Script3D
         dest.textureRawData = this.textureRawData;
         dest.Init();
 
-        if(dest.anim.name == "Monster_2012_Laohu_Skin1")
-        {
-            console.log("GPUSkinningPlayerMono _cloneTo", dest.anim.name);
-        }
         
         if(dest.player )
         {

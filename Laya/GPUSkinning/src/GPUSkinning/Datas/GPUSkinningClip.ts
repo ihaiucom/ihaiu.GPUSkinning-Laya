@@ -46,10 +46,19 @@ export default class GPUSkinningClip
         var b:Byte = new Byte(data);
         b.pos = 0;
         this.name = b.readUTFString();
-        // this.name = this.name.toLowerCase();
+        this.name = this.name.toLowerCase();
         this.length = b.readFloat32();
         this.fps = b.readUint32();
         this.wrapMode = b.readInt32();
+        this.wrapMode = GPUSkinningWrapMode.Once;
+        switch(this.name)
+        {
+            case "idle":
+            case "run":
+            case "walk":
+                this.wrapMode = GPUSkinningWrapMode.Loop;
+                break;
+        }
         this.pixelSegmentation = b.readUint32();
         this.rootMotionEnabled = b.readByte() != 0;
         this.individualDifferenceEnabled = b.readByte() != 0;
