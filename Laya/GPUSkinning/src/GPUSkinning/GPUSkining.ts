@@ -20,6 +20,7 @@ import { GPUSkinningCartoonMaterial } from "./Material/GPUSkinningCartoonMateria
 import LayaExtends_Node from "../LayaExtends/LayaExtends_Node";
 import { GPUSkinningCartoon2TextureMaterial } from "./Material/GPUSkinningCartoon2TextureMaterial";
 import SceneMaterial from "./Material/SceneMaterial";
+import { GPUSkinningToonMaterial } from "./Material/GPUSkinningToon";
 // import LayaExtends_Laya3D from "../LayaExtends/LayaExtends_Laya3D";
 // import LayaExtends_Texture2D from "../LayaExtends/LayaExtends_Texture2D";
 export default class GPUSkining
@@ -56,6 +57,7 @@ export default class GPUSkining
       // await GPUSkinningUnlitMaterial.install();
       // await GPUSkinningCartoonMaterial.install();
       await GPUSkinningCartoon2TextureMaterial.install();
+      await GPUSkinningToonMaterial.install();
 
 
       LayaExtends_Node.Init();
@@ -240,7 +242,7 @@ export default class GPUSkining
     {
       if(!materialCls)
       {
-        materialCls = GPUSkinningCartoon2TextureMaterial;
+        materialCls = GPUSkinningToonMaterial;
       }
       var animPath: string = this.GetPath(this.GetAnimName(name));
       var meshPath: string = this.GetPath(this.GetMeshName(name));

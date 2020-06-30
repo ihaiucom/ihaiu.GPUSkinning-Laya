@@ -649,9 +649,18 @@
             var b = new Byte$1(data);
             b.pos = 0;
             this.name = b.readUTFString();
+            this.name = this.name.toLowerCase();
             this.length = b.readFloat32();
             this.fps = b.readUint32();
             this.wrapMode = b.readInt32();
+            this.wrapMode = GPUSkinningWrapMode.Once;
+            switch (this.name) {
+                case "idle":
+                case "run":
+                case "walk":
+                    this.wrapMode = GPUSkinningWrapMode.Loop;
+                    break;
+            }
             this.pixelSegmentation = b.readUint32();
             this.rootMotionEnabled = b.readByte() != 0;
             this.individualDifferenceEnabled = b.readByte() != 0;
@@ -1596,6 +1605,7 @@
             this.Stop();
         }
         Play(clipName, nomrmalizeTime = 0) {
+            clipName = clipName.toLowerCase();
             let clips = this.res.anim.clips;
             let numClips = clips == null ? 0 : clips.length;
             let playingClip = this.playingClip;
@@ -1825,9 +1835,6 @@
             dest.mtrl = this.mtrl;
             dest.textureRawData = this.textureRawData;
             dest.Init();
-            if (dest.anim.name == "Monster_2012_Laohu_Skin1") {
-                console.log("GPUSkinningPlayerMono _cloneTo", dest.anim.name);
-            }
             if (dest.player) {
                 if (dest.player.__mname) {
                     console.warn(dest.player.__mname);
@@ -2835,10 +2842,472 @@
     GPUSkinningCartoon2TextureMaterial.DEPTH_TEST = Shader3D$4.propertyNameToID("s_DepthTest");
     GPUSkinningCartoon2TextureMaterial.DEPTH_WRITE = Shader3D$4.propertyNameToID("s_DepthWrite");
 
+    var Shader3D$5 = Laya.Shader3D;
+    var SubShader$2 = Laya.SubShader;
+    var VertexMesh$3 = Laya.VertexMesh;
+    var Vector4$4 = Laya.Vector4;
+    var RenderState$2 = Laya.RenderState;
+    var Scene3DShaderDeclaration$1 = Laya.Scene3DShaderDeclaration;
+    var Material$2 = Laya.Material;
+    class GPUSkinningToonMaterial extends GPUSkinningBaseMaterial {
+        constructor() {
+            super();
+            this._albedoColor = new Vector4$4(1.0, 1.0, 1.0, 1.0);
+            this._albedoIntensity = 1.0;
+            this._enableVertexColor = false;
+            this.setShaderName(GPUSkinningToonMaterial.shaderName);
+            this._albedoIntensity = 1.0;
+            this._shaderValues.setVector(GPUSkinningToonMaterial.ALBEDOCOLOR, new Vector4$4(1.0, 1.0, 1.0, 1.0));
+            this._shaderValues.setVector(GPUSkinningToonMaterial.TILINGOFFSET, new Vector4$4(1.0, 1.0, 0.0, 0.0));
+            this.CartoonShadowColor = new Vector4$4(0.1764706, 0.1764706, 0.1764706, 1.0);
+            this.CartoonColorRange = 0.08;
+            this.CartoonColorDeep = 88.4;
+            this.CartoonOutlineWidth = 0.004;
+            this._shaderValues.setNumber(Material$2.ALPHATESTVALUE, 0.5);
+            this._enableLighting = true;
+            this.renderMode = GPUSkinningToonMaterial.RENDERMODE_OPAQUE;
+        }
+        static async install() {
+            if (this._isInstalled) {
+                return;
+            }
+            this._isInstalled = true;
+            GPUSkinningToonMaterial.__initDefine__();
+            await GPUSkinningToonMaterial.initShader();
+            GPUSkinningToonMaterial.defaultMaterial = new GPUSkinningToonMaterial();
+            GPUSkinningToonMaterial.defaultMaterial.lock = true;
+        }
+        static async initShader() {
+            var outlineVS = await this.loadShaderVSAsync(GPUSkinningToonMaterial.outlinePass);
+            var outlinePS = await this.loadShaderPSAsync(GPUSkinningToonMaterial.outlinePass);
+            var vs = await GPUSkinningToonMaterial.loadShaderVSAsync(GPUSkinningToonMaterial.shaderName);
+            var ps = await GPUSkinningToonMaterial.loadShaderPSAsync(GPUSkinningToonMaterial.shaderName);
+            var attributeMap;
+            var uniformMap;
+            var stateMap;
+            var shader;
+            var subShader;
+            attributeMap =
+                {
+                    'a_Position': VertexMesh$3.MESH_POSITION0,
+                    'a_Color': VertexMesh$3.MESH_COLOR0,
+                    'a_Normal': VertexMesh$3.MESH_NORMAL0,
+                    'a_Texcoord0': VertexMesh$3.MESH_TEXTURECOORDINATE0,
+                    'a_Texcoord1': VertexMesh$3.MESH_TEXTURECOORDINATE1,
+                    'a_Texcoord2': GPUSkiningVertexMesh.MESH_TEXTURECOORDINATE2,
+                    'a_MvpMatrix': VertexMesh$3.MESH_MVPMATRIX_ROW0,
+                    'a_WorldMat': VertexMesh$3.MESH_WORLDMATRIX_ROW0
+                };
+            uniformMap =
+                {
+                    'u_GPUSkinning_TextureMatrix': Shader3D$5.PERIOD_MATERIAL,
+                    'u_GPUSkinning_TextureSize_NumPixelsPerFrame': Shader3D$5.PERIOD_MATERIAL,
+                    'u_GPUSkinning_RootMotion': Shader3D$5.PERIOD_MATERIAL,
+                    'u_GPUSkinning_RootMotion_CrossFade': Shader3D$5.PERIOD_MATERIAL,
+                    'u_GPUSkinning_FrameIndex_PixelSegmentation': Shader3D$5.PERIOD_SPRITE,
+                    'u_GPUSkinning_FrameIndex_PixelSegmentation_Blend_CrossFade': Shader3D$5.PERIOD_SPRITE,
+                    'u_CartoonShadowColor': Shader3D$5.PERIOD_MATERIAL,
+                    'u_CartoonColorRange': Shader3D$5.PERIOD_MATERIAL,
+                    'u_CartoonColorDeep': Shader3D$5.PERIOD_MATERIAL,
+                    'u_CartoonOutlineWidth': Shader3D$5.PERIOD_MATERIAL,
+                    'u_ShadowTexture': Shader3D$5.PERIOD_MATERIAL,
+                    'u_SceneLightingTexture': Shader3D$5.PERIOD_SCENE,
+                    'u_SceneLightingSize': Shader3D$5.PERIOD_SCENE,
+                    'u_AlbedoTexture': Shader3D$5.PERIOD_MATERIAL,
+                    'u_AlbedoColor': Shader3D$5.PERIOD_MATERIAL,
+                    'u_TilingOffset': Shader3D$5.PERIOD_MATERIAL,
+                    'u_AlphaTestValue': Shader3D$5.PERIOD_MATERIAL,
+                    'u_WorldMat': Shader3D$5.PERIOD_SPRITE,
+                    'u_MvpMatrix': Shader3D$5.PERIOD_SPRITE,
+                    'u_FogStart': Shader3D$5.PERIOD_SCENE,
+                    'u_FogRange': Shader3D$5.PERIOD_SCENE,
+                    'u_FogColor': Shader3D$5.PERIOD_SCENE,
+                    'u_DirationLightCount': Shader3D$5.PERIOD_SCENE,
+                    'u_LightBuffer': Shader3D$5.PERIOD_SCENE,
+                    'u_LightClusterBuffer': Shader3D$5.PERIOD_SCENE,
+                    'u_AmbientColor': Shader3D$5.PERIOD_SCENE,
+                    'u_DirectionLight.color': Shader3D$5.PERIOD_SCENE,
+                    'u_DirectionLight.direction': Shader3D$5.PERIOD_SCENE,
+                    'u_PointLight.position': Shader3D$5.PERIOD_SCENE,
+                    'u_PointLight.range': Shader3D$5.PERIOD_SCENE,
+                    'u_PointLight.color': Shader3D$5.PERIOD_SCENE,
+                    'u_SpotLight.position': Shader3D$5.PERIOD_SCENE,
+                    'u_SpotLight.direction': Shader3D$5.PERIOD_SCENE,
+                    'u_SpotLight.range': Shader3D$5.PERIOD_SCENE,
+                    'u_SpotLight.spot': Shader3D$5.PERIOD_SCENE,
+                    'u_SpotLight.color': Shader3D$5.PERIOD_SCENE,
+                    'u_CameraPos': Shader3D$5.PERIOD_CAMERA
+                };
+            stateMap =
+                {
+                    's_Cull': Shader3D$5.RENDER_STATE_CULL,
+                    's_Blend': Shader3D$5.RENDER_STATE_BLEND,
+                    's_BlendSrc': Shader3D$5.RENDER_STATE_BLEND_SRC,
+                    's_BlendDst': Shader3D$5.RENDER_STATE_BLEND_DST,
+                    's_DepthTest': Shader3D$5.RENDER_STATE_DEPTH_TEST,
+                    's_DepthWrite': Shader3D$5.RENDER_STATE_DEPTH_WRITE
+                };
+            shader = Shader3D$5.add(GPUSkinningToonMaterial.shaderName, null, null, true);
+            subShader = new SubShader$2(attributeMap, uniformMap);
+            shader.addSubShader(subShader);
+            var outlinePass = subShader.addShaderPass(outlineVS, outlinePS);
+            outlinePass.renderState.cull = Laya.RenderState.CULL_FRONT;
+            var mainPass = subShader.addShaderPass(vs, ps, stateMap);
+        }
+        static __initDefine__() {
+            GPUSkinningToonMaterial.SHADERDEFINE_ALBEDOTEXTURE = Shader3D$5.getDefineByName("ALBEDOTEXTURE");
+            GPUSkinningToonMaterial.SHADERDEFINE_SHADOWTEXTURE = Shader3D$5.getDefineByName("SHADOWTEXTURE");
+            GPUSkinningToonMaterial.SHADERDEFINE_SCENELIGHTINGTEXTURE = Shader3D$5.getDefineByName("SCENELIGHTING");
+            GPUSkinningToonMaterial.SHADERDEFINE_TILINGOFFSET = Shader3D$5.getDefineByName("TILINGOFFSET");
+            GPUSkinningToonMaterial.SHADERDEFINE_ENABLEVERTEXCOLOR = Shader3D$5.getDefineByName("ENABLEVERTEXCOLOR");
+        }
+        get _ColorR() {
+            return this._albedoColor.x;
+        }
+        set _ColorR(value) {
+            this._albedoColor.x = value;
+            this.albedoColor = this._albedoColor;
+        }
+        get _ColorG() {
+            return this._albedoColor.y;
+        }
+        set _ColorG(value) {
+            this._albedoColor.y = value;
+            this.albedoColor = this._albedoColor;
+        }
+        get _ColorB() {
+            return this._albedoColor.z;
+        }
+        set _ColorB(value) {
+            this._albedoColor.z = value;
+            this.albedoColor = this._albedoColor;
+        }
+        get _ColorA() {
+            return this._albedoColor.w;
+        }
+        set _ColorA(value) {
+            this._albedoColor.w = value;
+            this.albedoColor = this._albedoColor;
+        }
+        get _AlbedoIntensity() {
+            return this._albedoIntensity;
+        }
+        set _AlbedoIntensity(value) {
+            if (this._albedoIntensity !== value) {
+                var finalAlbedo = this._shaderValues.getVector(GPUSkinningToonMaterial.ALBEDOCOLOR);
+                Vector4$4.scale(this._albedoColor, value, finalAlbedo);
+                this._albedoIntensity = value;
+                this._shaderValues.setVector(GPUSkinningToonMaterial.ALBEDOCOLOR, finalAlbedo);
+            }
+        }
+        get _MainTex_STX() {
+            return this._shaderValues.getVector(GPUSkinningToonMaterial.TILINGOFFSET).x;
+        }
+        set _MainTex_STX(x) {
+            var tilOff = this._shaderValues.getVector(GPUSkinningToonMaterial.TILINGOFFSET);
+            tilOff.x = x;
+            this.tilingOffset = tilOff;
+        }
+        get _MainTex_STY() {
+            return this._shaderValues.getVector(GPUSkinningToonMaterial.TILINGOFFSET).y;
+        }
+        set _MainTex_STY(y) {
+            var tilOff = this._shaderValues.getVector(GPUSkinningToonMaterial.TILINGOFFSET);
+            tilOff.y = y;
+            this.tilingOffset = tilOff;
+        }
+        get _MainTex_STZ() {
+            return this._shaderValues.getVector(GPUSkinningToonMaterial.TILINGOFFSET).z;
+        }
+        set _MainTex_STZ(z) {
+            var tilOff = this._shaderValues.getVector(GPUSkinningToonMaterial.TILINGOFFSET);
+            tilOff.z = z;
+            this.tilingOffset = tilOff;
+        }
+        get _MainTex_STW() {
+            return this._shaderValues.getVector(GPUSkinningToonMaterial.TILINGOFFSET).w;
+        }
+        set _MainTex_STW(w) {
+            var tilOff = this._shaderValues.getVector(GPUSkinningToonMaterial.TILINGOFFSET);
+            tilOff.w = w;
+            this.tilingOffset = tilOff;
+        }
+        get _Cutoff() {
+            return this.alphaTestValue;
+        }
+        set _Cutoff(value) {
+            this.alphaTestValue = value;
+        }
+        get albedoColorR() {
+            return this._ColorR;
+        }
+        set albedoColorR(value) {
+            this._ColorR = value;
+        }
+        get albedoColorG() {
+            return this._ColorG;
+        }
+        set albedoColorG(value) {
+            this._ColorG = value;
+        }
+        get albedoColorB() {
+            return this._ColorB;
+        }
+        set albedoColorB(value) {
+            this._ColorB = value;
+        }
+        get albedoColorA() {
+            return this._ColorA;
+        }
+        set albedoColorA(value) {
+            this._ColorA = value;
+        }
+        get albedoColor() {
+            return this._albedoColor;
+        }
+        set albedoColor(value) {
+            var finalAlbedo = this._shaderValues.getVector(GPUSkinningToonMaterial.ALBEDOCOLOR);
+            Vector4$4.scale(value, this._albedoIntensity, finalAlbedo);
+            this._albedoColor = value;
+            this._shaderValues.setVector(GPUSkinningToonMaterial.ALBEDOCOLOR, finalAlbedo);
+        }
+        get albedoIntensity() {
+            return this._albedoIntensity;
+        }
+        set albedoIntensity(value) {
+            this._AlbedoIntensity = value;
+        }
+        get albedoTexture() {
+            return this._shaderValues.getTexture(GPUSkinningToonMaterial.ALBEDOTEXTURE);
+        }
+        set albedoTexture(value) {
+            if (value)
+                this._shaderValues.addDefine(GPUSkinningToonMaterial.SHADERDEFINE_ALBEDOTEXTURE);
+            else
+                this._shaderValues.removeDefine(GPUSkinningToonMaterial.SHADERDEFINE_ALBEDOTEXTURE);
+            this._shaderValues.setTexture(GPUSkinningToonMaterial.ALBEDOTEXTURE, value);
+        }
+        get shadowTexture() {
+            return this._shaderValues.getTexture(GPUSkinningToonMaterial.SHADOWTEXTURE);
+        }
+        set shadowTexture(value) {
+            if (value)
+                this._shaderValues.addDefine(GPUSkinningToonMaterial.SHADERDEFINE_SHADOWTEXTURE);
+            else
+                this._shaderValues.removeDefine(GPUSkinningToonMaterial.SHADERDEFINE_SHADOWTEXTURE);
+            this._shaderValues.setTexture(GPUSkinningToonMaterial.SHADOWTEXTURE, value);
+        }
+        get sceneLightingTexture() {
+            return this._shaderValues.getTexture(GPUSkinningToonMaterial.SCENELIGHTINGTEXTURE);
+        }
+        set sceneLightingTexture(value) {
+            if (value)
+                this._shaderValues.addDefine(GPUSkinningToonMaterial.SHADERDEFINE_SCENELIGHTINGTEXTURE);
+            else
+                this._shaderValues.removeDefine(GPUSkinningToonMaterial.SHADERDEFINE_SCENELIGHTINGTEXTURE);
+            this._shaderValues.setTexture(GPUSkinningToonMaterial.SCENELIGHTINGTEXTURE, value);
+        }
+        get tilingOffsetX() {
+            return this._MainTex_STX;
+        }
+        set tilingOffsetX(x) {
+            this._MainTex_STX = x;
+        }
+        get tilingOffsetY() {
+            return this._MainTex_STY;
+        }
+        set tilingOffsetY(y) {
+            this._MainTex_STY = y;
+        }
+        get tilingOffsetZ() {
+            return this._MainTex_STZ;
+        }
+        set tilingOffsetZ(z) {
+            this._MainTex_STZ = z;
+        }
+        get tilingOffsetW() {
+            return this._MainTex_STW;
+        }
+        set tilingOffsetW(w) {
+            this._MainTex_STW = w;
+        }
+        get tilingOffset() {
+            return this._shaderValues.getVector(GPUSkinningToonMaterial.TILINGOFFSET);
+        }
+        set tilingOffset(value) {
+            if (value) {
+                if (value.x != 1 || value.y != 1 || value.z != 0 || value.w != 0)
+                    this._shaderValues.addDefine(GPUSkinningToonMaterial.SHADERDEFINE_TILINGOFFSET);
+                else
+                    this._shaderValues.removeDefine(GPUSkinningToonMaterial.SHADERDEFINE_TILINGOFFSET);
+            }
+            else {
+                this._shaderValues.removeDefine(GPUSkinningToonMaterial.SHADERDEFINE_TILINGOFFSET);
+            }
+            this._shaderValues.setVector(GPUSkinningToonMaterial.TILINGOFFSET, value);
+        }
+        get enableVertexColor() {
+            return this._enableVertexColor;
+        }
+        set enableVertexColor(value) {
+            this._enableVertexColor = value;
+            if (value)
+                this._shaderValues.addDefine(GPUSkinningToonMaterial.SHADERDEFINE_ENABLEVERTEXCOLOR);
+            else
+                this._shaderValues.removeDefine(GPUSkinningToonMaterial.SHADERDEFINE_ENABLEVERTEXCOLOR);
+        }
+        set renderMode(value) {
+            switch (value) {
+                case GPUSkinningToonMaterial.RENDERMODE_OPAQUE:
+                    this.alphaTest = false;
+                    this.renderQueue = Material$2.RENDERQUEUE_OPAQUE;
+                    this.depthWrite = true;
+                    this.cull = RenderState$2.CULL_BACK;
+                    this.blend = RenderState$2.BLEND_DISABLE;
+                    this.depthTest = RenderState$2.DEPTHTEST_LESS;
+                    break;
+                case GPUSkinningToonMaterial.RENDERMODE_CUTOUT:
+                    this.renderQueue = Material$2.RENDERQUEUE_ALPHATEST;
+                    this.alphaTest = true;
+                    this.depthWrite = true;
+                    this.cull = RenderState$2.CULL_BACK;
+                    this.blend = RenderState$2.BLEND_DISABLE;
+                    this.depthTest = RenderState$2.DEPTHTEST_LESS;
+                    break;
+                case GPUSkinningToonMaterial.RENDERMODE_TRANSPARENT:
+                    this.renderQueue = Material$2.RENDERQUEUE_TRANSPARENT;
+                    this.alphaTest = false;
+                    this.depthWrite = false;
+                    this.cull = RenderState$2.CULL_BACK;
+                    this.blend = RenderState$2.BLEND_ENABLE_ALL;
+                    this.blendSrc = RenderState$2.BLENDPARAM_SRC_ALPHA;
+                    this.blendDst = RenderState$2.BLENDPARAM_ONE_MINUS_SRC_ALPHA;
+                    this.depthTest = RenderState$2.DEPTHTEST_LESS;
+                    break;
+                default:
+                    throw new Error("GPUSkinningToonMaterial : renderMode value error.");
+            }
+        }
+        get depthWrite() {
+            return this._shaderValues.getBool(GPUSkinningToonMaterial.DEPTH_WRITE);
+        }
+        set depthWrite(value) {
+            this._shaderValues.setBool(GPUSkinningToonMaterial.DEPTH_WRITE, value);
+        }
+        get cull() {
+            return this._shaderValues.getInt(GPUSkinningToonMaterial.CULL);
+        }
+        set cull(value) {
+            this._shaderValues.setInt(GPUSkinningToonMaterial.CULL, value);
+        }
+        get blend() {
+            return this._shaderValues.getInt(GPUSkinningToonMaterial.BLEND);
+        }
+        set blend(value) {
+            this._shaderValues.setInt(GPUSkinningToonMaterial.BLEND, value);
+        }
+        get blendSrc() {
+            return this._shaderValues.getInt(GPUSkinningToonMaterial.BLEND_SRC);
+        }
+        set blendSrc(value) {
+            this._shaderValues.setInt(GPUSkinningToonMaterial.BLEND_SRC, value);
+        }
+        get blendDst() {
+            return this._shaderValues.getInt(GPUSkinningToonMaterial.BLEND_DST);
+        }
+        set blendDst(value) {
+            this._shaderValues.setInt(GPUSkinningToonMaterial.BLEND_DST, value);
+        }
+        get depthTest() {
+            return this._shaderValues.getInt(GPUSkinningToonMaterial.DEPTH_TEST);
+        }
+        set depthTest(value) {
+            this._shaderValues.setInt(GPUSkinningToonMaterial.DEPTH_TEST, value);
+        }
+        get enableLighting() {
+            return this._enableLighting;
+        }
+        set enableLighting(value) {
+            if (this._enableLighting !== value) {
+                if (value) {
+                    this._shaderValues.removeDefine(Scene3DShaderDeclaration$1.SHADERDEFINE_POINTLIGHT);
+                }
+                else {
+                    this._shaderValues.addDefine(Scene3DShaderDeclaration$1.SHADERDEFINE_POINTLIGHT);
+                }
+                this._enableLighting = value;
+            }
+        }
+        get CartoonShadowColor() {
+            return this._cartoonShadowColor;
+        }
+        set CartoonShadowColor(value) {
+            this._cartoonShadowColor = value;
+            this._shaderValues.setVector(GPUSkinningToonMaterial.CARTOON_SHADOWCOLOR, value);
+        }
+        get CartoonColorRange() {
+            return this._shaderValues.getNumber(GPUSkinningToonMaterial.CARTOON_CORLORRANGE);
+        }
+        set CartoonColorRange(value) {
+            value = Math.max(0.0, Math.min(2, value));
+            this._shaderValues.setNumber(GPUSkinningToonMaterial.CARTOON_CORLORRANGE, value);
+        }
+        get CartoonColorDeep() {
+            return this._shaderValues.getNumber(GPUSkinningToonMaterial.CARTOON_CORLORDEEP);
+        }
+        set CartoonColorDeep(value) {
+            value = Math.max(-1.0, Math.min(100.0, value));
+            this._shaderValues.setNumber(GPUSkinningToonMaterial.CARTOON_CORLORDEEP, value);
+        }
+        get CartoonOutlineWidth() {
+            return this._shaderValues.getNumber(GPUSkinningToonMaterial.CARTOON_OUTLINEWIDTH);
+        }
+        set CartoonOutlineWidth(value) {
+            this._shaderValues.setNumber(GPUSkinningToonMaterial.CARTOON_OUTLINEWIDTH, value);
+        }
+        clone() {
+            var dest = new GPUSkinningToonMaterial();
+            this.cloneTo(dest);
+            this._albedoColor.cloneTo(dest._albedoColor);
+            return dest;
+        }
+        cloneTo(destObject) {
+            super.cloneTo(destObject);
+            var destMaterial = destObject;
+            destMaterial._enableLighting = this._enableLighting;
+            destMaterial._albedoIntensity = this._albedoIntensity;
+            destMaterial._enableVertexColor = this._enableVertexColor;
+            this._albedoColor.cloneTo(destMaterial._albedoColor);
+            this._cartoonShadowColor.cloneTo(destMaterial._cartoonShadowColor);
+        }
+    }
+    GPUSkinningToonMaterial.shaderName = "GPUSkinningToon";
+    GPUSkinningToonMaterial.outlinePass = "GPUSkinningToonOutline";
+    GPUSkinningToonMaterial._isInstalled = false;
+    GPUSkinningToonMaterial.RENDERMODE_OPAQUE = 0;
+    GPUSkinningToonMaterial.RENDERMODE_CUTOUT = 1;
+    GPUSkinningToonMaterial.RENDERMODE_TRANSPARENT = 2;
+    GPUSkinningToonMaterial.RENDERMODE_ADDTIVE = 3;
+    GPUSkinningToonMaterial.CARTOON_SHADOWCOLOR = Shader3D$5.propertyNameToID("u_CartoonShadowColor");
+    GPUSkinningToonMaterial.CARTOON_CORLORRANGE = Shader3D$5.propertyNameToID("u_CartoonColorRange");
+    GPUSkinningToonMaterial.CARTOON_CORLORDEEP = Shader3D$5.propertyNameToID("u_CartoonColorDeep");
+    GPUSkinningToonMaterial.CARTOON_OUTLINEWIDTH = Shader3D$5.propertyNameToID("u_CartoonOutlineWidth");
+    GPUSkinningToonMaterial.SCENELIGHTINGTEXTURE = Shader3D$5.propertyNameToID("u_SceneLightingTexture");
+    GPUSkinningToonMaterial.SHADOWTEXTURE = Shader3D$5.propertyNameToID("u_ShadowTexture");
+    GPUSkinningToonMaterial.ALBEDOTEXTURE = Shader3D$5.propertyNameToID("u_AlbedoTexture");
+    GPUSkinningToonMaterial.ALBEDOCOLOR = Shader3D$5.propertyNameToID("u_AlbedoColor");
+    GPUSkinningToonMaterial.TILINGOFFSET = Shader3D$5.propertyNameToID("u_TilingOffset");
+    GPUSkinningToonMaterial.CULL = Shader3D$5.propertyNameToID("s_Cull");
+    GPUSkinningToonMaterial.BLEND = Shader3D$5.propertyNameToID("s_Blend");
+    GPUSkinningToonMaterial.BLEND_SRC = Shader3D$5.propertyNameToID("s_BlendSrc");
+    GPUSkinningToonMaterial.BLEND_DST = Shader3D$5.propertyNameToID("s_BlendDst");
+    GPUSkinningToonMaterial.DEPTH_TEST = Shader3D$5.propertyNameToID("s_DepthTest");
+    GPUSkinningToonMaterial.DEPTH_WRITE = Shader3D$5.propertyNameToID("s_DepthWrite");
+
     var LoaderManager = Laya.LoaderManager;
     var Loader = Laya.Loader;
     var Event = Laya.Event;
-    var Shader3D$5 = Laya.Shader3D;
+    var Shader3D$6 = Laya.Shader3D;
     class GPUSkining {
         static async InitAsync() {
             window['GPUSkining'] = GPUSkining;
@@ -2856,9 +3325,10 @@
             window['GPUSkinningClip'] = GPUSkinningClip;
             window['SceneMaterial'] = SceneMaterial;
             var GPUSkinningIncludegGLSL = await GPUSkinningBaseMaterial.loadShaderGlslAsync("GPUSkinningInclude");
-            Shader3D$5.addInclude("GPUSkinningInclude.glsl", GPUSkinningIncludegGLSL);
+            Shader3D$6.addInclude("GPUSkinningInclude.glsl", GPUSkinningIncludegGLSL);
             GPUSkinningBaseMaterial.__initDefine__();
             await GPUSkinningCartoon2TextureMaterial.install();
+            await GPUSkinningToonMaterial.install();
             LayaExtends_Node.Init();
             Laya3D.SKING_MESH = "SKING_MESH";
             var createMap = LoaderManager.createMap;
@@ -2964,7 +3434,7 @@
         }
         static CreateByName(name, callback, hasShadowTexture, materialCls) {
             if (!materialCls) {
-                materialCls = GPUSkinningCartoon2TextureMaterial;
+                materialCls = GPUSkinningToonMaterial;
             }
             var animPath = this.GetPath(this.GetAnimName(name));
             var meshPath = this.GetPath(this.GetMeshName(name));
@@ -3035,6 +3505,7 @@
             GPUSkining.resRoot = "res3d/GPUSKinning-30/";
             await GPUSkining.InitAsync();
             var nameList = [
+                "1002_Skin1",
                 "Hero_1004_Dongzhuo_Skin1",
             ];
             for (var j = 0; j < nameList.length; j++) {
