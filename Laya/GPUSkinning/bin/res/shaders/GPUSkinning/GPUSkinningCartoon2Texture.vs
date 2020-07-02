@@ -72,14 +72,33 @@ varying vec2 v_Texcoord0;
 void main() 
 {
 	vec4 position = skin(a_Position, a_Texcoord1, a_Texcoord2);
-	mat4 mm = mat4(
+	
+	mat4 mm_scale = mat4(
 		-1.0, 0.0, 0.0, 0.0,
 		0.0, 1.0, 0.0, 0.0,
 		0.0, 0.0, 1.0, 0.0,
 		0.0, 0.0, 0.0, 1.0
 	);
 
-	position = mm * position;
+	
+	
+	mat4 mm_rotationX = mat4(
+		1.0, 0.0, -0.0, 0.0,
+		0.0, 2.220446049250313e-16, -1.0, 0.0,
+		0.0, 1.0, 2.220446049250313e-16, 0.0,
+		0.0, 0.0, 0.0, 1.0
+	);
+	
+	
+	mat4 mm_rotationY = mat4(
+		0.7071067690849304, 0.0, -0.7071067690849304, 0.0,
+		0.0, 1.0, 0.0, 0.0,
+		0.7071067690849304, 0.0, 0.7071067690849304, 0.0,
+		0.0, 0.0, 0.0, 1.0
+	);
+	
+
+	position = mm_scale * position;
 	
     
     // 模型坐标 转 屏幕裁剪坐标
@@ -107,11 +126,11 @@ void main()
 
 	
 	// mat4 worldInvMat = worldMat*skinTransform;
-	mat4 worldInvMat = skinTransform * worldMat;
+	// mat4 worldInvMat = skinTransform * worldMat;
 	// mat3 worldInvMat = inverse(mat3(worldMat));
 
 	// v_Normal = a_Normal * worldInvMat;
-	v_Normal = (  (vec4(a_Normal, 1.0) * worldInvMat) ).rgb;
+	v_Normal = ( worldMat * (mm_scale *mm_rotationY * mm_rotationX *  vec4(a_Normal, 0.0))  ).rgb;
 	v_PositionWorld=(worldMat*position).xyz;
 
 	

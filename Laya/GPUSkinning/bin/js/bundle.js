@@ -1719,10 +1719,7 @@
             let res = this.res;
             let frameIndex = this.GetFrameIndex();
             this.__frameIndex = frameIndex;
-            if (this.speed == 0) {
-                this.nextFrameIndex = this.__frameIndex;
-            }
-            else {
+            {
                 this.nextFrameIndex = this.GetNextFrameIndex(frameIndex);
             }
             if (this.lastPlayingClip == this.playingClip && this.lastPlayingFrameIndex == frameIndex) ;
@@ -3480,6 +3477,14 @@
             });
         }
         static CreateByName(name, callback, textureSetting = MaterialTextureType.None, materialCls = null) {
+            if (name == "1002_Skin1") {
+                textureSetting = MaterialTextureType.ShadowColor_And_HeightRimLight;
+                materialCls = GPUSkinningToonMaterial;
+            }
+            else {
+                textureSetting = MaterialTextureType.None;
+                materialCls = GPUSkinningCartoon2TextureMaterial;
+            }
             if (!materialCls) {
                 materialCls = GPUSkinningToonMaterial;
             }

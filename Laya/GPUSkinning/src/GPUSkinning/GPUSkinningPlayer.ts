@@ -760,11 +760,11 @@ export default class GPUSkinningPlayer
         let res = this.res;
         let frameIndex = this.GetFrameIndex();
         this.__frameIndex = frameIndex;
-        if(this.speed == 0)
-        {
-            this.nextFrameIndex = this.__frameIndex;
-        }
-        else
+        // if(this.speed == 0)
+        // {
+        //     this.nextFrameIndex = this.__frameIndex;
+        // }
+        // else
         {
             this.nextFrameIndex = this.GetNextFrameIndex(frameIndex);
         }

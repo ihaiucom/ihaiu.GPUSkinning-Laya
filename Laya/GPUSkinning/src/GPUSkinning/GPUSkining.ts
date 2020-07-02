@@ -270,6 +270,17 @@ export default class GPUSkining
 
     static CreateByName(name: string, callback:Laya.Handler, textureSetting: MaterialTextureType = MaterialTextureType.None, materialCls: any = null)
     {
+      if(name == "1002_Skin1")
+      {
+        textureSetting =  MaterialTextureType.ShadowColor_And_HeightRimLight;
+        materialCls = GPUSkinningToonMaterial;
+      }
+      else
+      {
+        textureSetting =  MaterialTextureType.None;
+        materialCls = GPUSkinningCartoon2TextureMaterial;
+      }
+
       if(!materialCls)
       {
         materialCls = GPUSkinningToonMaterial;

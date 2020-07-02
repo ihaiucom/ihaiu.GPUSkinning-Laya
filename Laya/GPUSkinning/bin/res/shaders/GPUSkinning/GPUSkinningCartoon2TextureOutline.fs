@@ -27,10 +27,10 @@ void main()
 	// #endif 
 	
 	// 地面以下 抛弃
-	if(v_PositionWorld.y < 0.0)
-	{
-		discard;
-	}
+	// if(v_PositionWorld.y < 0.0)
+	// {
+	// 	discard;
+	// }
 
 	float v = 0.0;
 	gl_FragColor = vec4(v, v, v, 1.0) ;

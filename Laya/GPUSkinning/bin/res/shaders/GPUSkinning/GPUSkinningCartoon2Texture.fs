@@ -91,10 +91,10 @@ void main()
 	#endif
 
 	// 地面以下 抛弃
-	if(v_PositionWorld.y < 0.0)
-	{
-		discard;
-	}
+	// if(v_PositionWorld.y < 0.0)
+	// {
+	// 	discard;
+	// }
 
 
 	// 灯光方向
