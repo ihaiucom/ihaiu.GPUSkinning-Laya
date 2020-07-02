@@ -231,9 +231,22 @@ export default class GPUSkinningPlayerMono extends Laya.Script3D
             player.CullingMode = this.cullingMode;
             this.player = player;
 
+
             if (anim != null && anim.clips != null && anim.clips.length > 0)
             {
-                player.Play(anim.clips[Mathf.clamp(this.defaultPlayingClipIndex, 0, anim.clips.length)].name);
+                var defaultClipName = anim.clips[Mathf.clamp(this.defaultPlayingClipIndex, 0, anim.clips.length)].name;
+
+                
+                for(var clip of anim.clips)
+                {
+                    if(clip.name == "idle")
+                    {
+                        defaultClipName = clip.name;
+                        break;
+                    }
+                }
+
+                player.Play(defaultClipName);
             }
         }
     }

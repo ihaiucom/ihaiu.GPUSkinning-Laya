@@ -63,10 +63,10 @@
             cameraRotationXNode.addChild(camera);
             camera.addChild(screenLayer);
             cameraRotationXNode.transform.localRotationEulerX = -20;
-            camera.transform.localPosition = new Vector3(0, 0, 10);
+            camera.transform.localPosition = new Vector3(0, 1, 10);
             camera.clearColor = new Laya.Vector4(0.2, 0.5, 0.8, 1);
             camera.orthographic = true;
-            camera.orthographicVerticalSize = 5.2;
+            camera.orthographicVerticalSize = 2.6;
             camera.farPlane = 2000;
             this.camera = camera;
             this.cameraNode = cameraRootNode;
@@ -1920,7 +1920,14 @@
                 player.CullingMode = this.cullingMode;
                 this.player = player;
                 if (anim != null && anim.clips != null && anim.clips.length > 0) {
-                    player.Play(anim.clips[Mathf.clamp(this.defaultPlayingClipIndex, 0, anim.clips.length)].name);
+                    var defaultClipName = anim.clips[Mathf.clamp(this.defaultPlayingClipIndex, 0, anim.clips.length)].name;
+                    for (var clip of anim.clips) {
+                        if (clip.name == "idle") {
+                            defaultClipName = clip.name;
+                            break;
+                        }
+                    }
+                    player.Play(defaultClipName);
                 }
             }
         }
@@ -2910,13 +2917,15 @@
                     'u_CartoonColorRange': Shader3D$5.PERIOD_MATERIAL,
                     'u_CartoonColorDeep': Shader3D$5.PERIOD_MATERIAL,
                     'u_CartoonOutlineWidth': Shader3D$5.PERIOD_MATERIAL,
-                    'u_ShadowTexture': Shader3D$5.PERIOD_MATERIAL,
                     'u_SceneLightingTexture': Shader3D$5.PERIOD_SCENE,
                     'u_SceneLightingSize': Shader3D$5.PERIOD_SCENE,
                     'u_AlbedoTexture': Shader3D$5.PERIOD_MATERIAL,
                     'u_AlbedoColor': Shader3D$5.PERIOD_MATERIAL,
                     'u_TilingOffset': Shader3D$5.PERIOD_MATERIAL,
                     'u_AlphaTestValue': Shader3D$5.PERIOD_MATERIAL,
+                    'u_ShadowTexture': Shader3D$5.PERIOD_MATERIAL,
+                    'u_ShadowColorTexture': Shader3D$5.PERIOD_MATERIAL,
+                    'u_HeightRimLightTexture': Shader3D$5.PERIOD_MATERIAL,
                     'u_WorldMat': Shader3D$5.PERIOD_SPRITE,
                     'u_MvpMatrix': Shader3D$5.PERIOD_SPRITE,
                     'u_FogStart': Shader3D$5.PERIOD_SCENE,
@@ -2957,6 +2966,8 @@
         static __initDefine__() {
             GPUSkinningToonMaterial.SHADERDEFINE_ALBEDOTEXTURE = Shader3D$5.getDefineByName("ALBEDOTEXTURE");
             GPUSkinningToonMaterial.SHADERDEFINE_SHADOWTEXTURE = Shader3D$5.getDefineByName("SHADOWTEXTURE");
+            GPUSkinningToonMaterial.SHADERDEFINE_SHADOWCOLORTEXTURE = Shader3D$5.getDefineByName("SHADOWCOLORTEXTURE");
+            GPUSkinningToonMaterial.SHADERDEFINE_HEIGHTRIMLIGHTTEXTURE = Shader3D$5.getDefineByName("HEIGHTRIMLIGHTTEXTURE");
             GPUSkinningToonMaterial.SHADERDEFINE_SCENELIGHTINGTEXTURE = Shader3D$5.getDefineByName("SCENELIGHTING");
             GPUSkinningToonMaterial.SHADERDEFINE_TILINGOFFSET = Shader3D$5.getDefineByName("TILINGOFFSET");
             GPUSkinningToonMaterial.SHADERDEFINE_ENABLEVERTEXCOLOR = Shader3D$5.getDefineByName("ENABLEVERTEXCOLOR");
@@ -3096,6 +3107,26 @@
             else
                 this._shaderValues.removeDefine(GPUSkinningToonMaterial.SHADERDEFINE_SHADOWTEXTURE);
             this._shaderValues.setTexture(GPUSkinningToonMaterial.SHADOWTEXTURE, value);
+        }
+        get shadowColorTexture() {
+            return this._shaderValues.getTexture(GPUSkinningToonMaterial.SHADOWCOLORTEXTURE);
+        }
+        set shadowColorTexture(value) {
+            if (value)
+                this._shaderValues.addDefine(GPUSkinningToonMaterial.SHADERDEFINE_SHADOWCOLORTEXTURE);
+            else
+                this._shaderValues.removeDefine(GPUSkinningToonMaterial.SHADERDEFINE_SHADOWCOLORTEXTURE);
+            this._shaderValues.setTexture(GPUSkinningToonMaterial.SHADOWCOLORTEXTURE, value);
+        }
+        get heightRimLightTexture() {
+            return this._shaderValues.getTexture(GPUSkinningToonMaterial.HEIGHTRIMLIGHTTEXTURE);
+        }
+        set heightRimLightTexture(value) {
+            if (value)
+                this._shaderValues.addDefine(GPUSkinningToonMaterial.SHADERDEFINE_HEIGHTRIMLIGHTTEXTURE);
+            else
+                this._shaderValues.removeDefine(GPUSkinningToonMaterial.SHADERDEFINE_HEIGHTRIMLIGHTTEXTURE);
+            this._shaderValues.setTexture(GPUSkinningToonMaterial.HEIGHTRIMLIGHTTEXTURE, value);
         }
         get sceneLightingTexture() {
             return this._shaderValues.getTexture(GPUSkinningToonMaterial.SCENELIGHTINGTEXTURE);
@@ -3293,6 +3324,8 @@
     GPUSkinningToonMaterial.CARTOON_CORLORDEEP = Shader3D$5.propertyNameToID("u_CartoonColorDeep");
     GPUSkinningToonMaterial.CARTOON_OUTLINEWIDTH = Shader3D$5.propertyNameToID("u_CartoonOutlineWidth");
     GPUSkinningToonMaterial.SCENELIGHTINGTEXTURE = Shader3D$5.propertyNameToID("u_SceneLightingTexture");
+    GPUSkinningToonMaterial.HEIGHTRIMLIGHTTEXTURE = Shader3D$5.propertyNameToID("u_HeightRimLightTexture");
+    GPUSkinningToonMaterial.SHADOWCOLORTEXTURE = Shader3D$5.propertyNameToID("u_ShadowColorTexture");
     GPUSkinningToonMaterial.SHADOWTEXTURE = Shader3D$5.propertyNameToID("u_ShadowTexture");
     GPUSkinningToonMaterial.ALBEDOTEXTURE = Shader3D$5.propertyNameToID("u_AlbedoTexture");
     GPUSkinningToonMaterial.ALBEDOCOLOR = Shader3D$5.propertyNameToID("u_AlbedoColor");
@@ -3308,6 +3341,14 @@
     var Loader = Laya.Loader;
     var Event = Laya.Event;
     var Shader3D$6 = Laya.Shader3D;
+    var MaterialTextureType;
+    (function (MaterialTextureType) {
+        MaterialTextureType[MaterialTextureType["None"] = 0] = "None";
+        MaterialTextureType[MaterialTextureType["Shadow"] = 2] = "Shadow";
+        MaterialTextureType[MaterialTextureType["ShadowColor"] = 4] = "ShadowColor";
+        MaterialTextureType[MaterialTextureType["HeightRimLight"] = 8] = "HeightRimLight";
+        MaterialTextureType[MaterialTextureType["ShadowColor_And_HeightRimLight"] = 12] = "ShadowColor_And_HeightRimLight";
+    })(MaterialTextureType || (MaterialTextureType = {}));
     class GPUSkining {
         static async InitAsync() {
             window['GPUSkining'] = GPUSkining;
@@ -3359,6 +3400,12 @@
         }
         static GetShadowTextureName(name) {
             return `GPUSKinning_${name}_ShadowTexture.png`;
+        }
+        static GetShadowColorTextureName(name) {
+            return `GPUSKinning_${name}_ShadowColorTexture.png`;
+        }
+        static GetHeightRimLightTextureName(name) {
+            return `GPUSKinning_${name}_HeightRimLightTexture.png`;
         }
         static GetPath(name) {
             return this.resRoot + name;
@@ -3425,14 +3472,14 @@
             }
             return list;
         }
-        static async CreateByNameAsync(name, hasShadowTexture, materialCls) {
+        static async CreateByNameAsync(name, textureSetting = MaterialTextureType.None, materialCls = null) {
             return new Promise((resolve) => {
                 this.CreateByName(name, Laya.Handler.create(this, (mono) => {
                     resolve(mono);
-                }), hasShadowTexture, materialCls);
+                }), textureSetting, materialCls);
             });
         }
-        static CreateByName(name, callback, hasShadowTexture, materialCls) {
+        static CreateByName(name, callback, textureSetting = MaterialTextureType.None, materialCls = null) {
             if (!materialCls) {
                 materialCls = GPUSkinningToonMaterial;
             }
@@ -3441,6 +3488,8 @@
             var matrixTexturePath = this.GetPath(this.GetMatrixTextureName(name));
             var mainTexturePath = this.GetPath(this.GetMainTextureName(name));
             var shadowTexturePath = this.GetPath(this.GetShadowTextureName(name));
+            var shadowColorTexturePath = this.GetPath(this.GetShadowColorTextureName(name));
+            var heightRimLightTexturePath = this.GetPath(this.GetHeightRimLightTextureName(name));
             GPUSkinningAnimation.Load(animPath, (anim) => {
                 if (anim == null) {
                     console.error("GPUSkinning.CreateByName资源加载失败", animPath);
@@ -3462,7 +3511,13 @@
                             if (mainTexture == null) {
                                 console.error("GPUSkinning.CreateByName资源加载失败", mainTexturePath);
                             }
-                            var createFun = (shadowTexture) => {
+                            var hasShadowTexture = textureSetting & MaterialTextureType.Shadow;
+                            var hasShadowColorTexture = textureSetting & MaterialTextureType.ShadowColor;
+                            var hasHeightRimLightTexture = textureSetting & MaterialTextureType.HeightRimLight;
+                            var shadowTexture;
+                            var shadowColorTexture;
+                            var heightRimLightTexture;
+                            var createFun = () => {
                                 var material = new materialCls();
                                 material.albedoTexture = mainTexture;
                                 material.GPUSkinning_TextureMatrix = animTexture;
@@ -3470,19 +3525,54 @@
                                 if (shadowTexture) {
                                     material.shadowTexture = shadowTexture;
                                 }
+                                if (shadowColorTexture) {
+                                    material.shadowColorTexture = shadowColorTexture;
+                                }
+                                if (heightRimLightTexture) {
+                                    material.heightRimLightTexture = heightRimLightTexture;
+                                }
                                 var sprite = new Laya.MeshSprite3D();
                                 var mono = sprite.addComponent(GPUSkinningPlayerMono);
                                 mono.SetData(anim, mesh, material, animTexture);
                                 callback.runWith(mono);
                             };
-                            if (hasShadowTexture) {
-                                Laya.loader.create(shadowTexturePath, Laya.Handler.create(this, (shadowTexture) => {
-                                    createFun(shadowTexture);
-                                }), null, Laya.Loader.TEXTURE2D);
-                            }
-                            else {
-                                createFun();
-                            }
+                            var loadShadowTexture = (...callfuns) => {
+                                var callfun = callfuns.shift();
+                                if (hasShadowTexture) {
+                                    Laya.loader.create(shadowTexturePath, Laya.Handler.create(this, (texture) => {
+                                        shadowTexture = texture;
+                                        callfun(...callfuns);
+                                    }), null, Laya.Loader.TEXTURE2D);
+                                }
+                                else {
+                                    callfun(...callfuns);
+                                }
+                            };
+                            var loadShadowColorTexture = (...callfuns) => {
+                                var callfun = callfuns.shift();
+                                if (hasShadowColorTexture) {
+                                    Laya.loader.create(shadowColorTexturePath, Laya.Handler.create(this, (texture) => {
+                                        shadowColorTexture = texture;
+                                        callfun(...callfuns);
+                                    }), null, Laya.Loader.TEXTURE2D);
+                                }
+                                else {
+                                    callfun(...callfuns);
+                                }
+                            };
+                            var loadHeightRimLightTexture = (...callfuns) => {
+                                var callfun = callfuns.shift();
+                                if (hasHeightRimLightTexture) {
+                                    Laya.loader.create(heightRimLightTexturePath, Laya.Handler.create(this, (texture) => {
+                                        heightRimLightTexture = texture;
+                                        callfun(...callfuns);
+                                    }), null, Laya.Loader.TEXTURE2D);
+                                }
+                                else {
+                                    callfun(...callfuns);
+                                }
+                            };
+                            loadShadowTexture(loadShadowColorTexture, loadShadowColorTexture, loadHeightRimLightTexture, createFun);
                         }), null, Laya.Loader.TEXTURE2D);
                     });
                 });
@@ -3495,6 +3585,13 @@
     window['GPUSkining'] = GPUSkining;
     window['SceneMaterial'] = SceneMaterial;
 
+    class TestRotation extends Laya.Script3D {
+        onUpdate() {
+            var go = this.owner;
+            go.transform.localRotationEulerY += 1;
+        }
+    }
+
     class TestShader {
         constructor() {
             this.scene = TestScene.create();
@@ -3506,12 +3603,17 @@
             await GPUSkining.InitAsync();
             var nameList = [
                 "1002_Skin1",
-                "Hero_1004_Dongzhuo_Skin1",
             ];
             for (var j = 0; j < nameList.length; j++) {
-                var mono = await GPUSkining.CreateByNameAsync(nameList[j], true);
+                var mono = await GPUSkining.CreateByNameAsync(nameList[j], MaterialTextureType.ShadowColor_And_HeightRimLight);
+                var node = mono.owner;
+                node.addComponent(TestRotation);
                 window['mono'] = mono;
                 mono.Player.Play("Idle");
+                for (var i = 0; i < mono.anim.clips.length; i++) {
+                    mono.anim.clips[i].wrapMode = GPUSkinningWrapMode.Loop;
+                    mono.anim.clips[i].individualDifferenceEnabled = true;
+                }
                 this.scene.addChild(mono.owner);
                 break;
             }

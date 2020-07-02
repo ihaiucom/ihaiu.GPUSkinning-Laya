@@ -83,17 +83,28 @@ export class GPUSkinningToonMaterial extends GPUSkinningBaseMaterial
             'u_CartoonColorDeep': Shader3D.PERIOD_MATERIAL,
             // 卡通材质 -- 描边粗细
             'u_CartoonOutlineWidth': Shader3D.PERIOD_MATERIAL,
-			// 卡通材质 -- 阴影贴图
-			'u_ShadowTexture': Shader3D.PERIOD_MATERIAL,
+
 			// 卡通材质 -- 场景光照贴图
 			'u_SceneLightingTexture': Shader3D.PERIOD_SCENE,
 			// 卡通材质 -- 场景光照贴图映射世界坐标大小
 			'u_SceneLightingSize': Shader3D.PERIOD_SCENE,
 			
+			// 主贴图
 			'u_AlbedoTexture': Shader3D.PERIOD_MATERIAL,
 			'u_AlbedoColor': Shader3D.PERIOD_MATERIAL,
 			'u_TilingOffset': Shader3D.PERIOD_MATERIAL,
 			'u_AlphaTestValue': Shader3D.PERIOD_MATERIAL,
+
+			
+			// 卡通材质 -- 阴影贴图
+			'u_ShadowTexture': Shader3D.PERIOD_MATERIAL,
+			
+			// 卡通材质 -- 阴影颜色贴图
+			'u_ShadowColorTexture': Shader3D.PERIOD_MATERIAL,
+			
+			// 卡通材质 -- 高光和边缘光贴图
+			'u_HeightRimLightTexture': Shader3D.PERIOD_MATERIAL,
+
 			
             
 			'u_WorldMat': Shader3D.PERIOD_SPRITE,
@@ -162,8 +173,16 @@ export class GPUSkinningToonMaterial extends GPUSkinningBaseMaterial
 	/**渲染状态__加色法混合。*/
 	static RENDERMODE_ADDTIVE: number = 3;
 
+	/** 宏定义--主贴图 */
 	static SHADERDEFINE_ALBEDOTEXTURE: ShaderDefine;
+	/** 宏定义--阴影贴图 */
 	static SHADERDEFINE_SHADOWTEXTURE: ShaderDefine;
+	/** 宏定义--阴影颜色贴图 */
+	static SHADERDEFINE_SHADOWCOLORTEXTURE: ShaderDefine;
+	/** 宏定义--高光和边缘光贴图 */
+	static SHADERDEFINE_HEIGHTRIMLIGHTTEXTURE: ShaderDefine;
+	
+	/** 宏定义--场景光照贴图 */
 	static SHADERDEFINE_SCENELIGHTINGTEXTURE: ShaderDefine;
 	static SHADERDEFINE_TILINGOFFSET: ShaderDefine;
 	static SHADERDEFINE_ENABLEVERTEXCOLOR: ShaderDefine;
@@ -179,7 +198,14 @@ export class GPUSkinningToonMaterial extends GPUSkinningBaseMaterial
     static CARTOON_OUTLINEWIDTH: number = Shader3D.propertyNameToID("u_CartoonOutlineWidth");
 
 	static SCENELIGHTINGTEXTURE: number = Shader3D.propertyNameToID("u_SceneLightingTexture");
+
+	// 高光和边缘光贴图
+	static HEIGHTRIMLIGHTTEXTURE: number = Shader3D.propertyNameToID("u_HeightRimLightTexture");
+	// 阴影颜色贴图
+	static SHADOWCOLORTEXTURE: number = Shader3D.propertyNameToID("u_ShadowColorTexture");
+	// 阴影贴图
 	static SHADOWTEXTURE: number = Shader3D.propertyNameToID("u_ShadowTexture");
+	// 主贴图
 	static ALBEDOTEXTURE: number = Shader3D.propertyNameToID("u_AlbedoTexture");
 	static ALBEDOCOLOR: number = Shader3D.propertyNameToID("u_AlbedoColor");
 	static TILINGOFFSET: number = Shader3D.propertyNameToID("u_TilingOffset");
@@ -199,6 +225,8 @@ export class GPUSkinningToonMaterial extends GPUSkinningBaseMaterial
 	static __initDefine__(): void {
 		GPUSkinningToonMaterial.SHADERDEFINE_ALBEDOTEXTURE = Shader3D.getDefineByName("ALBEDOTEXTURE");
 		GPUSkinningToonMaterial.SHADERDEFINE_SHADOWTEXTURE = Shader3D.getDefineByName("SHADOWTEXTURE");
+		GPUSkinningToonMaterial.SHADERDEFINE_SHADOWCOLORTEXTURE = Shader3D.getDefineByName("SHADOWCOLORTEXTURE");
+		GPUSkinningToonMaterial.SHADERDEFINE_HEIGHTRIMLIGHTTEXTURE = Shader3D.getDefineByName("HEIGHTRIMLIGHTTEXTURE");
 		GPUSkinningToonMaterial.SHADERDEFINE_SCENELIGHTINGTEXTURE = Shader3D.getDefineByName("SCENELIGHTING");
 		GPUSkinningToonMaterial.SHADERDEFINE_TILINGOFFSET = Shader3D.getDefineByName("TILINGOFFSET");
 		GPUSkinningToonMaterial.SHADERDEFINE_ENABLEVERTEXCOLOR = Shader3D.getDefineByName("ENABLEVERTEXCOLOR");
@@ -433,6 +461,38 @@ export class GPUSkinningToonMaterial extends GPUSkinningBaseMaterial
 		else
 			this._shaderValues.removeDefine(GPUSkinningToonMaterial.SHADERDEFINE_SHADOWTEXTURE);
 		this._shaderValues.setTexture(GPUSkinningToonMaterial.SHADOWTEXTURE, value);
+	}
+
+	/**
+	 * 阴影颜色贴图
+	 */
+	get shadowColorTexture(): BaseTexture {
+		return this._shaderValues.getTexture(GPUSkinningToonMaterial.SHADOWCOLORTEXTURE);
+	}
+
+	set shadowColorTexture(value: BaseTexture) {
+		if (value)
+			this._shaderValues.addDefine(GPUSkinningToonMaterial.SHADERDEFINE_SHADOWCOLORTEXTURE);
+		else
+			this._shaderValues.removeDefine(GPUSkinningToonMaterial.SHADERDEFINE_SHADOWCOLORTEXTURE);
+		this._shaderValues.setTexture(GPUSkinningToonMaterial.SHADOWCOLORTEXTURE, value);
+	}
+
+	
+	
+	/**
+	 * 高光和边缘光贴图
+	 */
+	get heightRimLightTexture(): BaseTexture {
+		return this._shaderValues.getTexture(GPUSkinningToonMaterial.HEIGHTRIMLIGHTTEXTURE);
+	}
+
+	set heightRimLightTexture(value: BaseTexture) {
+		if (value)
+			this._shaderValues.addDefine(GPUSkinningToonMaterial.SHADERDEFINE_HEIGHTRIMLIGHTTEXTURE);
+		else
+			this._shaderValues.removeDefine(GPUSkinningToonMaterial.SHADERDEFINE_HEIGHTRIMLIGHTTEXTURE);
+		this._shaderValues.setTexture(GPUSkinningToonMaterial.HEIGHTRIMLIGHTTEXTURE, value);
 	}
 
 	

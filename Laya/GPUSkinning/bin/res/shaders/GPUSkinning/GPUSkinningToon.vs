@@ -79,6 +79,39 @@ void main()
 		0.0, 0.0, 0.0, 1.0
 	);
 
+	mat4 mm_scale = mat4(
+		-1.0, 0.0, 0.0, 0.0,
+		0.0, 1.0, 0.0, 0.0,
+		0.0, 0.0, 1.0, 0.0,
+		0.0, 0.0, 0.0, 1.0
+	);
+
+	
+	
+	mat4 mm_rotationX = mat4(
+		1.0, 0.0, -0.0, 0.0,
+		0.0, 2.220446049250313e-16, -1.0, 0.0,
+		0.0, 1.0, 2.220446049250313e-16, 0.0,
+		0.0, 0.0, 0.0, 1.0
+	);
+	
+	
+	mat4 mm_rotationX135 = mat4(
+		1.0, 0.0, -0.0, 0.0,
+		0.0, -0.7071067690849304, -0.7071067690849304, 0.0,
+		0.0, 0.7071067690849304, -0.7071067690849304, 0.0,
+		0.0, 0.0, 0.0, 1.0
+	);
+	
+	
+	mat4 mm_rotationY = mat4(
+		0.7071067690849304, 0.0, -0.7071067690849304, 0.0,
+		0.0, 1.0, 0.0, 0.0,
+		0.7071067690849304, 0.0, 0.7071067690849304, 0.0,
+		0.0, 0.0, 0.0, 1.0
+	);
+	
+
 	position = mm * position;
 	
     
@@ -112,6 +145,8 @@ void main()
 
 	// v_Normal = a_Normal * worldInvMat;
 	v_Normal = (  (vec4(a_Normal, 1.0) * worldInvMat) ).rgb;
+	v_Normal = (  (vec4(a_Normal, 1.0) * u_WorldMat) ).rgb;
+	v_Normal = ( worldMat * (mm_scale *mm_rotationY * mm_rotationX *  vec4(a_Normal, 0.0))  ).rgb;;
 	v_PositionWorld=(worldMat*position).xyz;
 
 	
@@ -119,6 +154,7 @@ void main()
 	#if defined(DIRECTIONLIGHT)||defined(POINTLIGHT)||defined(SPOTLIGHT)
 		v_ViewDir=u_CameraPos-v_PositionWorld;
 	#endif
+	
 
     // 主贴图UV
 	#if defined(ALBEDOTEXTURE)
