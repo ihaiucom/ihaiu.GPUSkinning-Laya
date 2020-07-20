@@ -3590,13 +3590,6 @@
     window['GPUSkining'] = GPUSkining;
     window['SceneMaterial'] = SceneMaterial;
 
-    class TestRotation extends Laya.Script3D {
-        onUpdate() {
-            var go = this.owner;
-            go.transform.localRotationEulerY += 1;
-        }
-    }
-
     class TestShader {
         constructor() {
             this.scene = TestScene.create();
@@ -3612,7 +3605,7 @@
             for (var j = 0; j < nameList.length; j++) {
                 var mono = await GPUSkining.CreateByNameAsync(nameList[j], MaterialTextureType.ShadowColor_And_HeightRimLight);
                 var node = mono.owner;
-                node.addComponent(TestRotation);
+                node.transform.localRotationEulerY = 90;
                 window['mono'] = mono;
                 mono.Player.Play("Idle");
                 for (var i = 0; i < mono.anim.clips.length; i++) {
@@ -3620,6 +3613,13 @@
                     mono.anim.clips[i].individualDifferenceEnabled = true;
                 }
                 this.scene.addChild(mono.owner);
+                var b = new Laya.Sprite3D();
+                var node2 = node.clone();
+                node2.transform.localRotationEulerY = 90;
+                b.addChild(node2);
+                b.transform.localPositionX += 1.5;
+                b.transform.localScaleX = -1;
+                this.scene.addChild(b);
                 break;
             }
         }
@@ -3651,6 +3651,18 @@
                 Laya.URL.basePath = "http://10.10.10.188:8900/bin/";
             }
             new TestShader();
+            this.TestFun();
+        }
+        TestFun() {
+            for (let i = 0; i < 10; i++) {
+                let ii = i;
+                let handler = Laya.Handler.create(null, (r) => {
+                    console.log(ii + ", " + r);
+                });
+                setTimeout(() => {
+                    handler.runWith(i);
+                }, 100);
+            }
         }
         InitLaya() {
             if (window["Laya3D"])

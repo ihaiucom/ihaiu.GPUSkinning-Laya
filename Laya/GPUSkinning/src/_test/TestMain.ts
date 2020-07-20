@@ -17,8 +17,24 @@ import GPUSkining from "../GPUSkinning/GPUSkining";
 		// 启动游戏
 		new TestShader();
 		
-		
+		this.TestFun();
 
+	}
+
+	TestFun()
+	{
+		for(let i = 0; i < 10; i ++)
+		{
+			let ii = i;
+			let handler = Laya.Handler.create(null, (r)=>{
+				console.log(ii + ", " + r);
+			})
+
+			setTimeout(() => {
+				handler.runWith(i);
+			}, 100);
+
+		}
 	}
 
 	

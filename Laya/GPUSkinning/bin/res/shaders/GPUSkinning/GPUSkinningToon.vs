@@ -90,13 +90,31 @@ void main()
 	);
 	
 	
-	mat4 mm_rotationY = mat4(
-		0.7071067690849304, 0.0, -0.7071067690849304, 0.0,
-		0.0, 1.0, 0.0, 0.0,
-		0.7071067690849304, 0.0, 0.7071067690849304, 0.0,
-		0.0, 0.0, 0.0, 1.0
-	);
+	// mat4 mm_rotationY = mat4(
+	// 	0.7071067690849304, 0.0, -0.7071067690849304, 0.0,
+	// 	0.0, 1.0, 0.0, 0.0,
+	// 	0.7071067690849304, 0.0, 0.7071067690849304, 0.0,
+	// 	0.0, 0.0, 0.0, 1.0
+	// );
 	
+	mat4 mm_rotationY20 = mat4(
+  0.9396926164627075
+, 0.0
+, -0.3420201539993286
+, 0.0
+, 0.0
+, 1.0
+, 0.0
+, 0.0
+, 0.3420201539993286
+, 0.0
+, 0.9396926164627075
+, 0.0
+, 0.0
+, 0.0
+, 0.0
+, 1.0
+	);
 
 	position = mm_scale * position;
 	
@@ -126,13 +144,15 @@ void main()
 
 	
 	// mat4 worldInvMat = worldMat*skinTransform;
-	// mat4 worldInvMat = skinTransform * worldMat;
+	mat4 worldInvMat = skinTransform * worldMat;
 	// mat3 worldInvMat = inverse(mat3(worldMat));
 
 	// v_Normal = a_Normal * worldInvMat;
 	// v_Normal = (  (vec4(a_Normal, 1.0) * worldInvMat) ).rgb;
 	// v_Normal = (  (vec4(a_Normal, 1.0) * u_WorldMat) ).rgb;
-	v_Normal = ( worldMat * (mm_scale *mm_rotationY * mm_rotationX *  vec4(a_Normal, 0.0))  ).rgb;
+	// v_Normal = ( worldMat * (mm_scale *mm_rotationY20 * mm_rotationX *  vec4(a_Normal, 0.0))  ).rgb;
+	v_Normal = (  worldMat  * (mm_scale *mm_rotationY20 * mm_rotationX *  vec4(a_Normal, 0.0))  ).rgb  ;
+
 	v_PositionWorld=(worldMat*position).xyz;
 
 	

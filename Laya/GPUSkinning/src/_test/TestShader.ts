@@ -27,6 +27,8 @@ export default class TestShader
         GPUSkining.resRoot = "res3d/GPUSKinning-30/";
         await GPUSkining.InitAsync();
         
+        // var box = new Laya.MeshSprite3D(Laya.PrimitiveMesh.createBox(1.0, 0.25, 0.5));
+        // this.scene.addChild(box);
 
 
         var nameList = [
@@ -41,8 +43,8 @@ export default class TestShader
             var mono = await GPUSkining.CreateByNameAsync(nameList[j], MaterialTextureType.ShadowColor_And_HeightRimLight);
             // var mono = await GPUSkining.CreateByNameAsync(nameList[j], MaterialTextureType.Shadow, GPUSkinningCartoon2TextureMaterial);
             var node = <Laya.Sprite3D> mono.owner;
-            node.addComponent(TestRotation);
-            // node.transform.localRotationEulerY = 90;
+            node.transform.localRotationEulerY = 90;
+            // node.addComponent(TestRotation);
             window['mono'] = mono;
             mono.Player.Play("Idle");
             for(var i = 0; i < mono.anim.clips.length; i ++)
@@ -53,6 +55,14 @@ export default class TestShader
             // mono.Player.isRandomPlayClip = true;
 
             this.scene.addChild(mono.owner);
+
+            var b = new Laya.Sprite3D();
+            var node2 = <Laya.Sprite3D> node.clone();
+            node2.transform.localRotationEulerY = 90;
+            b.addChild(node2);
+            b.transform.localPositionX += 1.5;
+            b.transform.localScaleX = -1;
+            this.scene.addChild(b);
             break;
         }
        

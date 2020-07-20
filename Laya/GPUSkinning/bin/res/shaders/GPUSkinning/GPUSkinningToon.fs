@@ -283,7 +283,8 @@ void main()
 
 	
 	// 边缘光 光照值 = 1 - dot(法线, 摄像机方向)
-	float rimArea = 1.0 - max(0.0, dot(worldNormal, worldViewDir));
+	float rimArea = 1.0 - max(0.0, dot(worldNormal, worldViewDir) );
+	
 	// 边缘光 光照值, 强度处理
 	float rimLightValue = pow(rimArea, exp2(lerp(3.0, 0.0, _RimLight_Power))  );
 	// 边缘光 内边界
@@ -296,12 +297,12 @@ void main()
 							(1.0 - _RimLight_InsideMask)
 						, 0.0, 1.0);
 
-	// 边缘光颜色， 处理过内边界后的， 边缘光颜色 * 边缘光内边界
+	// 边缘光颜色， 处理过内边界后的， 边缘光颜色 * 边缘光内边界da
 	rimLightColor = rimLightColor * rimLightInsideMaskValue;
 
 	
 	// 边缘光 最后颜色值
-	rimLightColor *= clamp(heightRimLightTexture.b + _Tweak_RimLightMaskLevel, 0.0, 1.0);
+	rimLightColor *= clamp(heightRimLightTexture.b + _Tweak_RimLightMaskLevel * step(0.01, heightRimLightTexture.b), 0.0, 1.0);
 
 	
 	finalColor.rgb += rimLightColor;
