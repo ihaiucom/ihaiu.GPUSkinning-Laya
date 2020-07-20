@@ -52,6 +52,7 @@ export class TestScene extends Laya.Scene3D
         camera.transform.localPosition = new Vector3(0, 1, 10);
 
         camera.clearColor = new Laya.Vector4(0.2, 0.5, 0.8, 1);
+        camera.clearColor = new Laya.Vector4(0.3, 0.3, 0.3, 1);
         camera.orthographic = true;
         // camera.orthographicVerticalSize = 5.2;
         camera.orthographicVerticalSize = 2.6;

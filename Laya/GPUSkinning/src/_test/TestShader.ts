@@ -10,6 +10,7 @@ import { GPUSkinningUnlitMaterial } from "../GPUSkinning/Material/GPUSkinningUnl
 import { GPUSkinningWrapMode } from "../GPUSkinning/Datas/GPUSkinningWrapMode";
 import { TestRotation } from "./TestRotation";
 import { GPUSkinningCartoon2TextureMaterial } from "../GPUSkinning/Material/GPUSkinningCartoon2TextureMaterial";
+import { GPUSkinningToonV2Material } from "../GPUSkinning/Material/GPUSkinningToonV2";
 
 
 export default class TestShader
@@ -40,7 +41,8 @@ export default class TestShader
         {
             var resId = nameList[j];
             var hasShadowTexture = false;
-            var mono = await GPUSkining.CreateByNameAsync(nameList[j], MaterialTextureType.ShadowColor_And_HeightRimLight);
+            var mono = await GPUSkining.CreateByNameAsync(nameList[j], MaterialTextureType.None, GPUSkinningToonV2Material);
+            // var mono = await GPUSkining.CreateByNameAsync(nameList[j], MaterialTextureType.ShadowColor_And_HeightRimLight);
             // var mono = await GPUSkining.CreateByNameAsync(nameList[j], MaterialTextureType.Shadow, GPUSkinningCartoon2TextureMaterial);
             var node = <Laya.Sprite3D> mono.owner;
             node.transform.localRotationEulerY = 90;

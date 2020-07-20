@@ -21,6 +21,7 @@ import LayaExtends_Node from "../LayaExtends/LayaExtends_Node";
 import { GPUSkinningCartoon2TextureMaterial } from "./Material/GPUSkinningCartoon2TextureMaterial";
 import SceneMaterial from "./Material/SceneMaterial";
 import { GPUSkinningToonMaterial } from "./Material/GPUSkinningToon";
+import { GPUSkinningToonV2Material } from "./Material/GPUSkinningToonV2";
 // import LayaExtends_Laya3D from "../LayaExtends/LayaExtends_Laya3D";
 // import LayaExtends_Texture2D from "../LayaExtends/LayaExtends_Texture2D";
 
@@ -37,6 +38,9 @@ export enum MaterialTextureType
 
   /** 高光和边缘光贴图 */
   HeightRimLight = 8,
+
+  /** 遮罩 */
+  Mask = 16,
 
   
   /** 阴影颜色贴图 和 高光和边缘光贴图 */
@@ -77,7 +81,8 @@ export default class GPUSkining
       // await GPUSkinningUnlitMaterial.install();
       // await GPUSkinningCartoonMaterial.install();
       await GPUSkinningCartoon2TextureMaterial.install();
-      await GPUSkinningToonMaterial.install();
+      // await GPUSkinningToonMaterial.install();
+      await GPUSkinningToonV2Material.install();
 
 
       LayaExtends_Node.Init();
@@ -144,6 +149,11 @@ export default class GPUSkining
     static GetShadowColorTextureName(name: string): string
     {
       return `GPUSKinning_${name}_ShadowColorTexture.png`;
+    }
+
+    static GetMaskTextureName(name: string): string
+    {
+      return `GPUSKinning_${name}_MaskTexture.png`;
     }
     
     static GetHeightRimLightTextureName(name: string): string
@@ -250,10 +260,15 @@ export default class GPUSkining
                 {url: matrixTexturePath, type: Laya.Loader.BUFFER},
                 {url: mainTexturePath, type: Laya.Loader.TEXTURE2D},
              );
-      if(hasShadowTexture)
+      // if(hasShadowTexture)
+      // {
+      //     var shadowTexturePath = this.GetPath(this.GetShadowTextureName(name));
+      //     list.push({url: shadowTexturePath, type: Laya.Loader.TEXTURE2D});
+      // }
+      if(name == "1002_Skin1")
       {
-          var shadowTexturePath = this.GetPath(this.GetShadowTextureName(name));
-          list.push({url: shadowTexturePath, type: Laya.Loader.TEXTURE2D});
+          var maskTexturePath = this.GetPath(this.GetMaskTextureName(name));
+          list.push({url: maskTexturePath, type: Laya.Loader.TEXTURE2D});
       }
       return list;
     }
@@ -272,8 +287,8 @@ export default class GPUSkining
     {
       if(name == "1002_Skin1")
       {
-        textureSetting =  MaterialTextureType.ShadowColor_And_HeightRimLight;
-        materialCls = GPUSkinningToonMaterial;
+        textureSetting =  MaterialTextureType.Mask;
+        materialCls = GPUSkinningToonV2Material;
       }
       else
       {
@@ -292,6 +307,7 @@ export default class GPUSkining
 
       var shadowTexturePath = this.GetPath(this.GetShadowTextureName(name));
       var shadowColorTexturePath = this.GetPath(this.GetShadowColorTextureName(name));
+      var maskTexturePath = this.GetPath(this.GetMaskTextureName(name));
       var heightRimLightTexturePath = this.GetPath(this.GetHeightRimLightTextureName(name));
 
       GPUSkinningAnimation.Load(animPath, (anim: GPUSkinningAnimation)=>
@@ -330,10 +346,12 @@ export default class GPUSkining
                           var hasShadowTexture = textureSetting & MaterialTextureType.Shadow;
                           var hasShadowColorTexture = textureSetting & MaterialTextureType.ShadowColor;
                           var hasHeightRimLightTexture = textureSetting & MaterialTextureType.HeightRimLight;
+                          var hasMaskTexture = textureSetting & MaterialTextureType.Mask;
 
                           var shadowTexture:Laya.Texture2D;
                           var shadowColorTexture:Laya.Texture2D;
                           var heightRimLightTexture:Laya.Texture2D;
+                          var maskTexture:Laya.Texture2D;
 
                           var createFun = ()=>
                           {
@@ -356,6 +374,13 @@ export default class GPUSkining
                             {
                               material.heightRimLightTexture = heightRimLightTexture;
                             }
+                            
+  
+                            if(maskTexture)
+                            {
+                              material.heightRimLightTexture = maskTexture;
+                            }
+
 
                             var sprite = new Laya.MeshSprite3D();
                             var mono: GPUSkinningPlayerMono = sprite.addComponent(GPUSkinningPlayerMono);
@@ -396,6 +421,23 @@ export default class GPUSkining
                           }
 
                           
+                          var loadMaskTexture = (...callfuns:Function[])=>{
+                            var callfun = callfuns.shift();
+                            if(hasMaskTexture)
+                            {  
+                                Laya.loader.create(maskTexturePath, Laya.Handler.create(this, (texture:Laya.Texture2D)=>
+                                {
+                                  maskTexture = texture;
+                                  callfun(...callfuns);
+                                }), null, Laya.Loader.TEXTURE2D);
+                            }
+                            else
+                            {
+                              callfun(...callfuns);
+                            }
+                        }
+
+                          
                           var loadHeightRimLightTexture = (...callfuns:Function[])=>{
                             var callfun = callfuns.shift();
                             if(hasHeightRimLightTexture)
@@ -412,7 +454,7 @@ export default class GPUSkining
                             }
                         }
 
-                        loadShadowTexture(loadShadowColorTexture, loadShadowColorTexture, loadHeightRimLightTexture, createFun);
+                        loadShadowTexture(loadShadowColorTexture, loadShadowColorTexture, loadHeightRimLightTexture, loadMaskTexture, createFun);
 
 
 
