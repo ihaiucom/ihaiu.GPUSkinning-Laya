@@ -89,7 +89,7 @@ void main()
 
 
 	vec4 p = a_Position;
-	p.rgb +=  a_Normal * 0.005 ;
+	p.rgb +=  a_Normal * 0.005 * 1.5 * heightRimLightTexture.g;
 	vec4 position = skin(p, a_Texcoord1, a_Texcoord2);
 	mat4 mm_scale = mat4(
 		-1.0, 0.0, 0.0, 0.0,

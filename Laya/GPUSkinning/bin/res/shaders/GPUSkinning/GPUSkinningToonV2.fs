@@ -172,18 +172,23 @@ void main()
 	vec3 rimColorC = vec3(0.2, 0.3, 0.5);
 	float rimCSwitch = 1.0;
 
-	float rimRateA = 0.40;
+	float rimRateA = 0.5;
 	float rimRateB = 0.45;
 	rimRateB =  rimRateA + 0.05;
 
-	vec3 rimViewDir0 = normalize(vec3(1.0, 0.0, 1.0));
-	vec3 rimViewDir1 = normalize(vec3(10.0, 0.0, 1.0));
+	vec3 rimViewDir0 = normalize(vec3(2.0, 0.0, -1));
+	vec3 rimViewDir1 = normalize(vec3(10.0, 0.0, 1));
 	vec3 rimViewDir2 = normalize(vec3(-30.0, -1.0, 0.5));
 
 	float rimMask = heightRimLightTexture.r;
 
 	float dotNormalView0 = dot(worldNormal, rimViewDir0);
+	// dotNormalView0 = dotNormalView0 ;
+	// dotNormalView0 = pow(dotNormalView0, 8.0);
+	dotNormalView0 = (dotNormalView0 - 0.4) / 0.2;
 	dotNormalView0 = max(dotNormalView0, 0.0);
+	dotNormalView0 = min(dotNormalView0, 1.0);
+
 
 	float dotNormalView1 = dot(worldNormal, rimViewDir1);
 	dotNormalView1 = dotNormalView1 * 0.5 + 0.1;
@@ -215,10 +220,11 @@ void main()
 	
 
 
-	// float v = rimMain;
+	// float v = heightRimLightTexture.g;
 	// finalColor.rgb = vec3(v, v, v);
 	// finalColor.rgb = worldNormal;
 	// finalColor.rgb = gradientColor * dotNormalView1 * rimMask;
+	// finalColor.rgb = rimMainColor1;
 
 	
 	
