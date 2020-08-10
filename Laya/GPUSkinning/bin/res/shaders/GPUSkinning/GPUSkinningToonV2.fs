@@ -70,6 +70,9 @@ uniform vec4 u_AlbedoColor;
 
 varying vec3 v_PositionWorld;
 
+// 受击颜色
+uniform vec4 u_DotRimColor;
+
 
 
 float lerp(float a, float b, float w) 
@@ -241,6 +244,11 @@ void main()
 	// finalColor.rgb = vec3(v, v, v);
 	// finalColor.rgb = v_Normal;
 	// finalColor.rgb = rimLightColor;
+
+	// 受击
+	float dotNV = dot(worldNormal, worldViewDir);
+	dotNV = max(0.0, dotNV);
+	finalColor.rgb = finalColor.rgb + u_DotRimColor.rgb * u_DotRimColor.a  * dotNV ;
 
 
 	// 霸体

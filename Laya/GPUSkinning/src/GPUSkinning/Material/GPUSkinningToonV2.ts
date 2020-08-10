@@ -74,6 +74,8 @@ export class GPUSkinningToonV2Material extends GPUSkinningBaseMaterial
 			'u_GPUSkinning_FrameIndex_PixelSegmentation': Shader3D.PERIOD_SPRITE,
 			'u_GPUSkinning_FrameIndex_PixelSegmentation_Blend_CrossFade': Shader3D.PERIOD_SPRITE,
 
+			'u_DotRimColor': Shader3D.PERIOD_MATERIAL,
+			
             // 卡通材质 -- 描边粗细
             'u_CartoonOutlineWidth': Shader3D.PERIOD_MATERIAL,
 
@@ -445,6 +447,8 @@ export class GPUSkinningToonV2Material extends GPUSkinningBaseMaterial
 		this.setShaderName(GPUSkinningToonV2Material.shaderName);
 		this._shaderValues.setVector(GPUSkinningToonV2Material.ALBEDOCOLOR, new Vector4(1.0, 1.0, 1.0, 1.0));
 		this._shaderValues.setVector(GPUSkinningToonV2Material.TILINGOFFSET, new Vector4(1.0, 1.0, 0.0, 0.0));
+		
+		// this._shaderValues.setVector(GPUSkinningToonV2Material.DOTRIMCOLOR, new Vector4(1.0, 0.0, 0.0, 1.0));
 		// 卡通材质 -- 描边粗细
 		this.CartoonOutlineWidth = 0.004;
 

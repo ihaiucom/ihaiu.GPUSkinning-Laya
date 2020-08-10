@@ -64,6 +64,9 @@ uniform float u_CartoonColorRange;
 // 卡通材质 -- 颜色强调
 uniform float u_CartoonColorDeep;
 
+// 受击颜色
+uniform vec4 u_DotRimColor;
+
 
 float lerp(float a, float b, float w) 
 {
@@ -164,6 +167,10 @@ void main()
 	// finalColor.rgb = vec3(v, v, v);
 	// finalColor.rgb = v_Normal;
 
+	// 受击
+	float dotNV = dot(worldNormal, worldViewDir);
+	dotNV = max(0.0, dotNV);
+	finalColor.rgb = finalColor.rgb + u_DotRimColor.rgb * u_DotRimColor.a  * dotNV ;
 	
 	// 霸体
 	#ifdef IS_SUPERARMOR

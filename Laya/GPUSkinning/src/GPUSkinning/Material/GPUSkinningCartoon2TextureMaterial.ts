@@ -74,6 +74,7 @@ export class GPUSkinningCartoon2TextureMaterial extends GPUSkinningBaseMaterial
 			'u_GPUSkinning_FrameIndex_PixelSegmentation': Shader3D.PERIOD_SPRITE,
 			'u_GPUSkinning_FrameIndex_PixelSegmentation_Blend_CrossFade': Shader3D.PERIOD_SPRITE,
 
+			'u_DotRimColor': Shader3D.PERIOD_MATERIAL,
 			
             // 卡通材质 -- 阴影颜色
 			'u_CartoonShadowColor': Shader3D.PERIOD_MATERIAL,

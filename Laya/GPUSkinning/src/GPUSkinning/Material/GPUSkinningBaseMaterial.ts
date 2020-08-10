@@ -1,6 +1,7 @@
 import Shader3D = Laya.Shader3D;
 import BaseTexture = Laya.BaseTexture;
 import ShaderDefine = Laya.ShaderDefine;
+import Vector4 = Laya.Vector4;
 
 
 export class GPUSkinningBaseMaterial extends Laya.Material
@@ -63,6 +64,8 @@ export class GPUSkinningBaseMaterial extends Laya.Material
          });
     }
 
+    /** Rim颜色（受击） */
+    static DOTRIMCOLOR: number = Shader3D.propertyNameToID("u_DotRimColor");
     
     static GPUSKINING_MATRIX_TEXTURE: number = Shader3D.propertyNameToID("u_GPUSkinning_TextureMatrix");
     
@@ -134,6 +137,66 @@ export class GPUSkinningBaseMaterial extends Laya.Material
             this._shaderValues.addDefine(GPUSkinningBaseMaterial.SHADERDEFINE_IS_SUPERARMOR);
         else
             this._shaderValues.removeDefine(GPUSkinningBaseMaterial.SHADERDEFINE_IS_SUPERARMOR);
+    }
+
+    /** DotRim颜色强度 */
+    protected _DotRimIntensity = 0.0;
+	/**
+	 * @internal
+	 */
+	get DotRimIntensity(): number {
+		return this._DotRimIntensity;
+	}
+
+	set DotRimIntensity(value: number) {
+		if (this._DotRimIntensity !== value) {
+			// var color: Vector4 = (<Vector4>this._shaderValues.getVector(GPUSkinningBaseMaterial.DOTRIMCOLOR));
+			// Vector4.scale(this._DotRimColor, value, color);
+            this._DotRimIntensity = value;
+            this._DotRimColor.w = value;
+            this._shaderValues.setVector(GPUSkinningBaseMaterial.DOTRIMCOLOR, this._DotRimColor);
+		}
+    }
+    
+    protected _DotRimColor = new Vector4(1.0, 0.0, 0.0, 0.0);
+    
+	/**
+	 * DotRim颜色
+	 */
+	get DotRimColor(): Vector4 {
+		return this._DotRimColor;
+	}
+
+	set DotRimColor(value: Vector4) {
+		// var color: Vector4 = (<Vector4>this._shaderValues.getVector(GPUSkinningBaseMaterial.DOTRIMCOLOR));
+		// Vector4.scale(value, this._DotRimIntensity, color);
+		this._DotRimColor = value;
+		this._shaderValues.setVector(GPUSkinningBaseMaterial.DOTRIMCOLOR, this._DotRimColor);
+    }
+    
+    private _HitTime = 0;
+    private _HitTimeMax = 0.1;
+    OnHit(t: number = 0.1)
+    {
+        var preT = this._HitTime;
+        this._HitTime = t;
+        this._HitTimeMax = Math.max(t, 0.01);
+        this.DotRimIntensity = Math.max(0, Math.min(this._HitTime / this._HitTimeMax, 1));
+        if(preT <= 0 && t > 0)
+        {
+            Laya.timer.frameLoop(1, this, this.__OnFrameHit);
+        }
+    }
+
+    private __OnFrameHit()
+    {
+        this._HitTime -= Laya.timer.delta;
+        this.DotRimIntensity = Math.max(0, Math.min(this._HitTime / this._HitTimeMax, 1));
+        if(this._HitTime <= 0)
+        {
+            this._HitTime = 0;
+            Laya.timer.clear(this, this.__OnFrameHit);
+        }
     }
     
     __mname:string;
