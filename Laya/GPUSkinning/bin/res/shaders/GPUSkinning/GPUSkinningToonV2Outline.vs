@@ -135,6 +135,13 @@ void main()
 
 	v_Color.rgb = mainTexture.rgb;
 
+	
+	// 分身
+	#ifdef IS_SPEARATION
+		float separation = 0.5;
+		v_Color.rgb = v_Color.rgb * (1.0- separation)  + vec3(separation, separation, separation);
+	#endif
+
 
 	
 	v_PositionWorld=(worldMat*position).xyz;

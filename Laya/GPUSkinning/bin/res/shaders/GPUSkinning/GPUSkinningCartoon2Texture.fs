@@ -164,6 +164,20 @@ void main()
 	// finalColor.rgb = vec3(v, v, v);
 	// finalColor.rgb = v_Normal;
 
+	
+	// 霸体
+	#ifdef IS_SUPERARMOR
+		float dotSuperarmor = dot(worldNormal, worldViewDir);
+		dotSuperarmor = max(0.0, dotSuperarmor);
+		vec3 superarmorColorA = vec3(1.0, 0.7, 0.0);
+		finalColor.rgb = finalColor.rgb * 0.5 + superarmorColorA * dotSuperarmor ;
+	#endif
+
+	// 分身
+	#ifdef IS_SPEARATION
+		float separation = 0.5;
+		finalColor.rgb = finalColor.rgb * (1.0- separation)  + vec3(separation, separation, separation);
+	#endif
 
 	gl_FragColor = finalColor;
 	

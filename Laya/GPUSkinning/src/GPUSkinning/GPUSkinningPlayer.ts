@@ -21,7 +21,7 @@ import Transform3D = Laya.Transform3D;
 
 import GPUSkinningAnimEvent from "./Datas/GPUSkinningAnimEvent";
 import GPUSkining from "./GPUSkining";
-import { GPUSkinningUnlitMaterial } from "./Material/GPUSkinningUnlitMaterial";
+import { GPUSkinningBaseMaterial } from "./Material/GPUSkinningBaseMaterial";
 
 /** GPU骨骼动画--组件播放控制器 */
 export default class GPUSkinningPlayer
@@ -387,7 +387,14 @@ export default class GPUSkinningPlayer
         }
     }
 
-    mtrl: GPUSkinningMaterial;
+    private mtrl: GPUSkinningMaterial;
+
+    get material(): GPUSkinningBaseMaterial
+    {
+        return <any>this.mtrl.material;
+    }
+
+
 
     static _ShaderUID = 0;
     constructor(go: Laya.MeshSprite3D, res: GPUSkinningPlayerResources)

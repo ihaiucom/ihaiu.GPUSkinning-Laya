@@ -8,7 +8,6 @@ import HalfFloatUtils = Laya.HalfFloatUtils;
 import GPUSkinningAnimation from "./Datas/GPUSkinningAnimation";
 import GPUSkinningPlayerMono from "./GPUSkinningPlayerMono";
 import { GPUSkinningBaseMaterial } from "./Material/GPUSkinningBaseMaterial";
-import { GPUSkinningUnlitMaterial } from "./Material/GPUSkinningUnlitMaterial";
 import GPUSkinningPlayerMonoManager from "./GPUSkinningPlayerMonoManager";
 import GPUSkinningPlayer from "./GPUSkinningPlayer";
 import GPUSkinningPlayerResources from "./GPUSkinningPlayerResources";
@@ -16,11 +15,9 @@ import GPUSkinningPlayerJoint from "./GPUSkinningPlayerJoint";
 import { GPUSkiningLoadModelV05 } from "./Mesh/GPUSkiningLoadModelV05";
 import GPUSkiningVertexMesh from "./Mesh/GPUSkiningVertexMesh";
 import GPUSkinningClip from "./Datas/GPUSkinningClip";
-import { GPUSkinningCartoonMaterial } from "./Material/GPUSkinningCartoonMaterial";
 import LayaExtends_Node from "../LayaExtends/LayaExtends_Node";
 import { GPUSkinningCartoon2TextureMaterial } from "./Material/GPUSkinningCartoon2TextureMaterial";
 import SceneMaterial from "./Material/SceneMaterial";
-import { GPUSkinningToonMaterial } from "./Material/GPUSkinningToon";
 import { GPUSkinningToonV2Material } from "./Material/GPUSkinningToonV2";
 // import LayaExtends_Laya3D from "../LayaExtends/LayaExtends_Laya3D";
 // import LayaExtends_Texture2D from "../LayaExtends/LayaExtends_Texture2D";
@@ -65,7 +62,8 @@ export default class GPUSkining
       window['GPUSkiningLoadModelV05'] = GPUSkiningLoadModelV05;
       window['GPUSkiningVertexMesh'] = GPUSkiningVertexMesh;
       window['GPUSkinningBaseMaterial'] = GPUSkinningBaseMaterial;
-      window['GPUSkinningUnlitMaterial'] = GPUSkinningUnlitMaterial;
+      window['GPUSkinningCartoon2TextureMaterial'] = GPUSkinningCartoon2TextureMaterial;
+      window['GPUSkinningToonV2Material'] = GPUSkinningToonV2Material;
       window['GPUSkinningAnimation'] = GPUSkinningAnimation;
       window['GPUSkinningClip'] = GPUSkinningClip;
       window['SceneMaterial'] = SceneMaterial;
@@ -285,21 +283,21 @@ export default class GPUSkining
 
     static CreateByName(name: string, callback:Laya.Handler, textureSetting: MaterialTextureType = MaterialTextureType.None, materialCls: any = null)
     {
-      if(name == "1002_Skin1")
-      {
-        textureSetting =  MaterialTextureType.Mask;
-        materialCls = GPUSkinningToonV2Material;
-      }
-      else
-      {
-        textureSetting =  MaterialTextureType.None;
-        materialCls = GPUSkinningCartoon2TextureMaterial;
-      }
-
+      
       if(!materialCls)
       {
-        materialCls = GPUSkinningToonMaterial;
+        if(name == "1002_Skin1")
+        {
+          textureSetting =  MaterialTextureType.Mask;
+          materialCls = GPUSkinningToonV2Material;
+        }
+        else
+        {
+          textureSetting =  MaterialTextureType.None;
+          materialCls = GPUSkinningCartoon2TextureMaterial;
+        }
       }
+
       var animPath: string = this.GetPath(this.GetAnimName(name));
       var meshPath: string = this.GetPath(this.GetMeshName(name));
       var matrixTexturePath: string = this.GetPath(this.GetMatrixTextureName(name));
@@ -355,7 +353,7 @@ export default class GPUSkining
 
                           var createFun = ()=>
                           {
-                            var material:GPUSkinningToonMaterial = new materialCls();
+                            var material:GPUSkinningToonV2Material = new materialCls();
                             material.albedoTexture = mainTexture;
                             material.GPUSkinning_TextureMatrix = animTexture;
                             material.__mname = name + " prefab";

@@ -127,6 +127,7 @@ export default class GPUSkinningPlayerResources
     /** 销毁 */
     public Destroy()
     {
+        return;
         
         if(this.anim != null)
         {

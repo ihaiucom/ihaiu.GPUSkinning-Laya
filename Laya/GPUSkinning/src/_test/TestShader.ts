@@ -41,7 +41,9 @@ export default class TestShader
         {
             var resId = nameList[j];
             var hasShadowTexture = false;
-            var mono = await GPUSkining.CreateByNameAsync(nameList[j], MaterialTextureType.None, GPUSkinningToonV2Material);
+            var mono = await GPUSkining.CreateByNameAsync(nameList[j], MaterialTextureType.Mask, GPUSkinningToonV2Material);
+            // mono.Player.material.IsSeparation = true;
+            mono.Player.material.IsSuperarmor = true;
             // var mono = await GPUSkining.CreateByNameAsync(nameList[j], MaterialTextureType.ShadowColor_And_HeightRimLight);
             // var mono = await GPUSkining.CreateByNameAsync(nameList[j], MaterialTextureType.Shadow, GPUSkinningCartoon2TextureMaterial);
             var node = <Laya.Sprite3D> mono.owner;
@@ -60,6 +62,8 @@ export default class TestShader
 
             var b = new Laya.Sprite3D();
             var node2 = <Laya.Sprite3D> node.clone();
+            var mono2:GPUSkinningPlayerMono = node2.getComponent(GPUSkinningPlayerMono);
+            // mono2.Player.material.IsSeparation = true;
             node2.transform.localRotationEulerY = 90;
             b.addChild(node2);
             b.transform.localPositionX += 1.5;

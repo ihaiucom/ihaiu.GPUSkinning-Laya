@@ -40,6 +40,12 @@ void main()
 			discard;
 	#endif
 	
+	// 分身
+	#ifdef IS_SPEARATION
+		float separation = 0.5;
+		color.rgb = color.rgb * (1.0- separation)  + vec3(separation, separation, separation);
+	#endif
+	
 	gl_FragColor = color;
 	
 	#ifdef FOG

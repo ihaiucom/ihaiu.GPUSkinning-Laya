@@ -33,6 +33,11 @@ void main()
 	// }
 
 	float v = 0.0;
+	
+	// 分身
+	#ifdef IS_SPEARATION
+		v = 0.5;
+	#endif
 	gl_FragColor = vec4(v, v, v, 1.0) ;
 	// gl_FragColor = mainTexture;
 	
