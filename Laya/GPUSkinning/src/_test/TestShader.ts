@@ -42,8 +42,8 @@ export default class TestShader
             var resId = nameList[j];
             var hasShadowTexture = false;
             var mono = await GPUSkining.CreateByNameAsync(nameList[j], MaterialTextureType.Mask, GPUSkinningToonV2Material);
-            // mono.Player.material.IsSeparation = true;
-            mono.Player.material.IsSuperarmor = true;
+            mono.Player.material.IsSeparation = true;
+            // mono.Player.material.IsSuperarmor = true;
             // var mono = await GPUSkining.CreateByNameAsync(nameList[j], MaterialTextureType.ShadowColor_And_HeightRimLight);
             // var mono = await GPUSkining.CreateByNameAsync(nameList[j], MaterialTextureType.Shadow, GPUSkinningCartoon2TextureMaterial);
             var node = <Laya.Sprite3D> mono.owner;

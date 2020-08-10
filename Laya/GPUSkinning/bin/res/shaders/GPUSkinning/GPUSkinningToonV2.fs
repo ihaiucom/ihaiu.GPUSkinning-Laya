@@ -70,12 +70,6 @@ uniform vec4 u_AlbedoColor;
 
 varying vec3 v_PositionWorld;
 
-// 卡通材质 -- 阴影颜色
-uniform vec4 u_CartoonShadowColor;
-// 卡通材质 -- 颜色强度
-uniform float u_CartoonColorRange;
-// 卡通材质 -- 颜色强调
-uniform float u_CartoonColorDeep;
 
 
 float lerp(float a, float b, float w) 

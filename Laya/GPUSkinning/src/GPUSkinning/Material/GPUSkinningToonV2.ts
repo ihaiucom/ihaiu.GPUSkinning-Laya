@@ -74,13 +74,6 @@ export class GPUSkinningToonV2Material extends GPUSkinningBaseMaterial
 			'u_GPUSkinning_FrameIndex_PixelSegmentation': Shader3D.PERIOD_SPRITE,
 			'u_GPUSkinning_FrameIndex_PixelSegmentation_Blend_CrossFade': Shader3D.PERIOD_SPRITE,
 
-			
-            // 卡通材质 -- 阴影颜色
-			'u_CartoonShadowColor': Shader3D.PERIOD_MATERIAL,
-            // 卡通材质 -- 颜色范围
-            'u_CartoonColorRange': Shader3D.PERIOD_MATERIAL,
-            // 卡通材质 -- 颜色强度
-            'u_CartoonColorDeep': Shader3D.PERIOD_MATERIAL,
             // 卡通材质 -- 描边粗细
             'u_CartoonOutlineWidth': Shader3D.PERIOD_MATERIAL,
 
@@ -188,12 +181,6 @@ export class GPUSkinningToonV2Material extends GPUSkinningBaseMaterial
 	static SHADERDEFINE_ENABLEVERTEXCOLOR: ShaderDefine;
 
 	
-    // 卡通材质 -- 阴影颜色
-    static CARTOON_SHADOWCOLOR: number = Shader3D.propertyNameToID("u_CartoonShadowColor");
-    // 卡通材质 -- 颜色范围
-    static CARTOON_CORLORRANGE: number = Shader3D.propertyNameToID("u_CartoonColorRange");
-    // 卡通材质 -- 颜色强度
-    static CARTOON_CORLORDEEP: number = Shader3D.propertyNameToID("u_CartoonColorDeep");
 	// 卡通材质 -- 描边粗细
     static CARTOON_OUTLINEWIDTH: number = Shader3D.propertyNameToID("u_CartoonOutlineWidth");
 
@@ -233,179 +220,7 @@ export class GPUSkinningToonV2Material extends GPUSkinningBaseMaterial
 	}
 
 	private _albedoColor: Vector4 = new Vector4(1.0, 1.0, 1.0, 1.0);
-	private _albedoIntensity: number = 1.0;
-	private _enableVertexColor: boolean = false;
 
-	/**
-	 * @internal
-	 */
-	get _ColorR(): number {
-		return this._albedoColor.x;
-	}
-
-	set _ColorR(value: number) {
-		this._albedoColor.x = value;
-		this.albedoColor = this._albedoColor;
-	}
-
-	/**
-	 * @internal
-	 */
-	get _ColorG(): number {
-		return this._albedoColor.y;
-	}
-
-	set _ColorG(value: number) {
-		this._albedoColor.y = value;
-		this.albedoColor = this._albedoColor;
-	}
-
-	/**
-	 * @internal
-	 */
-	get _ColorB(): number {
-		return this._albedoColor.z;
-	}
-
-	set _ColorB(value: number) {
-		this._albedoColor.z = value;
-		this.albedoColor = this._albedoColor;
-	}
-
-	/**
-	 * @internal 
-	 */
-	get _ColorA(): number {
-		return this._albedoColor.w;
-	}
-
-	set _ColorA(value: number) {
-		this._albedoColor.w = value;
-		this.albedoColor = this._albedoColor;
-	}
-
-	/**
-	 * @internal
-	 */
-	get _AlbedoIntensity(): number {
-		return this._albedoIntensity;
-	}
-
-	set _AlbedoIntensity(value: number) {
-		if (this._albedoIntensity !== value) {
-			var finalAlbedo: Vector4 = (<Vector4>this._shaderValues.getVector(GPUSkinningToonV2Material.ALBEDOCOLOR));
-			Vector4.scale(this._albedoColor, value, finalAlbedo);
-			this._albedoIntensity = value;
-			this._shaderValues.setVector(GPUSkinningToonV2Material.ALBEDOCOLOR, finalAlbedo);
-		}
-	}
-
-	/**
-	 * @internal
-	 */
-	get _MainTex_STX(): number {
-		return this._shaderValues.getVector(GPUSkinningToonV2Material.TILINGOFFSET).x;
-	}
-
-	set _MainTex_STX(x: number) {
-		var tilOff: Vector4 = (<Vector4>this._shaderValues.getVector(GPUSkinningToonV2Material.TILINGOFFSET));
-		tilOff.x = x;
-		this.tilingOffset = tilOff;
-	}
-
-	/**
-	 * @internal
-	 */
-	get _MainTex_STY(): number {
-		return this._shaderValues.getVector(GPUSkinningToonV2Material.TILINGOFFSET).y;
-	}
-
-	set _MainTex_STY(y: number) {
-		var tilOff: Vector4 = (<Vector4>this._shaderValues.getVector(GPUSkinningToonV2Material.TILINGOFFSET));
-		tilOff.y = y;
-		this.tilingOffset = tilOff;
-	}
-
-	/**
-	 * @internal
-	 */
-	get _MainTex_STZ(): number {
-		return this._shaderValues.getVector(GPUSkinningToonV2Material.TILINGOFFSET).z;
-	}
-
-	set _MainTex_STZ(z: number) {
-		var tilOff: Vector4 = (<Vector4>this._shaderValues.getVector(GPUSkinningToonV2Material.TILINGOFFSET));
-		tilOff.z = z;
-		this.tilingOffset = tilOff;
-	}
-
-	/**
-	 * @internal
-	 */
-	get _MainTex_STW(): number {
-		return this._shaderValues.getVector(GPUSkinningToonV2Material.TILINGOFFSET).w;
-	}
-
-	set _MainTex_STW(w: number) {
-		var tilOff: Vector4 = (<Vector4>this._shaderValues.getVector(GPUSkinningToonV2Material.TILINGOFFSET));
-		tilOff.w = w;
-		this.tilingOffset = tilOff;
-	}
-
-	/**
-	 * @internal
-	 */
-	get _Cutoff(): number {
-		return this.alphaTestValue;
-	}
-
-	set _Cutoff(value: number) {
-		this.alphaTestValue = value;
-	}
-
-	/**
-	 * 反照率颜色R分量。
-	 */
-	get albedoColorR(): number {
-		return this._ColorR;
-	}
-
-	set albedoColorR(value: number) {
-		this._ColorR = value;
-	}
-
-	/**
-	 * 反照率颜色G分量。
-	 */
-	get albedoColorG(): number {
-		return this._ColorG;
-	}
-
-	set albedoColorG(value: number) {
-		this._ColorG = value;
-	}
-
-	/**
-	 * 反照率颜色B分量。
-	 */
-	get albedoColorB(): number {
-		return this._ColorB;
-	}
-
-	set albedoColorB(value: number) {
-		this._ColorB = value;
-	}
-
-	/**
-	 * 反照率颜色Z分量。
-	 */
-	get albedoColorA(): number {
-		return this._ColorA;
-	}
-
-	set albedoColorA(value: number) {
-		this._ColorA = value;
-	}
 
 	/**
 	 * 反照率颜色。
@@ -416,21 +231,11 @@ export class GPUSkinningToonV2Material extends GPUSkinningBaseMaterial
 
 	set albedoColor(value: Vector4) {
 		var finalAlbedo: Vector4 = (<Vector4>this._shaderValues.getVector(GPUSkinningToonV2Material.ALBEDOCOLOR));
-		Vector4.scale(value, this._albedoIntensity, finalAlbedo);
+		Vector4.scale(value, 1, finalAlbedo);
 		this._albedoColor = value;
 		this._shaderValues.setVector(GPUSkinningToonV2Material.ALBEDOCOLOR, finalAlbedo);
 	}
 
-	/**
-	 * 反照率强度。
-	 */
-	get albedoIntensity(): number {
-		return this._albedoIntensity;
-	}
-
-	set albedoIntensity(value: number) {
-		this._AlbedoIntensity = value;
-	}
 
 	/**
 	 * 反照率贴图。
@@ -511,83 +316,6 @@ export class GPUSkinningToonV2Material extends GPUSkinningBaseMaterial
 		this._shaderValues.setTexture(GPUSkinningToonV2Material.SCENELIGHTINGTEXTURE, value);
 	}
 
-	/**
-	 * 纹理平铺和偏移X分量。
-	 */
-	get tilingOffsetX(): number {
-		return this._MainTex_STX;
-	}
-
-	set tilingOffsetX(x: number) {
-		this._MainTex_STX = x;
-	}
-
-	/**
-	 * 纹理平铺和偏移Y分量。
-	 */
-	get tilingOffsetY(): number {
-		return this._MainTex_STY;
-	}
-
-	set tilingOffsetY(y: number) {
-		this._MainTex_STY = y;
-	}
-
-	/**
-	 * 纹理平铺和偏移Z分量。
-	 */
-	get tilingOffsetZ(): number {
-		return this._MainTex_STZ;
-	}
-
-	set tilingOffsetZ(z: number) {
-		this._MainTex_STZ = z;
-	}
-
-	/**
-	 * 纹理平铺和偏移W分量。
-	 */
-	get tilingOffsetW(): number {
-		return this._MainTex_STW;
-	}
-
-	set tilingOffsetW(w: number) {
-		this._MainTex_STW = w;
-	}
-
-	/**
-	 * 纹理平铺和偏移。
-	 */
-	get tilingOffset(): Vector4 {
-		return (<Vector4>this._shaderValues.getVector(GPUSkinningToonV2Material.TILINGOFFSET));
-	}
-
-	set tilingOffset(value: Vector4) {
-		if (value) {
-			if (value.x != 1 || value.y != 1 || value.z != 0 || value.w != 0)
-				this._shaderValues.addDefine(GPUSkinningToonV2Material.SHADERDEFINE_TILINGOFFSET);
-			else
-				this._shaderValues.removeDefine(GPUSkinningToonV2Material.SHADERDEFINE_TILINGOFFSET);
-		} else {
-			this._shaderValues.removeDefine(GPUSkinningToonV2Material.SHADERDEFINE_TILINGOFFSET);
-		}
-		this._shaderValues.setVector(GPUSkinningToonV2Material.TILINGOFFSET, value);
-	}
-
-	/**
-	 * 是否支持顶点色。
-	 */
-	get enableVertexColor(): boolean {
-		return this._enableVertexColor;
-	}
-
-	set enableVertexColor(value: boolean) {
-		this._enableVertexColor = value;
-		if (value)
-			this._shaderValues.addDefine(GPUSkinningToonV2Material.SHADERDEFINE_ENABLEVERTEXCOLOR);
-		else
-			this._shaderValues.removeDefine(GPUSkinningToonV2Material.SHADERDEFINE_ENABLEVERTEXCOLOR);
-	}
 
 	/**
 	 * 渲染模式。
@@ -701,63 +429,7 @@ export class GPUSkinningToonV2Material extends GPUSkinningBaseMaterial
 	}
 
 	
-	private _enableLighting: boolean;
-	/**
-	 * 是否启用光照。
-	 */
-	get enableLighting(): boolean {
-		return this._enableLighting;
-	}
 
-	set enableLighting(value: boolean) {
-		if (this._enableLighting !== value) {
-			if (value) 
-			{
-				this._shaderValues.removeDefine(Scene3DShaderDeclaration.SHADERDEFINE_POINTLIGHT);
-			}
-			else 
-			{
-				this._shaderValues.addDefine(Scene3DShaderDeclaration.SHADERDEFINE_POINTLIGHT);
-			}
-			this._enableLighting = value;
-		}
-	}
-
-    // 卡通材质 -- 阴影颜色
-	private _cartoonShadowColor: Vector4;
-	
-    // 卡通材质 -- 阴影颜色
-    get CartoonShadowColor() {
-        return this._cartoonShadowColor;
-    }
-    set CartoonShadowColor(value:Vector4) {
-        this._cartoonShadowColor = value;
-        this._shaderValues.setVector(GPUSkinningToonV2Material.CARTOON_SHADOWCOLOR, value);
-	}
-	
-	
-    /** 卡通材质 -- 颜色范围 */
-    get CartoonColorRange() {
-        return this._shaderValues.getNumber(GPUSkinningToonV2Material.CARTOON_CORLORRANGE);
-    }
-    set CartoonColorRange(value) {
-        value = Math.max(0.0, Math.min(2, value));
-        this._shaderValues.setNumber(GPUSkinningToonV2Material.CARTOON_CORLORRANGE, value);
-	}
-	
-	
-    /** 卡通材质 -- 颜色强度 */
-	get CartoonColorDeep() 
-	{
-        return this._shaderValues.getNumber(GPUSkinningToonV2Material.CARTOON_CORLORDEEP);
-	}
-	
-	set CartoonColorDeep(value) 
-	{
-        value = Math.max(-1.0, Math.min(100.0, value));
-        this._shaderValues.setNumber(GPUSkinningToonV2Material.CARTOON_CORLORDEEP, value);
-	}
-	
 	
     /** 卡通材质 -- 描边粗细 */
     get CartoonOutlineWidth() {
@@ -771,22 +443,14 @@ export class GPUSkinningToonV2Material extends GPUSkinningBaseMaterial
 	constructor() {
 		super();
 		this.setShaderName(GPUSkinningToonV2Material.shaderName);
-		this._albedoIntensity = 1.0;
 		this._shaderValues.setVector(GPUSkinningToonV2Material.ALBEDOCOLOR, new Vector4(1.0, 1.0, 1.0, 1.0));
 		this._shaderValues.setVector(GPUSkinningToonV2Material.TILINGOFFSET, new Vector4(1.0, 1.0, 0.0, 0.0));
-		// 卡通材质 -- 阴影颜色
-		this.CartoonShadowColor = new Vector4(0.1764706, 0.1764706, 0.1764706, 1.0);
-		// 卡通材质 -- 颜色范围
-		this.CartoonColorRange = 0.08;
-		// 卡通材质 -- 颜色强度
-		this.CartoonColorDeep = 88.4;
 		// 卡通材质 -- 描边粗细
 		this.CartoonOutlineWidth = 0.004;
 
 
         this._shaderValues.setNumber(Material.ALPHATESTVALUE, 0.5);
 
-		this._enableLighting = true;
 		this.renderMode = GPUSkinningToonV2Material.RENDERMODE_OPAQUE;
 
 		// this._shaderValues.addDefine(Shader3D.getDefineByName("SKIN_4"));
@@ -810,11 +474,7 @@ export class GPUSkinningToonV2Material extends GPUSkinningBaseMaterial
 	cloneTo(destObject: any): void {
 		super.cloneTo(destObject);
 		var destMaterial: GPUSkinningToonV2Material = (<GPUSkinningToonV2Material>destObject);
-		destMaterial._enableLighting = this._enableLighting;
-		destMaterial._albedoIntensity = this._albedoIntensity;
-		destMaterial._enableVertexColor = this._enableVertexColor;
 		this._albedoColor.cloneTo(destMaterial._albedoColor);
-		this._cartoonShadowColor.cloneTo(destMaterial._cartoonShadowColor);
 		
 	}
 
