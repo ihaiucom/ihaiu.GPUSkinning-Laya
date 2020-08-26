@@ -12,6 +12,7 @@ window.Laya= (function (exports) {
     Config.webGL2D_MeshAllocMaxMem = true;
     Config.is2DPixelArtGame = false;
     Config.useWebGL2 = true;
+    Config.allowGPUInstanceDynamicBatch = true;
     Config.useRetinalCanvas = false;
     window.Config = Config;
 
@@ -866,8 +867,8 @@ window.Laya= (function (exports) {
                 gl.blendEquationSeparate(blendEquationRGB, blendEquationAlpha);
             }
         }
-        static setBlendFunc(gl, sFactor, dFactor) {
-            if (sFactor !== WebGLContext._sFactor || dFactor !== WebGLContext._dFactor) {
+        static setBlendFunc(gl, sFactor, dFactor, force = false) {
+            if (force || sFactor !== WebGLContext._sFactor || dFactor !== WebGLContext._dFactor) {
                 WebGLContext._sFactor = sFactor;
                 WebGLContext._dFactor = dFactor;
                 WebGLContext._sFactorRGB = null;
@@ -1408,9 +1409,16 @@ window.Laya= (function (exports) {
         }
     }
 
+    (function (FilterMode) {
+        FilterMode[FilterMode["Point"] = 0] = "Point";
+        FilterMode[FilterMode["Bilinear"] = 1] = "Bilinear";
+        FilterMode[FilterMode["Trilinear"] = 2] = "Trilinear";
+    })(exports.FilterMode || (exports.FilterMode = {}));
+
     (function (TextureFormat) {
         TextureFormat[TextureFormat["R8G8B8"] = 0] = "R8G8B8";
         TextureFormat[TextureFormat["R8G8B8A8"] = 1] = "R8G8B8A8";
+        TextureFormat[TextureFormat["R5G6B5"] = 16] = "R5G6B5";
         TextureFormat[TextureFormat["Alpha8"] = 2] = "Alpha8";
         TextureFormat[TextureFormat["DXT1"] = 3] = "DXT1";
         TextureFormat[TextureFormat["DXT5"] = 4] = "DXT5";
@@ -1422,12 +1430,17 @@ window.Laya= (function (exports) {
         TextureFormat[TextureFormat["R32G32B32A32"] = 15] = "R32G32B32A32";
     })(exports.TextureFormat || (exports.TextureFormat = {}));
 
+    (function (WarpMode) {
+        WarpMode[WarpMode["Repeat"] = 0] = "Repeat";
+        WarpMode[WarpMode["Clamp"] = 1] = "Clamp";
+    })(exports.WarpMode || (exports.WarpMode = {}));
+
     class BaseTexture extends Bitmap {
         constructor(format, mipMap) {
             super();
-            this._wrapModeU = BaseTexture.WARPMODE_REPEAT;
-            this._wrapModeV = BaseTexture.WARPMODE_REPEAT;
-            this._filterMode = BaseTexture.FILTERMODE_BILINEAR;
+            this._wrapModeU = exports.WarpMode.Repeat;
+            this._wrapModeV = exports.WarpMode.Repeat;
+            this._filterMode = exports.FilterMode.Bilinear;
             this._readyed = false;
             this._width = -1;
             this._height = -1;
@@ -1490,6 +1503,8 @@ window.Laya= (function (exports) {
                     return 3;
                 case exports.TextureFormat.R8G8B8A8:
                     return 4;
+                case exports.TextureFormat.R5G6B5:
+                    return 1;
                 case exports.TextureFormat.Alpha8:
                     return 1;
                 case exports.TextureFormat.R32G32B32A32:
@@ -1507,6 +1522,7 @@ window.Laya= (function (exports) {
             var gpu = LayaGL.layaGPUInstance;
             switch (this._format) {
                 case exports.TextureFormat.R8G8B8:
+                case exports.TextureFormat.R5G6B5:
                     glFormat = gl.RGB;
                     break;
                 case exports.TextureFormat.R8G8B8A8:
@@ -1569,21 +1585,21 @@ window.Laya= (function (exports) {
             var gl = LayaGL.instance;
             WebGLContext.bindTexture(gl, this._glTextureType, this._glTexture);
             switch (value) {
-                case BaseTexture.FILTERMODE_POINT:
+                case exports.FilterMode.Point:
                     if (this._mipmap)
                         gl.texParameteri(this._glTextureType, gl.TEXTURE_MIN_FILTER, gl.NEAREST_MIPMAP_NEAREST);
                     else
                         gl.texParameteri(this._glTextureType, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
                     gl.texParameteri(this._glTextureType, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
                     break;
-                case BaseTexture.FILTERMODE_BILINEAR:
+                case exports.FilterMode.Bilinear:
                     if (this._mipmap)
                         gl.texParameteri(this._glTextureType, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST);
                     else
                         gl.texParameteri(this._glTextureType, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
                     gl.texParameteri(this._glTextureType, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
                     break;
-                case BaseTexture.FILTERMODE_TRILINEAR:
+                case exports.FilterMode.Trilinear:
                     if (this._mipmap)
                         gl.texParameteri(this._glTextureType, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
                     else
@@ -1599,10 +1615,10 @@ window.Laya= (function (exports) {
             WebGLContext.bindTexture(gl, this._glTextureType, this._glTexture);
             if (this._isPot(this._width) && this._isPot(this._height)) {
                 switch (mode) {
-                    case BaseTexture.WARPMODE_REPEAT:
+                    case exports.WarpMode.Repeat:
                         gl.texParameteri(this._glTextureType, orientation, gl.REPEAT);
                         break;
-                    case BaseTexture.WARPMODE_CLAMP:
+                    case exports.WarpMode.Clamp:
                         gl.texParameteri(this._glTextureType, orientation, gl.CLAMP_TO_EDGE);
                         break;
                 }
@@ -1639,11 +1655,7 @@ window.Laya= (function (exports) {
                 LayaGL.instance.generateMipmap(this._glTextureType);
         }
     }
-    BaseTexture.WARPMODE_REPEAT = 0;
-    BaseTexture.WARPMODE_CLAMP = 1;
-    BaseTexture.FILTERMODE_POINT = 0;
-    BaseTexture.FILTERMODE_BILINEAR = 1;
-    BaseTexture.FILTERMODE_TRILINEAR = 2;
+    BaseTexture._rgbmRange = 5.0;
     BaseTexture.FORMAT_R8G8B8 = 0;
     BaseTexture.FORMAT_R8G8B8A8 = 1;
     BaseTexture.FORMAT_ALPHA8 = 2;
@@ -1660,6 +1672,11 @@ window.Laya= (function (exports) {
     BaseTexture.FORMAT_STENCIL_8 = 1;
     BaseTexture.FORMAT_DEPTHSTENCIL_16_8 = 2;
     BaseTexture.FORMAT_DEPTHSTENCIL_NONE = 3;
+    BaseTexture.FILTERMODE_POINT = 0;
+    BaseTexture.FILTERMODE_BILINEAR = 1;
+    BaseTexture.FILTERMODE_TRILINEAR = 2;
+    BaseTexture.WARPMODE_REPEAT = 0;
+    BaseTexture.WARPMODE_CLAMP = 1;
 
     class Texture2D extends BaseTexture {
         constructor(width = 0, height = 0, format = exports.TextureFormat.R8G8B8A8, mipmap = true, canRead = false) {
@@ -1759,6 +1776,11 @@ window.Laya= (function (exports) {
                 case exports.TextureFormat.R8G8B8:
                     gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
                     gl.texImage2D(textureType, miplevel, glFormat, width, height, 0, glFormat, gl.UNSIGNED_BYTE, pixels);
+                    gl.pixelStorei(gl.UNPACK_ALIGNMENT, 4);
+                    break;
+                case exports.TextureFormat.R5G6B5:
+                    gl.pixelStorei(gl.UNPACK_ALIGNMENT, 2);
+                    gl.texImage2D(textureType, miplevel, glFormat, width, height, 0, glFormat, gl.UNSIGNED_SHORT_5_6_5, pixels);
                     gl.pixelStorei(gl.UNPACK_ALIGNMENT, 4);
                     break;
                 case exports.TextureFormat.R32G32B32A32:
@@ -1947,7 +1969,10 @@ window.Laya= (function (exports) {
             }
             else {
                 (premultiplyAlpha) && (gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true));
-                gl.texImage2D(this._glTextureType, 0, glFormat, glFormat, gl.UNSIGNED_BYTE, source);
+                if (this.format == exports.TextureFormat.R5G6B5)
+                    gl.texImage2D(this._glTextureType, 0, gl.RGB, gl.RGB, gl.UNSIGNED_SHORT_5_6_5, source);
+                else
+                    gl.texImage2D(this._glTextureType, 0, glFormat, glFormat, gl.UNSIGNED_BYTE, source);
                 (premultiplyAlpha) && (gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false));
             }
             if (this._mipmap) {
@@ -2002,6 +2027,11 @@ window.Laya= (function (exports) {
                     gl.texSubImage2D(textureType, miplevel, x, y, width, height, glFormat, gl.UNSIGNED_BYTE, pixels);
                     gl.pixelStorei(gl.UNPACK_ALIGNMENT, 4);
                     break;
+                case exports.TextureFormat.R5G6B5:
+                    gl.pixelStorei(gl.UNPACK_ALIGNMENT, 2);
+                    gl.texSubImage2D(textureType, miplevel, x, y, width, height, glFormat, gl.UNSIGNED_SHORT_5_6_5, pixels);
+                    gl.pixelStorei(gl.UNPACK_ALIGNMENT, 4);
+                    break;
                 case exports.TextureFormat.R32G32B32A32:
                     gl.texSubImage2D(textureType, miplevel, x, y, width, height, glFormat, gl.FLOAT, pixels);
                     break;
@@ -2011,37 +2041,6 @@ window.Laya= (function (exports) {
             this._readyed = true;
             this._activeResource();
         }
-        
-        setSubPixels16(x, y, width, height, pixels, miplevel = 0) {
-            // if (this._gpuCompressFormat())
-            //     throw "Texture2D:the format is GPU compression format.";
-            if (!pixels)
-                throw "Texture2D:pixels can't be null.";
-            var gl = LayaGL.instance;
-            var textureType = this._glTextureType;
-            WebGLContext.bindTexture(gl, textureType, this._glTexture);
-            var ext = gl.getExtension('OES_texture_half_float');
-            gl.getExtension('OES_texture_half_float_linear');
-            var glFormat = this._getGLFormat();
-            // gl.texParameterf(textureType, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-            // gl.texSubImage2D(textureType, miplevel, x, y, width, height, gl.RGBA, LayaGL.layaGPUInstance._oesTextureHalfFloat.HALF_FLOAT_OES, pixels);
-            // gl.texSubImage2D(textureType, miplevel, x, y, width, height, gl.RGBA, gl.UNSIGNED_SHORT , pixels);
-            // gl.texSubImage2D(textureType, miplevel, x, y, width, height, gl.RGBA, ext.HALF_FLOAT_OES, pixels);
-            // gl.texSubImage2D(textureType, miplevel, x, y, width, height, gl.RGBA,  gl.FLOAT, pixels);
-            
-            // gl.texSubImage2D(textureType, miplevel, x, y, width, height, glFormat, gl.FLOAT, pixels);
-            // gl.texSubImage2D(textureType, miplevel, x, y, width, height, gl.RGBA,  gl.FLOAT, pixels); // 对的
-            // gl.texImage2D(textureType, miplevel, gl.RGBA32F, width, height, 0, gl.RGBA, gl.FLOAT, pixels); //对的
-            
-            // gl.texImage2D(textureType, miplevel, gl.RGBA16F, width, height, 0, gl.RGBA, gl.HALF_FLOAT, pixels); //对的
-            
-            // gl.texImage2D(textureType, miplevel, gl.RGBA, width, height, 0, gl.RGBA, ext.HALF_FLOAT_OES , pixels); //对的
-            // gl.texImage2D(textureType, miplevel, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_SHORT_4_4_4_4 , pixels); //对的
-            gl.texImage2D(textureType, miplevel, gl.RGBA, width, height, 0, gl.RGBA, LayaGL.layaGPUInstance._oesTextureHalfFloat.HALF_FLOAT_OES , pixels); 
-            this._readyed = true;
-            this._activeResource();
-        }
-
         setCompressData(data) {
             switch (this._format) {
                 case exports.TextureFormat.DXT1:
@@ -2060,8 +2059,6 @@ window.Laya= (function (exports) {
                 default:
                     throw "Texture2D:unkonwn format.";
             }
-        }
-        _recoverResource() {
         }
         getPixels() {
             if (this._canRead)
@@ -2132,12 +2129,15 @@ window.Laya= (function (exports) {
         RenderTextureFormat[RenderTextureFormat["R8G8B8A8"] = 1] = "R8G8B8A8";
         RenderTextureFormat[RenderTextureFormat["Alpha8"] = 2] = "Alpha8";
         RenderTextureFormat[RenderTextureFormat["R16G16B16A16"] = 14] = "R16G16B16A16";
+        RenderTextureFormat[RenderTextureFormat["Depth"] = 15] = "Depth";
+        RenderTextureFormat[RenderTextureFormat["ShadowMap"] = 16] = "ShadowMap";
     })(exports.RenderTextureFormat || (exports.RenderTextureFormat = {}));
     (function (RenderTextureDepthFormat) {
         RenderTextureDepthFormat[RenderTextureDepthFormat["DEPTH_16"] = 0] = "DEPTH_16";
         RenderTextureDepthFormat[RenderTextureDepthFormat["STENCIL_8"] = 1] = "STENCIL_8";
-        RenderTextureDepthFormat[RenderTextureDepthFormat["DEPTHSTENCIL_16_8"] = 2] = "DEPTHSTENCIL_16_8";
+        RenderTextureDepthFormat[RenderTextureDepthFormat["DEPTHSTENCIL_24_8"] = 2] = "DEPTHSTENCIL_24_8";
         RenderTextureDepthFormat[RenderTextureDepthFormat["DEPTHSTENCIL_NONE"] = 3] = "DEPTHSTENCIL_NONE";
+        RenderTextureDepthFormat[RenderTextureDepthFormat["DEPTHSTENCIL_16_8"] = 2] = "DEPTHSTENCIL_16_8";
     })(exports.RenderTextureDepthFormat || (exports.RenderTextureDepthFormat = {}));
 
     class RenderTexture2D extends BaseTexture {
@@ -2196,7 +2196,7 @@ window.Laya= (function (exports) {
                         gl.renderbufferStorage(gl.RENDERBUFFER, gl.STENCIL_INDEX8, width, height);
                         gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.STENCIL_ATTACHMENT, gl.RENDERBUFFER, this._depthStencilBuffer);
                         break;
-                    case exports.RenderTextureDepthFormat.DEPTHSTENCIL_16_8:
+                    case exports.RenderTextureDepthFormat.DEPTHSTENCIL_24_8:
                         gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_STENCIL, width, height);
                         gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_STENCIL_ATTACHMENT, gl.RENDERBUFFER, this._depthStencilBuffer);
                         break;
@@ -2345,7 +2345,7 @@ window.Laya= (function (exports) {
             return ret;
         }
         static releaseRT(rt) {
-            rt._disposeResource();
+            rt.destroy();
             return;
         }
     }
@@ -2357,46 +2357,46 @@ window.Laya= (function (exports) {
             BlendMode.targetFns = [BlendMode.BlendNormalTarget, BlendMode.BlendAddTarget, BlendMode.BlendMultiplyTarget, BlendMode.BlendScreenTarget, BlendMode.BlendOverlayTarget, BlendMode.BlendLightTarget, BlendMode.BlendMask, BlendMode.BlendDestinationOut];
         }
         static BlendNormal(gl) {
-            WebGLContext.setBlendFunc(gl, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+            WebGLContext.setBlendFunc(gl, gl.ONE, gl.ONE_MINUS_SRC_ALPHA, true);
         }
         static BlendAdd(gl) {
-            WebGLContext.setBlendFunc(gl, gl.ONE, gl.DST_ALPHA);
+            WebGLContext.setBlendFunc(gl, gl.ONE, gl.DST_ALPHA, true);
         }
         static BlendMultiply(gl) {
-            WebGLContext.setBlendFunc(gl, gl.DST_COLOR, gl.ONE_MINUS_SRC_ALPHA);
+            WebGLContext.setBlendFunc(gl, gl.DST_COLOR, gl.ONE_MINUS_SRC_ALPHA, true);
         }
         static BlendScreen(gl) {
-            WebGLContext.setBlendFunc(gl, gl.ONE, gl.ONE);
+            WebGLContext.setBlendFunc(gl, gl.ONE, gl.ONE, true);
         }
         static BlendOverlay(gl) {
-            WebGLContext.setBlendFunc(gl, gl.ONE, gl.ONE_MINUS_SRC_COLOR);
+            WebGLContext.setBlendFunc(gl, gl.ONE, gl.ONE_MINUS_SRC_COLOR, true);
         }
         static BlendLight(gl) {
-            WebGLContext.setBlendFunc(gl, gl.ONE, gl.ONE);
+            WebGLContext.setBlendFunc(gl, gl.ONE, gl.ONE, true);
         }
         static BlendNormalTarget(gl) {
-            WebGLContext.setBlendFunc(gl, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+            WebGLContext.setBlendFunc(gl, gl.ONE, gl.ONE_MINUS_SRC_ALPHA, true);
         }
         static BlendAddTarget(gl) {
-            WebGLContext.setBlendFunc(gl, gl.ONE, gl.DST_ALPHA);
+            WebGLContext.setBlendFunc(gl, gl.ONE, gl.DST_ALPHA, true);
         }
         static BlendMultiplyTarget(gl) {
-            WebGLContext.setBlendFunc(gl, gl.DST_COLOR, gl.ONE_MINUS_SRC_ALPHA);
+            WebGLContext.setBlendFunc(gl, gl.DST_COLOR, gl.ONE_MINUS_SRC_ALPHA, true);
         }
         static BlendScreenTarget(gl) {
-            WebGLContext.setBlendFunc(gl, gl.ONE, gl.ONE);
+            WebGLContext.setBlendFunc(gl, gl.ONE, gl.ONE, true);
         }
         static BlendOverlayTarget(gl) {
-            WebGLContext.setBlendFunc(gl, gl.ONE, gl.ONE_MINUS_SRC_COLOR);
+            WebGLContext.setBlendFunc(gl, gl.ONE, gl.ONE_MINUS_SRC_COLOR, true);
         }
         static BlendLightTarget(gl) {
-            WebGLContext.setBlendFunc(gl, gl.ONE, gl.ONE);
+            WebGLContext.setBlendFunc(gl, gl.ONE, gl.ONE, true);
         }
         static BlendMask(gl) {
-            WebGLContext.setBlendFunc(gl, gl.ZERO, gl.SRC_ALPHA);
+            WebGLContext.setBlendFunc(gl, gl.ZERO, gl.SRC_ALPHA, true);
         }
         static BlendDestinationOut(gl) {
-            WebGLContext.setBlendFunc(gl, gl.ZERO, gl.ZERO);
+            WebGLContext.setBlendFunc(gl, gl.ZERO, gl.ZERO, true);
         }
     }
     BlendMode.activeBlendFunction = null;
@@ -6682,6 +6682,10 @@ window.Laya= (function (exports) {
             var btex = source instanceof Texture;
             var uv = btex ? source.uv : Texture.DEF_UV;
             var bitmap = btex ? source.bitmap : source;
+            if(!bitmap)
+            {
+                console.log();
+            }
             if (bitmap.width && (x + width) > bitmap.width)
                 width = bitmap.width - x;
             if (bitmap.height && (y + height) > bitmap.height)
@@ -6834,14 +6838,32 @@ window.Laya= (function (exports) {
         getTexturePixels(x, y, width, height) {
             var st, dst, i;
             var tex2d = this.bitmap;
-            var texw = tex2d.width;
-            var texh = tex2d.height;
-            if (x + width > texw)
-                width -= (x + width) - texw;
-            if (y + height > texh)
-                height -= (y + height) - texh;
+            var texw = this._w;
+            var texh = this._h;
+            var sourceWidth = this.sourceWidth;
+            var sourceHeight = this.sourceHeight;
+            var tex2dw = tex2d.width;
+            var tex2dh = tex2d.height;
+            var offsetX = this.offsetX;
+            var offsetY = this.offsetY;
+            let draww = width;
+            let drawh = height;
+            if (x + width > texw + offsetX)
+                draww -= (x + width) - texw - offsetX;
+            if (x + width > sourceWidth)
+                width -= (x + width) - sourceWidth;
+            if (y + height > texh + offsetY)
+                drawh -= (y + height) - texh - offsetY;
+            if (y + height > sourceHeight)
+                height -= (y + height) - sourceHeight;
             if (width <= 0 || height <= 0)
                 return null;
+            let marginL = offsetX > x ? offsetX - x : 0;
+            let marginT = offsetY > y ? offsetY - y : 0;
+            let rePosX = x > offsetX ? x - offsetX : 0;
+            let rePosY = y > offsetY ? y - offsetY : 0;
+            draww -= marginL;
+            drawh -= marginT;
             var wstride = width * 4;
             var pix = null;
             try {
@@ -6850,16 +6872,18 @@ window.Laya= (function (exports) {
             catch (e) {
             }
             if (pix) {
-                if (x == 0 && y == 0 && width == texw && height == texh)
+                if (x == 0 && y == 0 && width == tex2dw && height == tex2dh)
                     return pix;
+                let uv = this._uv.slice();
+                let atlasPosX = Math.round(uv[0] * tex2dw);
+                let atlasPosY = Math.round(uv[1] * tex2dh);
                 var ret = new Uint8Array(width * height * 4);
-                wstride = texw * 4;
-                st = x * 4;
-                dst = (y + height - 1) * wstride + x * 4;
-                for (i = height - 1; i >= 0; i--) {
-                    ret.set(dt.slice(dst, dst + width * 4), st);
+                wstride = tex2dw * 4;
+                dst = (atlasPosY + rePosY) * wstride;
+                st = atlasPosX * 4 + rePosX * 4 + dst;
+                for (i = 0; i < drawh; i++) {
+                    ret.set(pix.slice(st, st + draww * 4), width * 4 * (i + marginT) + marginL * 4);
                     st += wstride;
-                    dst -= wstride;
                 }
                 return ret;
             }
@@ -6867,7 +6891,7 @@ window.Laya= (function (exports) {
             ctx.size(width, height);
             ctx.asBitmap = true;
             var uv = null;
-            if (x != 0 || y != 0 || width != texw || height != texh) {
+            if (x != 0 || y != 0 || width != tex2dw || height != tex2dh) {
                 uv = this._uv.slice();
                 var stu = uv[0];
                 var stv = uv[1];
@@ -6875,12 +6899,12 @@ window.Laya= (function (exports) {
                 var uvh = uv[7] - stv;
                 var uk = uvw / texw;
                 var vk = uvh / texh;
-                uv = [stu + x * uk, stv + y * vk,
-                    stu + (x + width) * uk, stv + y * vk,
-                    stu + (x + width) * uk, stv + (y + height) * vk,
-                    stu + x * uk, stv + (y + height) * vk];
+                uv = [stu + rePosX * uk, stv + rePosY * vk,
+                    stu + (rePosX + draww) * uk, stv + rePosY * vk,
+                    stu + (rePosX + draww) * uk, stv + (rePosY + drawh) * vk,
+                    stu + rePosX * uk, stv + (rePosY + drawh) * vk];
             }
-            ctx._drawTextureM(this, 0, 0, width, height, null, 1.0, uv);
+            ctx._drawTextureM(this, marginL, marginT, draww, drawh, null, 1.0, uv);
             ctx._targets.start();
             ctx.flush();
             ctx._targets.end();
@@ -7012,6 +7036,8 @@ window.Laya= (function (exports) {
             this.startIDStroke = 0;
             this.lastGCCnt = 0;
             this.splitRender = false;
+            this.scalex = 1;
+            this.scaley = 1;
         }
         setText(txt) {
             this.changed = true;
@@ -7041,6 +7067,8 @@ window.Laya= (function (exports) {
             });
             this.pageChars = [];
             this.startID = 0;
+            this.scalex = 1;
+            this.scaley = 1;
         }
     }
 
@@ -7101,7 +7129,16 @@ window.Laya= (function (exports) {
                 }
             }
             if (u.indexOf('OPPO') == -1 && u.indexOf("MiniGame") > -1 && "wx" in Browser.window) {
-                if ("qq" in Browser.window) {
+                if ("bl" in Browser.window) {
+                    window.biliMiniGame(Laya, Laya);
+                    if (!Laya["BLMiniAdapter"]) {
+                        console.error("请引入bilibili小游戏的适配库：https://ldc2.layabox.com/doc/?nav=zh-ts-5-0-0");
+                    }
+                    else {
+                        Laya["BLMiniAdapter"].enable();
+                    }
+                }
+                else if ("qq" in Browser.window) {
                     window.qqMiniGame(Laya, Laya);
                     if (!Laya["QQMiniAdapter"]) {
                         console.error("请引入手机QQ小游戏的适配库：https://ldc2.layabox.com/doc/?nav=zh-ts-5-0-0");
@@ -7213,6 +7250,10 @@ window.Laya= (function (exports) {
             else if ("qq" in Browser.window && u.indexOf('MiniGame') > -1) {
                 Browser.onQQMiniGame = true;
                 Browser.onMiniGame = false;
+            }
+            else if ("bl" in Browser.window && u.indexOf('MiniGame') > -1) {
+                Browser.onBLMiniGame = true;
+                Browser.onMiniGame = true;
             }
             Browser.onVVMiniGame = u.indexOf('VVGame') > -1;
             Browser.onKGMiniGame = u.indexOf('QuickGame') > -1;
@@ -7672,6 +7713,10 @@ window.Laya= (function (exports) {
             var ri = null;
             var splitTex = this.renderPerChar = (!isWT) || TextRender.forceSplitRender || isHtmlChar || (isWT && wt.splitRender);
             if (!sameTexData || sameTexData.length < 1) {
+                if (isWT) {
+                    wt.scalex = this.fontScaleX;
+                    wt.scaley = this.fontScaleY;
+                }
                 if (splitTex) {
                     var stx = 0;
                     var sty = 0;
@@ -8533,6 +8578,9 @@ window.Laya= (function (exports) {
                 if (!this._width || !this._height)
                     throw Error("asBitmap no size!");
                 if (!rt || rt.width != this._width || rt.height != this._height) {
+                    if (rt) {
+                        rt.destroy();
+                    }
                     this._targets = new RenderTexture2D(this._width, this._height, exports.RenderTextureFormat.R8G8B8A8, -1);
                 }
             }
@@ -8881,6 +8929,9 @@ window.Laya= (function (exports) {
             return enable;
         }
         _inner_drawTexture(tex, imgid, x, y, width, height, m, uv, alpha, lastRender) {
+            if (width <= 0 || height <= 0) {
+                return;
+            }
             var preKey = this._curSubmit._key;
             uv = uv || tex._uv;
             if (preKey.submitType === SubmitBase.KEY_TRIANGLES && preKey.other === imgid) {
@@ -9189,16 +9240,16 @@ window.Laya= (function (exports) {
             return false;
         }
         drawTriangles(tex, x, y, vertices, uvs, indices, matrix, alpha, color, blendMode, colorNum = 0xffffffff) {
-            var oldcomp = null;
-            if (blendMode) {
-                oldcomp = this.globalCompositeOperation;
-                this.globalCompositeOperation = blendMode;
-            }
             if (!tex._getSource()) {
                 if (this.sprite) {
                     ILaya.systemTimer.callLater(this, this._repaintSprite);
                 }
                 return;
+            }
+            var oldcomp = null;
+            if (blendMode) {
+                oldcomp = this.globalCompositeOperation;
+                this.globalCompositeOperation = blendMode;
             }
             this._drawCount++;
             var tmpMat = this._tmpMatrix;
@@ -9805,12 +9856,8 @@ window.Laya= (function (exports) {
             var uv = tex.uv, w = tex.bitmap.width, h = tex.bitmap.height;
             var top = sizeGrid[0];
             var left = sizeGrid[3];
-            var d_top = top / h;
-            var d_left = left / w;
             var right = sizeGrid[1];
             var bottom = sizeGrid[2];
-            var d_right = right / w;
-            var d_bottom = bottom / h;
             var repeat = sizeGrid[4];
             var needClip = false;
             if (width == w) {
@@ -9819,6 +9866,10 @@ window.Laya= (function (exports) {
             if (height == h) {
                 top = bottom = 0;
             }
+            var d_top = top / h;
+            var d_left = left / w;
+            var d_right = right / w;
+            var d_bottom = bottom / h;
             if (left + right > width) {
                 var clipWidth = width;
                 needClip = true;
@@ -10308,36 +10359,39 @@ window.Laya= (function (exports) {
                 return this.__OESVertexArrayObject;
             };
         };
-        window._forceSetupVertexArrayObject = function (gl) {
-            var original_getSupportedExtensions = gl.getSupportedExtensions;
-            gl.getSupportedExtensions = function getSupportedExtensions() {
-                var list = original_getSupportedExtensions.call(this) || [];
-                if (list.indexOf("OES_vertex_array_object") < 0) {
-                    list.push("OES_vertex_array_object");
-                }
-                return list;
-            };
-            var original_getExtension = gl.getExtension;
-            gl.getExtension = function getExtension(name) {
-                if (name === "OES_vertex_array_object") {
-                    if (!this.__OESVertexArrayObject) {
-                        console.log("Setup OES_vertex_array_object polyfill");
-                        this.__OESVertexArrayObject = new OESVertexArrayObject(this);
-                    }
-                    return this.__OESVertexArrayObject;
-                }
-                else {
-                    var ext = original_getExtension.call(this, name);
-                    if (ext) {
-                        return ext;
-                    }
-                    else {
-                        return null;
-                    }
-                }
-            };
-        };
     }());
+
+    class SystemUtils {
+        static get maxTextureCount() {
+            return this._maxTextureCount;
+        }
+        static get maxTextureSize() {
+            return this._maxTextureSize;
+        }
+        static get shaderCapailityLevel() {
+            return this._shaderCapailityLevel;
+        }
+        static supportTextureFormat(format) {
+            switch (format) {
+                case exports.TextureFormat.R32G32B32A32:
+                    return (!LayaGL.layaGPUInstance._isWebGL2 && !LayaGL.layaGPUInstance._oesTextureFloat) ? false : true;
+                default:
+                    return true;
+            }
+        }
+        static supportRenderTextureFormat(format) {
+            switch (format) {
+                case exports.RenderTextureFormat.R16G16B16A16:
+                    return (LayaGL.layaGPUInstance._isWebGL2 || LayaGL.layaGPUInstance._oesTextureHalfFloat && LayaGL.layaGPUInstance._oesTextureHalfFloatLinear) ? true : false;
+                case exports.RenderTextureFormat.Depth:
+                    return (LayaGL.layaGPUInstance._isWebGL2 || LayaGL.layaGPUInstance._webgl_depth_texture) ? true : false;
+                case exports.RenderTextureFormat.ShadowMap:
+                    return LayaGL.layaGPUInstance._isWebGL2 ? true : false;
+                default:
+                    return true;
+            }
+        }
+    }
 
     class LayaGPU {
         constructor(gl, isWebGL2) {
@@ -10349,41 +10403,41 @@ window.Laya= (function (exports) {
             this._oes_element_index_uint = null;
             this._oesTextureHalfFloatLinear = null;
             this._oesTextureFloat = null;
+            this._extShaderTextureLod = null;
             this._extTextureFilterAnisotropic = null;
             this._compressedTextureS3tc = null;
             this._compressedTexturePvrtc = null;
             this._compressedTextureEtc1 = null;
+            this._webgl_depth_texture = null;
             this._gl = gl;
             this._isWebGL2 = isWebGL2;
+            var maxTextureFS = gl.getParameter(gl.MAX_TEXTURE_IMAGE_UNITS);
+            var maxTextureSize = gl.getParameter(gl.MAX_TEXTURE_SIZE);
             if (!isWebGL2) {
-                var forceVAO = LayaGPU._forceSupportVAOPlatform();
                 if (!ILaya.Render.isConchApp) {
-                    if (window._setupVertexArrayObject) {
-                        if (forceVAO)
-                            window._forceSetupVertexArrayObject(gl);
-                        else
-                            window._setupVertexArrayObject(gl);
-                    }
+                    if (window._setupVertexArrayObject)
+                        window._setupVertexArrayObject(gl);
                 }
                 this._vaoExt = this._getExtension("OES_vertex_array_object");
-                if (!forceVAO)
-                    this._angleInstancedArrays = this._getExtension("ANGLE_instanced_arrays");
+                this._angleInstancedArrays = this._getExtension("ANGLE_instanced_arrays");
                 this._oesTextureHalfFloat = this._getExtension("OES_texture_half_float");
                 this._oesTextureHalfFloatLinear = this._getExtension("OES_texture_half_float_linear");
                 this._oesTextureFloat = this._getExtension("OES_texture_float");
                 this._oes_element_index_uint = this._getExtension("OES_element_index_uint");
+                this._extShaderTextureLod = this._getExtension("EXT_shader_texture_lod");
+                this._webgl_depth_texture = this._getExtension("WEBGL_depth_texture");
+                SystemUtils._shaderCapailityLevel = 30;
             }
             else {
                 this._getExtension("EXT_color_buffer_float");
+                SystemUtils._shaderCapailityLevel = 35;
             }
             this._extTextureFilterAnisotropic = this._getExtension("EXT_texture_filter_anisotropic");
             this._compressedTextureS3tc = this._getExtension("WEBGL_compressed_texture_s3tc");
             this._compressedTexturePvrtc = this._getExtension("WEBGL_compressed_texture_pvrtc");
             this._compressedTextureEtc1 = this._getExtension("WEBGL_compressed_texture_etc1");
-        }
-        static _forceSupportVAOPlatform() {
-            let Browser = ILaya.Browser;
-            return Browser.onBDMiniGame || Browser.onQGMiniGame;
+            SystemUtils._maxTextureCount = maxTextureFS;
+            SystemUtils._maxTextureSize = maxTextureSize;
         }
         _getExtension(name) {
             var prefixes = LayaGPU._extentionVendorPrefixes;
@@ -10437,7 +10491,7 @@ window.Laya= (function (exports) {
                 this._angleInstancedArrays.vertexAttribDivisorANGLE(index, divisor);
         }
         supportInstance() {
-            if (this._isWebGL2 || this._angleInstancedArrays)
+            if ((this._isWebGL2 || this._angleInstancedArrays) && Config.allowGPUInstanceDynamicBatch)
                 return true;
             else
                 return false;
@@ -10462,6 +10516,15 @@ window.Laya= (function (exports) {
             this.initRender(Render._mainCanvas, width, height);
             window.requestAnimationFrame(loop);
             function loop(stamp) {
+                // // TODO ZF
+                // try 
+                // {
+                //     ILaya.stage._loop();
+                // } 
+                // catch (error) 
+                // {
+                //     console.error(error);
+                // }
                 ILaya.stage._loop();
                 window.requestAnimationFrame(loop);
             }
@@ -10478,7 +10541,7 @@ window.Laya= (function (exports) {
         initRender(canvas, w, h) {
             function getWebGLContext(canvas) {
                 var gl;
-                var names = [ "experimental-webgl", "webgl2", "webgl", "webkit-3d", "moz-webgl"];
+                var names = ["webgl2", "webgl", "experimental-webgl", "webkit-3d", "moz-webgl"];
                 if (!Config.useWebGL2 || Browser.onBDMiniGame) {
                     names.shift();
                 }
@@ -10532,13 +10595,13 @@ window.Laya= (function (exports) {
         Render.isConchApp = (window.conch != null);
         if (Render.isConchApp) {
             Render.supportWebGLPlusCulling = false;
-            Render.supportWebGLPlusAnimation = true;
-            Render.supportWebGLPlusRendering = true;
+            Render.supportWebGLPlusAnimation = false;
+            Render.supportWebGLPlusRendering = false;
         }
         else if (window.qq != null && window.qq.webglPlus != null) {
             Render.supportWebGLPlusCulling = false;
-            Render.supportWebGLPlusAnimation = true;
-            Render.supportWebGLPlusRendering = true;
+            Render.supportWebGLPlusAnimation = false;
+            Render.supportWebGLPlusRendering = false;
         }
     }
 
@@ -11822,8 +11885,13 @@ window.Laya= (function (exports) {
             if (next == RenderSprite.NORENDER)
                 return;
             var r = sprite._style.scrollRect;
+            var width = r.width;
+            var height = r.height;
+            if (width === 0 || height === 0) {
+                return;
+            }
             context.save();
-            context.clipRect(x, y, r.width, r.height);
+            context.clipRect(x, y, width, height);
             next._fun.call(next, sprite, context, x - r.x, y - r.y);
             context.restore();
         }
@@ -12101,7 +12169,14 @@ window.Laya= (function (exports) {
             this.lock = true;
         }
         clear() {
-            this._ctx && this._ctx.clear && this._ctx.clear();
+            if (this._ctx) {
+                if (this._ctx.clear) {
+                    this._ctx.clear();
+                }
+                else {
+                    this._ctx.clearRect(0, 0, this._width, this._height);
+                }
+            }
             if (this._texture) {
                 this._texture.destroy();
                 this._texture = null;
@@ -13103,8 +13178,10 @@ window.Laya= (function (exports) {
             if (this._components) {
                 for (var i = 0, n = this._components.length; i < n; i++) {
                     var comp = this._components[i];
-                    comp._setActive(true);
-                    (comp._isScript() && comp._enabled) && (activeChangeScripts.push(comp));
+                    if (comp._isScript())
+                        (comp._enabled) && (activeChangeScripts.push(comp));
+                    else
+                        comp._setActive(true);
                 }
             }
             this._onActive();
@@ -13119,8 +13196,14 @@ window.Laya= (function (exports) {
             this.onEnable();
         }
         _activeScripts() {
-            for (var i = 0, n = this._activeChangeScripts.length; i < n; i++)
-                this._activeChangeScripts[i].onEnable();
+            for (var i = 0, n = this._activeChangeScripts.length; i < n; i++) {
+                var comp = this._activeChangeScripts[i];
+                if (!comp._awaked) {
+                    comp._awaked = true;
+                    comp._onAwake();
+                }
+                comp._onEnable();
+            }
             this._activeChangeScripts.length = 0;
         }
         _processInActive() {
@@ -13943,6 +14026,7 @@ window.Laya= (function (exports) {
                 ctx.destroy(true);
                 return rtex;
             }
+            sprite._repaint = 0;
             return rt;
         }
         customRender(context, x, y) {
@@ -14730,6 +14814,8 @@ window.Laya= (function (exports) {
                 else if (tempVAlign === "bottom")
                     startY = this._height - visibleLineCount * lineHeight - padding[2];
             }
+            //TODO:解决文本向上偏移的问题
+            // startY+= 3;
             var style = this._style;
             if (tCurrBitmapFont && tCurrBitmapFont.autoScaleSize) {
                 var bitmapScale = tCurrBitmapFont.fontSize / this.fontSize;
@@ -15105,7 +15191,7 @@ window.Laya= (function (exports) {
             Input._createInputElement();
             if (ILaya.Browser.onMobile) {
                 var isTrue = false;
-                if (ILaya.Browser.onMiniGame || ILaya.Browser.onBDMiniGame || ILaya.Browser.onQGMiniGame || ILaya.Browser.onKGMiniGame || ILaya.Browser.onVVMiniGame || ILaya.Browser.onAlipayMiniGame || ILaya.Browser.onQQMiniGame) {
+                if (ILaya.Browser.onMiniGame || ILaya.Browser.onBDMiniGame || ILaya.Browser.onQGMiniGame || ILaya.Browser.onKGMiniGame || ILaya.Browser.onVVMiniGame || ILaya.Browser.onAlipayMiniGame || ILaya.Browser.onQQMiniGame || ILaya.Browser.onBLMiniGame) {
                     isTrue = true;
                 }
                 ILaya.Render.canvas.addEventListener(Input.IOS_IFRAME ? (isTrue ? "touchend" : "click") : "touchend", Input._popupInputMethod);
@@ -15268,7 +15354,7 @@ window.Laya= (function (exports) {
             this.event(Event.FOCUS);
             if (ILaya.Browser.onPC)
                 input.focus();
-            if (!ILaya.Browser.onMiniGame && !ILaya.Browser.onBDMiniGame && !ILaya.Browser.onQGMiniGame && !ILaya.Browser.onKGMiniGame && !ILaya.Browser.onVVMiniGame && !ILaya.Browser.onAlipayMiniGame && !ILaya.Browser.onQQMiniGame) {
+            if (!ILaya.Browser.onMiniGame && !ILaya.Browser.onBDMiniGame && !ILaya.Browser.onQGMiniGame && !ILaya.Browser.onKGMiniGame && !ILaya.Browser.onVVMiniGame && !ILaya.Browser.onAlipayMiniGame && !ILaya.Browser.onQQMiniGame && !ILaya.Browser.onBLMiniGame) {
                 var temp = this._text;
                 this._text = null;
             }
@@ -16366,8 +16452,8 @@ window.Laya= (function (exports) {
                     break;
             }
             if (this.useRetinalCanvas) {
-                canvasWidth = screenWidth;
-                canvasHeight = screenHeight;
+                realWidth = canvasWidth = screenWidth;
+                realHeight = canvasHeight = screenHeight;
             }
             scaleX *= this.scaleX;
             scaleY *= this.scaleY;
@@ -16525,7 +16611,6 @@ window.Laya= (function (exports) {
                 this.renderToNative(context, x, y);
                 return;
             }
-            Stage._dbgSprite.graphics.clear();
             if (this._frameRate === Stage.FRAME_SLEEP) {
                 var now = Browser.now();
                 if (now - this._frameStartTime >= 1000)
@@ -16564,7 +16649,6 @@ window.Laya= (function (exports) {
                 super.render(context, x, y);
                 Stat._StatRender.renderNotCanvas(context, x, y);
             }
-            Stage._dbgSprite.render(context, 0, 0);
             if (this.renderingEnabled) {
                 Stage.clear(this._bgColor);
                 context.flush();
@@ -16732,7 +16816,6 @@ window.Laya= (function (exports) {
     Stage.FRAME_SLOW = "slow";
     Stage.FRAME_MOUSE = "mouse";
     Stage.FRAME_SLEEP = "sleep";
-    Stage._dbgSprite = new Sprite();
     Stage.clear = function (value) {
         Context.set2DRenderConfig();
         var gl = LayaGL.instance;
@@ -16914,12 +16997,19 @@ window.Laya= (function (exports) {
                 ILaya.SoundManager.disposeSoundLater(this.url);
         }
         resume() {
-            if (!this._audio)
+            var audio = this._audio;
+            if (!audio)
                 return;
             this.isStopped = false;
+            if (audio.readyState == 0) {
+                audio.src = this.url;
+                audio.addEventListener("canplay", this._resumePlay);
+                audio.load();
+            }
             ILaya.SoundManager.addChannel(this);
-            if ("play" in this._audio)
-                this._audio.play();
+            if ("play" in audio) {
+                audio.play();
+            }
         }
         set volume(v) {
             if (!this._audio)
@@ -17593,7 +17683,7 @@ window.Laya= (function (exports) {
                     return null;
             }
             var tSound;
-            if (!ILaya.Browser.onBDMiniGame && !ILaya.Browser.onMiniGame && !ILaya.Browser.onKGMiniGame && !ILaya.Browser.onQGMiniGame && !ILaya.Browser.onVVMiniGame && !ILaya.Browser.onAlipayMiniGame && !ILaya.Browser.onQQMiniGame) {
+            if (!ILaya.Browser.onBDMiniGame && !ILaya.Browser.onMiniGame && !ILaya.Browser.onKGMiniGame && !ILaya.Browser.onQGMiniGame && !ILaya.Browser.onVVMiniGame && !ILaya.Browser.onAlipayMiniGame && !ILaya.Browser.onQQMiniGame && !ILaya.Browser.onBLMiniGame) {
                 tSound = ILaya.loader.getRes(url);
             }
             if (!soundClass)
@@ -17601,7 +17691,7 @@ window.Laya= (function (exports) {
             if (!tSound) {
                 tSound = new soundClass();
                 tSound.load(url);
-                if (!ILaya.Browser.onBDMiniGame && !ILaya.Browser.onMiniGame && !ILaya.Browser.onKGMiniGame && !ILaya.Browser.onQGMiniGame && !ILaya.Browser.onVVMiniGame && !ILaya.Browser.onAlipayMiniGame && !ILaya.Browser.onQQMiniGame) {
+                if (!ILaya.Browser.onBDMiniGame && !ILaya.Browser.onMiniGame && !ILaya.Browser.onKGMiniGame && !ILaya.Browser.onQGMiniGame && !ILaya.Browser.onVVMiniGame && !ILaya.Browser.onAlipayMiniGame && !ILaya.Browser.onQQMiniGame && !ILaya.Browser.onBLMiniGame) {
                     ILaya.Loader.cacheRes(url, tSound);
                 }
             }
@@ -18277,14 +18367,15 @@ window.Laya= (function (exports) {
         send(url, data = null, method = "get", responseType = "text", headers = null) {
             this._responseType = responseType;
             this._data = null;
-            if (Browser.onVVMiniGame || Browser.onQGMiniGame || Browser.onQQMiniGame) {
-                url = encodeURI(url);
+            if (Browser.onVVMiniGame || Browser.onQGMiniGame || Browser.onQQMiniGame || Browser.onAlipayMiniGame || Browser.onBLMiniGame) {
+                url = HttpRequest._urlEncode(url);
             }
             this._url = url;
             var _this = this;
             var http = this._http;
             url = URL.getAdptedFilePath(url);
             http.open(method, url, true);
+            let isJson = false;
             if (headers) {
                 for (var i = 0; i < headers.length; i++) {
                     http.setRequestHeader(headers[i++], headers[i]);
@@ -18293,8 +18384,10 @@ window.Laya= (function (exports) {
             else if (!(window.conch)) {
                 if (!data || typeof (data) == 'string')
                     http.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-                else
+                else {
                     http.setRequestHeader("Content-Type", "application/json");
+                    isJson = true;
+                }
             }
             let restype = responseType !== "arraybuffer" ? "text" : "arraybuffer";
             http.responseType = restype;
@@ -18313,7 +18406,9 @@ window.Laya= (function (exports) {
             http.onload = function (e) {
                 _this._onLoad(e);
             };
-            http.send(data);
+            if (Browser.onBLMiniGame && Browser.onAndroid && !data)
+                data = {};
+            http.send(isJson ? JSON.stringify(data) : data);
         }
         _onProgress(e) {
             if (e && e.lengthComputable)
@@ -18374,6 +18469,7 @@ window.Laya= (function (exports) {
             return this._http;
         }
     }
+    HttpRequest._urlEncode = encodeURI;
 
     class Loader extends EventDispatcher {
         constructor() {
@@ -18510,53 +18606,18 @@ window.Laya= (function (exports) {
             var _this = this;
             if (isformatURL)
                 url = URL.formatURL(url);
-            var onLoaded;
             var onError = function () {
                 _this.event(Event.ERROR, "Load image failed");
             };
             if (this._type === "nativeimage") {
-                onLoaded = (image) => {
-                    this.onLoaded(image);
-                };
-                this._loadHtmlImage(url, this, onLoaded, this, onError);
+                this._loadHtmlImage(url, this, this.onLoaded, this, onError);
             }
             else {
                 var ext = Utils.getFileExtension(url);
-                if (ext === "ktx" || ext === "pvr") {
-                    onLoaded = function (imageData) {
-                        let format;
-                        switch (ext) {
-                            case "ktx":
-                                format = exports.TextureFormat.ETC1RGB;
-                                break;
-                            case "pvr":
-                                format = exports.TextureFormat.PVRTCRGBA_4BPPV;
-                                break;
-                            default: {
-                                console.error('unknown format', ext);
-                                return;
-                            }
-                        }
-                        var tex = new Texture2D(0, 0, format, false, false);
-                        tex.wrapModeU = BaseTexture.WARPMODE_CLAMP;
-                        tex.wrapModeV = BaseTexture.WARPMODE_CLAMP;
-                        tex.setCompressData(imageData);
-                        tex._setCreateURL(url);
-                        _this.onLoaded(tex);
-                    };
-                    this._loadHttpRequest(url, Loader.BUFFER, this, onLoaded, null, null, this, onError);
-                }
-                else {
-                    onLoaded = function (image) {
-                        var tex = new Texture2D(image.width, image.height, 1, false, false);
-                        tex.wrapModeU = BaseTexture.WARPMODE_CLAMP;
-                        tex.wrapModeV = BaseTexture.WARPMODE_CLAMP;
-                        tex.loadImageSource(image, true);
-                        tex._setCreateURL(url);
-                        _this.onLoaded(tex);
-                    };
-                    this._loadHtmlImage(url, this, onLoaded, this, onError);
-                }
+                if (ext === "ktx" || ext === "pvr")
+                    this._loadHttpRequest(url, Loader.BUFFER, this, this.onLoaded, this, this.onProgress, this, this.onError);
+                else
+                    this._loadHtmlImage(url, this, this.onLoaded, this, onError);
             }
         }
         _loadSound(url) {
@@ -18598,15 +18659,51 @@ window.Laya= (function (exports) {
                 this.complete(data);
             }
             else if (type === Loader.IMAGE) {
-                var tex = new Texture(data);
-                tex.url = this._url;
-                this.complete(tex);
+                if (data instanceof ArrayBuffer) {
+                    var ext = Utils.getFileExtension(this._url);
+                    let format;
+                    switch (ext) {
+                        case "ktx":
+                            format = exports.TextureFormat.ETC1RGB;
+                            break;
+                        case "pvr":
+                            format = exports.TextureFormat.PVRTCRGBA_4BPPV;
+                            break;
+                        default: {
+                            console.error('unknown format', ext);
+                            return;
+                        }
+                    }
+                    var tex = new Texture2D(0, 0, format, false, false);
+                    tex.wrapModeU = exports.WarpMode.Clamp;
+                    tex.wrapModeV = exports.WarpMode.Clamp;
+                    tex.setCompressData(data);
+                    tex._setCreateURL(this.url);
+                }
+                else if (!(data instanceof Texture2D)) {
+                    var tex = new Texture2D(data.width, data.height, 1, false, false);
+                    tex.wrapModeU = exports.WarpMode.Clamp;
+                    tex.wrapModeV = exports.WarpMode.Clamp;
+                    tex.loadImageSource(data, true);
+                    tex._setCreateURL(data.src);
+                }
+                var texture = new Texture(tex);
+                texture.url = this._url;
+                this.complete(texture);
             }
-            else if (type === Loader.SOUND || type === "htmlimage" || type === "nativeimage") {
+            else if (type === Loader.SOUND || type === "nativeimage") {
                 this.complete(data);
             }
+            else if (type === "htmlimage") {
+                var tex = new Texture2D(data.width, data.height, 1, false, false);
+                tex.wrapModeU = exports.WarpMode.Clamp;
+                tex.wrapModeV = exports.WarpMode.Clamp;
+                tex.loadImageSource(data, true);
+                tex._setCreateURL(data.src);
+                this.complete(tex);
+            }
             else if (type === Loader.ATLAS) {
-                if (!(data instanceof Texture2D)) {
+                if (data.frames) {
                     var toloadPics = [];
                     if (!this._data) {
                         this._data = data;
@@ -18642,6 +18739,14 @@ window.Laya= (function (exports) {
                     return this._loadResourceFilter(Loader.IMAGE, toloadPics.pop());
                 }
                 else {
+                    if (!(data instanceof Texture2D)) {
+                        var tex = new Texture2D(data.width, data.height, 1, false, false);
+                        tex.wrapModeU = BaseTexture.WARPMODE_CLAMP;
+                        tex.wrapModeV = BaseTexture.WARPMODE_CLAMP;
+                        tex.loadImageSource(data, true);
+                        tex._setCreateURL(data.src);
+                        data = tex;
+                    }
                     this._data.pics.push(data);
                     if (this._data.toLoads.length > 0) {
                         this.event(Event.PROGRESS, 0.3 + 1 / this._data.toLoads.length * 0.6);
@@ -19419,7 +19524,13 @@ window.Laya= (function (exports) {
             }
         }
         static getJSON(key) {
-            return JSON.parse(Storage.support ? Storage.items.getItem(key) : null);
+            try {
+                let obj = JSON.parse(Storage.support ? Storage.items.getItem(key) : null);
+                return obj;
+            }
+            catch (err) {
+                return Storage.items.getItem(key);
+            }
         }
         static removeItem(key) {
             Storage.support && Storage.items.removeItem(key);
@@ -20481,9 +20592,12 @@ window.Laya= (function (exports) {
     }
 
     class FrameAnimation extends AnimationBase {
+        static _sortIndexFun(objpre, objnext) {
+            return objpre.index - objnext.index;
+        }
         constructor() {
             super();
-            if (FrameAnimation._sortIndexFun === null) {
+            if (FrameAnimation._sortIndexFun === undefined) {
                 FrameAnimation._sortIndexFun = MathUtil.sortByKey("index", false, true);
             }
         }
@@ -21095,26 +21209,23 @@ window.Laya= (function (exports) {
             this._view = [];
         }
         show(x = 0, y = 0) {
-            if (!Browser.onMiniGame && !ILaya.Render.isConchApp && !Browser.onBDMiniGame && !Browser.onKGMiniGame && !Browser.onQGMiniGame && !Browser.onQQMiniGame && !Browser.onAlipayMiniGame)
+            if (!Browser.onMiniGame && !ILaya.Render.isConchApp && !Browser.onBDMiniGame && !Browser.onKGMiniGame && !Browser.onQGMiniGame && !Browser.onQQMiniGame && !Browser.onAlipayMiniGame && !Browser.onBLMiniGame)
                 this._useCanvas = true;
             this._show = true;
             Stat._fpsData.length = 60;
-            this._view[0] = { title: "FPS(Canvas)", value: "_fpsStr", color: "yellow", units: "int" };
+            this._view[0] = { title: "FPS(WebGL)", value: "_fpsStr", color: "yellow", units: "int" };
             this._view[1] = { title: "Sprite", value: "_spriteStr", color: "white", units: "int" };
             this._view[2] = { title: "RenderBatches", value: "renderBatches", color: "white", units: "int" };
             this._view[3] = { title: "SavedRenderBatches", value: "savedRenderBatches", color: "white", units: "int" };
             this._view[4] = { title: "CPUMemory", value: "cpuMemory", color: "yellow", units: "M" };
             this._view[5] = { title: "GPUMemory", value: "gpuMemory", color: "yellow", units: "M" };
             this._view[6] = { title: "Shader", value: "shaderCall", color: "white", units: "int" };
-            if (!Render.is3DMode) {
-                this._view[0].title = "FPS(WebGL)";
-                this._view[7] = { title: "Canvas", value: "_canvasStr", color: "white", units: "int" };
-            }
-            else {
+            this._view[7] = { title: "Canvas", value: "_canvasStr", color: "white", units: "int" };
+            if (Render.is3DMode) {
                 this._view[0].title = "FPS(3D)";
-                this._view[7] = { title: "TriFaces", value: "trianglesFaces", color: "white", units: "int" };
-                this._view[8] = { title: "FrustumCulling", value: "frustumCulling", color: "white", units: "int" };
-                this._view[9] = { title: "OctreeNodeCulling", value: "octreeNodeCulling", color: "white", units: "int" };
+                this._view[8] = { title: "TriFaces", value: "trianglesFaces", color: "white", units: "int" };
+                this._view[9] = { title: "FrustumCulling", value: "frustumCulling", color: "white", units: "int" };
+                this._view[10] = { title: "OctreeNodeCulling", value: "octreeNodeCulling", color: "white", units: "int" };
             }
             if (this._useCanvas) {
                 this.createUIPre(x, y);
@@ -21974,16 +22085,15 @@ window.Laya= (function (exports) {
                 return;
             }
             var imageData = data.imageBitmap;
-            var tex = new Texture2D();
-            tex.loadImageSource(imageData);
             console.log("load:", data.url);
-            this.event(data.url, tex);
+            this.event(data.url, imageData);
         }
         loadImage(url) {
             this.worker.postMessage(url);
         }
         _loadImage(url) {
             var _this = this;
+            let type = _this.type;
             if (!this._useWorkerLoader || !WorkerLoader._enable) {
                 WorkerLoader._preLoadFun.call(_this, url);
                 return;
@@ -21992,9 +22102,14 @@ window.Laya= (function (exports) {
             function clear() {
                 WorkerLoader.I.off(url, _this, onload);
             }
-            var onload = function (image) {
+            var onload = function (imageData) {
                 clear();
-                if (image) {
+                if (imageData) {
+                    var image = imageData;
+                    if (type !== "nativeimage") {
+                        image = new Texture2D();
+                        image.loadImageSource(imageData);
+                    }
                     _this["onLoaded"](image);
                 }
                 else {
@@ -22088,8 +22203,8 @@ window.Laya= (function (exports) {
     }
     HTMLImage.create = function (width, height, format) {
         var tex = new Texture2D(width, height, format, false, false);
-        tex.wrapModeU = BaseTexture.WARPMODE_CLAMP;
-        tex.wrapModeV = BaseTexture.WARPMODE_CLAMP;
+        tex.wrapModeU = exports.WarpMode.Clamp;
+        tex.wrapModeV = exports.WarpMode.Clamp;
         return tex;
     };
 
@@ -22186,7 +22301,7 @@ window.Laya= (function (exports) {
             newU8List.set(arrU8List);
             return newU8List.buffer;
         }
-        static set alertGlobalError(value) {
+        static alertGlobalError(value) {
             var erralert = 0;
             if (value) {
                 Browser.window.onerror = function (msg, url, line, column, detail) {
@@ -22221,10 +22336,12 @@ window.Laya= (function (exports) {
             if (Laya.isNativeRender_enable)
                 return;
             Laya.isNativeRender_enable = true;
-            Shader.prototype.uploadTexture2D = function (value) {
-                var gl = LayaGL.instance;
-                gl.bindTexture(gl.TEXTURE_2D, value);
-            };
+            if (Render.supportWebGLPlusRendering) {
+                Shader.prototype.uploadTexture2D = function (value) {
+                    var gl = LayaGL.instance;
+                    gl.bindTexture(gl.TEXTURE_2D, value);
+                };
+            }
             RenderState2D.width = Browser.window.innerWidth;
             RenderState2D.height = Browser.window.innerHeight;
             Browser.measureText = function (txt, font) {
@@ -22284,7 +22401,7 @@ window.Laya= (function (exports) {
     Laya.lateTimer = null;
     Laya.timer = null;
     Laya.loader = null;
-    Laya.version = "2.4.0beta2";
+    Laya.version = "2.6.0";
     Laya._isinit = false;
     Laya.isWXOpenDataContext = false;
     Laya.isWXPosMsg = false;
@@ -22480,6 +22597,7 @@ window.Laya= (function (exports) {
             if (this.onPreRender !== proto.onPreRender) {
                 ILaya.lateTimer.frameLoop(1, this, this.onPreRender);
             }
+            this.onEnable();
         }
         _onDisable() {
             this.owner.offAllCaller(this);
@@ -23685,10 +23803,10 @@ window.Laya= (function (exports) {
         }
         static destroy(url, name = "") {
             var flag = false;
-            var list = Scene.unDestroyedScenes;
+            var list = [].concat(Scene.unDestroyedScenes);
             for (var i = 0, n = list.length; i < n; i++) {
                 var scene = list[i];
-                if (scene.url === url && scene.name == name) {
+                if (scene.url === url && scene.name == name && !scene.destroyed) {
                     scene.destroy();
                     flag = true;
                 }
@@ -24692,6 +24810,11 @@ window.Laya= (function (exports) {
     Socket.LITTLE_ENDIAN = "littleEndian";
     Socket.BIG_ENDIAN = "bigEndian";
 
+    (function (TextureDecodeFormat) {
+        TextureDecodeFormat[TextureDecodeFormat["Normal"] = 0] = "Normal";
+        TextureDecodeFormat[TextureDecodeFormat["RGBM"] = 1] = "RGBM";
+    })(exports.TextureDecodeFormat || (exports.TextureDecodeFormat = {}));
+
     class System {
         static changeDefinition(name, classObj) {
             window.Laya[name] = classObj;
@@ -25678,6 +25801,7 @@ window.Laya= (function (exports) {
     exports.SubmitTarget = SubmitTarget;
     exports.SubmitTexture = SubmitTexture;
     exports.System = System;
+    exports.SystemUtils = SystemUtils;
     exports.TTFLoader = TTFLoader;
     exports.Text = Text;
     exports.TextAtlas = TextAtlas;

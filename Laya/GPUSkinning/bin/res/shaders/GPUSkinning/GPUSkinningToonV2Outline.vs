@@ -72,11 +72,13 @@ varying vec2 v_Texcoord0;
 	uniform sampler2D u_HeightRimLightTexture;
 #endif
 
+uniform vec4 u_outlineColor;
 
 //  主函数
 void main() 
 {
-	vec4 mainTexture =  vec4(0.5, 0.3, 0.3, 1.0);
+	// vec4 mainTexture =  vec4(0.5, 0.3, 0.3, 1.0);
+	vec4 mainTexture = u_outlineColor;
 	#ifdef ALBEDOTEXTURE
 		mainTexture *= texture2D(u_AlbedoTexture, a_Texcoord0);
 	#endif 
@@ -134,6 +136,7 @@ void main()
 	#endif
 
 	v_Color.rgb = mainTexture.rgb;
+	
 
 	
 	// 分身

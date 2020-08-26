@@ -146,7 +146,8 @@ void main()
 	// mat4 worldInvMat = worldMat*skinTransform;
 	// mat3 worldInvMat = inverse(mat3(worldMat));
 	
-	mat3 worldInvMat = inverse(mat3(worldMat * mm_scale *skinTransform ));
+	// mat3 worldInvMat = inverse(mat3(worldMat * mm_scale *skinTransform ));
+	mat3 worldInvMat = INVERSE_MAT(mat3(worldMat * mm_scale  *skinTransform ));
 	
 	v_Normal=normalize(a_Normal*worldInvMat);
 

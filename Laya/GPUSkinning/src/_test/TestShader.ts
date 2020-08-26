@@ -33,7 +33,7 @@ export default class TestShader
 
 
         var nameList = [
-            "1002_Skin1",
+            "1011",
             // "Hero_1004_Dongzhuo_Skin1",
         ];
 

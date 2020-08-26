@@ -75,6 +75,13 @@ uniform vec4 u_DotRimColor;
 
 
 
+uniform vec4 u_rimColorA0;
+uniform vec4 u_rimColorA1;
+uniform vec4 u_rimColorB;
+uniform vec4 u_rimViewDirA0;
+uniform vec4 u_rimViewDirB;
+
+
 float lerp(float a, float b, float w) 
 {
   return a + w*(b-a);
@@ -121,8 +128,8 @@ void main()
 
 
 	// 灯光方向
-	vec3 lightDir = vec3(120.0, -60.0, 0.0);
-	vec3 lightColor = vec3(0.0, 0.0, 0.0);
+	// vec3 lightDir = vec3(120.0, -60.0, 0.0);
+	// vec3 lightColor = vec3(0.0, 0.0, 0.0);
 	// #ifdef LEGACYSINGLELIGHTING
 	// 	#ifdef DIRECTIONLIGHT
 	// 		lightDir = u_DirectionLight.direction;
@@ -144,10 +151,7 @@ void main()
 	
 	vec3 worldNormal = normalize(v_Normal);
 	vec3 worldViewDir= normalize(v_ViewDir);
-	vec3 worldLightDir = normalize(lightDir);
 	
-	// 光入射方向L和视点方向V的中间向量
-	vec3 halfLightViewDir = normalize(worldViewDir + worldLightDir);
 
 
 
@@ -164,92 +168,79 @@ void main()
 	//==========================================
 	// 边缘光
 	//------------------------------------------
-	vec3 rimColorA = vec3(1.0, 0.27, 0.25);
-	vec3 rimColorB = vec3(1.0, 0.93, 0.75);
-	vec3 rimColorC = vec3(0.2, 0.3, 0.5);
+	// 战姬配置
+	// vec3 rimColorA0 = vec3(1.0, 0.27, 0.25);
+	// vec3 rimColorA1 = vec3(1.0, 0.93, 0.75);
+	// vec3 rimColorB = vec3(0.2, 0.3, 0.5);
+
+	// 龙骑配置
+	// vec3 rimColorA0 = vec3(1.0, 0.02116402, 0.0);
+	// vec3 rimColorA1 = vec3(1.0, 0.9290133, 0.759434);
+	// vec3 rimColorB = vec3(1.0, 0.501811, 0.0);
+
+
+	// rim颜色 AB一起渐变过度
+	vec3 rimColorA0 = u_rimColorA0.rgb;
+	vec3 rimColorA1 = u_rimColorA1.rgb;
+	// rim颜色 另一侧
+	vec3 rimColorB = u_rimColorB.rgb;
+
+	vec3 rimViewDirA = normalize(u_rimViewDirA0.rgb);
+	vec3 rimViewDirB = normalize(u_rimViewDirB.rgb);
+
+	
+	float rimRateA0 = u_rimViewDirA0.w;
+	float rimRateA1 = u_rimViewDirB.w;
+	float rimRange_C = u_rimColorB.w;
+
 	float rimCSwitch = 1.0;
 
-	float rimRateA = 0.5;
-	float rimRateB = 0.45;
-	rimRateB =  rimRateA + 0.05;
 
-	vec3 rimViewDir0 = normalize(vec3(2.0, 0.0, -1));
-	vec3 rimViewDir1 = normalize(vec3(10.0, 0.0, 1));
-	vec3 rimViewDir2 = normalize(vec3(-30.0, -1.0, 0.5));
 
 	float rimMask = heightRimLightTexture.r;
 
-	float dotNormalView0 = dot(worldNormal, rimViewDir0);
-	// dotNormalView0 = dotNormalView0 ;
-	// dotNormalView0 = pow(dotNormalView0, 8.0);
-	dotNormalView0 = (dotNormalView0 - 0.4) / 0.2;
-	dotNormalView0 = max(dotNormalView0, 0.0);
-	dotNormalView0 = min(dotNormalView0, 1.0);
-
-
-	float dotNormalView1 = dot(worldNormal, rimViewDir1);
-	dotNormalView1 = dotNormalView1 * 0.5 + 0.1;
-	dotNormalView1 = max(dotNormalView1, 0.0);
-
+	// 方向A
+	float dotNormalViewA = dot(worldNormal, rimViewDirA);
+	dotNormalViewA = max(dotNormalViewA, 0.0);
+	dotNormalViewA = min(dotNormalViewA, 1.0);
 
 	
+	
 
-	float rimMain = (dotNormalView1 - rimRateA) / (rimRateB - rimRateA);
+	// 方向A，渐变颜色rate
+	float rimMain = (dotNormalViewA - rimRateA0) / (rimRateA1 - rimRateA0);
 	rimMain = max(rimMain, 0.0);
 	rimMain = min(rimMain, 1.0);
-
 	
 
-	
-	float dotNormalView2 = dot(worldNormal, rimViewDir2);
-	dotNormalView2 = dotNormalView2 * 1.2 - 0.3;
-	dotNormalView2 = max(dotNormalView2, 0.0);
-	dotNormalView2 = pow(dotNormalView2, 2.0);
+	// 方向B
+	float dotNormalViewB = dot(worldNormal, rimViewDirB);
+	dotNormalViewB = dotNormalViewB * 1.05 - rimRange_C;
+	dotNormalViewB = max(dotNormalViewB, 0.0);
+	dotNormalViewB = min(dotNormalViewB, 1.0);
 
-	vec3 gradientColor = lerp3(rimColorA, rimColorB, rimMain);
-	vec3 rimMainColor0 = baseColor.rgb * rimColorB * dotNormalView0 * (1.0 - rimMask);
-	vec3 rimMainColor1 = baseColor.rgb * gradientColor * dotNormalView1 * rimMask;
-	vec3 rimColorLeft = rimColorC * dotNormalView2 * rimCSwitch;
-	vec3 rimColor = rimMainColor0 + rimMainColor1 + rimColorLeft;
+	// 方向A, 渐变颜色
+	vec3 gradientColor = lerp3(rimColorA0, rimColorA1, rimMain);
+
+	// 方向A, 颜色
+	vec3 rimMainColorA0 = baseColor.rgb * gradientColor * dotNormalViewA * rimMask;
+	vec3 rimMainColorA1 = baseColor.rgb * rimColorA1 * rimMain * (1.0 - rimMask);
+	
+	// 方向B，颜色
+	vec3 rimMainColorB = rimColorB * dotNormalViewB * rimCSwitch;
+	vec3 rimColor =   rimMainColorA0 + rimMainColorA1 + rimMainColorB;
 
 	finalColor.rgb += rimColor;
 
-	
 
 
-	// float v = heightRimLightTexture.g;
-	// finalColor.rgb = vec3(v, v, v);
-	// finalColor.rgb = worldNormal;
-	// finalColor.rgb = gradientColor * dotNormalView1 * rimMask;
-	// finalColor.rgb = rimMainColor1;
 
-	
-	
-	//==========================================
-	// 场景光照贴图
-	//------------------------------------------
-	// #ifdef SCENELIGHTING
-	// 	vec4 sceneLighting = texture2D(u_SceneLightingTexture, v_SceneLightingUV);
-	// 	// float brightness = step(0.5, sceneLighting.a) * sceneLighting.a * 0.25;
-	// 	// finalColor.rgb += sceneLighting.rgb * brightness;
-	// 	// finalColor.rgb -= step(sceneLighting.a, 0.5) * (0.25 - sceneLighting.a * 0.5);
-		
-	// 	float brightness =  sceneLighting.a - 0.5;
-	// 	finalColor.rgb += sceneLighting.rgb * brightness;
-	// #endif
 
-	// float v = 1.0 - stepValue *  _ShadowStrength;
-	// float v = shadowTexture.r;
-	// float v = heightRimLightTexture.b;
-	// finalColor.rgb = vec3(v, v, v);
-	// finalColor.rgb = v_Normal;
-	// finalColor.rgb = rimLightColor;
 
 	// 受击
 	float dotNV = dot(worldNormal, worldViewDir);
 	dotNV = max(0.0, dotNV);
 	finalColor.rgb = finalColor.rgb + u_DotRimColor.rgb * u_DotRimColor.a  * dotNV ;
-
 
 	// 霸体
 	#ifdef IS_SUPERARMOR

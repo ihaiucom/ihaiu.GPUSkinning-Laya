@@ -56,6 +56,7 @@ export default class GPUSkinningClip
             case "idle":
             case "run":
             case "walk":
+            case "standby":
             case "skin_10b":
                 this.wrapMode = GPUSkinningWrapMode.Loop;
                 break;

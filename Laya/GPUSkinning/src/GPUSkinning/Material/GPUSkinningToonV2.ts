@@ -100,6 +100,12 @@ export class GPUSkinningToonV2Material extends GPUSkinningBaseMaterial
 			// 卡通材质 -- 高光和边缘光贴图
 			'u_HeightRimLightTexture': Shader3D.PERIOD_MATERIAL,
 
+			'u_rimColorA0': Shader3D.PERIOD_MATERIAL,
+			'u_rimColorA1': Shader3D.PERIOD_MATERIAL,
+			'u_rimColorB': Shader3D.PERIOD_MATERIAL,
+			'u_rimViewDirA0': Shader3D.PERIOD_MATERIAL,
+			'u_rimViewDirB': Shader3D.PERIOD_MATERIAL,
+			'u_outlineColor': Shader3D.PERIOD_MATERIAL,
 			
             
 			'u_WorldMat': Shader3D.PERIOD_SPRITE,
@@ -197,6 +203,12 @@ export class GPUSkinningToonV2Material extends GPUSkinningBaseMaterial
 	// 主贴图
 	static ALBEDOTEXTURE: number = Shader3D.propertyNameToID("u_AlbedoTexture");
 	static ALBEDOCOLOR: number = Shader3D.propertyNameToID("u_AlbedoColor");
+	static RIMCOLORA0: number = Shader3D.propertyNameToID("u_rimColorA0");
+	static RIMCOLORA1: number = Shader3D.propertyNameToID("u_rimColorA1");
+	static RIMCOLORB: number = Shader3D.propertyNameToID("u_rimColorB");
+	static RIMVIEWDIRA0: number = Shader3D.propertyNameToID("u_rimViewDirA0");
+	static RIMVIEWDIRB: number = Shader3D.propertyNameToID("u_rimViewDirB");
+	static OUTLINECOLOR: number = Shader3D.propertyNameToID("u_outlineColor");
 	static TILINGOFFSET: number = Shader3D.propertyNameToID("u_TilingOffset");
 	static CULL: number = Shader3D.propertyNameToID("s_Cull");
 	static BLEND: number = Shader3D.propertyNameToID("s_Blend");
@@ -220,6 +232,72 @@ export class GPUSkinningToonV2Material extends GPUSkinningBaseMaterial
 		GPUSkinningToonV2Material.SHADERDEFINE_TILINGOFFSET = Shader3D.getDefineByName("TILINGOFFSET");
 		GPUSkinningToonV2Material.SHADERDEFINE_ENABLEVERTEXCOLOR = Shader3D.getDefineByName("ENABLEVERTEXCOLOR");
 	}
+
+	
+	private _rimColorA0: Vector4 = new Vector4(1.0, 0.02116402, 0.0);
+	get rimColorA0(): Vector4 {
+		return this._rimColorA0;
+	}
+	set rimColorA0(value: Vector4) {
+		
+		var finalAlbedo: Vector4 = (<Vector4>this._shaderValues.getVector(GPUSkinningToonV2Material.RIMCOLORA0));
+		Vector4.scale(value, 1, finalAlbedo);
+
+		this._rimColorA0 = value;
+		this._shaderValues.setVector(GPUSkinningToonV2Material.RIMCOLORA0, finalAlbedo);
+	}
+
+	
+	private _rimColorA1: Vector4 = new Vector4(1.0, 0.9290133, 0.759434);
+	get rimColorA1(): Vector4 {
+		return this._rimColorA1;
+	}
+	set rimColorA1(value: Vector4) {
+		this._rimColorA1 = value;
+		this._shaderValues.setVector(GPUSkinningToonV2Material.RIMCOLORA1, value);
+	}
+
+
+	
+	private _rimColorB: Vector4 = new Vector4(1.0, 0.501811, 0.0);
+	get rimColorB(): Vector4 {
+		return this._rimColorB;
+	}
+	set rimColorB(value: Vector4) {
+		this._rimColorB = value;
+		this._shaderValues.setVector(GPUSkinningToonV2Material.RIMCOLORB, value);
+	}
+
+	
+	private _outlineColor: Vector4 = new Vector4(0.0, 0, 0.0);
+	get outlineColor(): Vector4 {
+		return this._outlineColor;
+	}
+	set outlineColor(value: Vector4) {
+		this._outlineColor = value;
+		this._shaderValues.setVector(GPUSkinningToonV2Material.OUTLINECOLOR, value);
+	}
+
+	
+	private _rimViewDirA0: Vector4 = new Vector4(25, -5, 10, 0.55);
+	get rimViewDirA0(): Vector4 {
+		return this._rimViewDirA0;
+	}
+	set rimViewDirA0(value: Vector4) {
+		this._rimViewDirA0 = value;
+		this._shaderValues.setVector(GPUSkinningToonV2Material.RIMVIEWDIRA0, value);
+	}
+	
+	
+	private _rimViewDirB: Vector4 = new Vector4(-30, -5, 20, 0.6);
+	get rimViewDirB(): Vector4 {
+		return this._rimViewDirB;
+	}
+	set rimViewDirB(value: Vector4) {
+		this._rimViewDirB = value;
+		this._shaderValues.setVector(GPUSkinningToonV2Material.RIMVIEWDIRB, value);
+	}
+
 
 	private _albedoColor: Vector4 = new Vector4(1.0, 1.0, 1.0, 1.0);
 
@@ -447,6 +525,9 @@ export class GPUSkinningToonV2Material extends GPUSkinningBaseMaterial
 		this.setShaderName(GPUSkinningToonV2Material.shaderName);
 		this._shaderValues.setVector(GPUSkinningToonV2Material.ALBEDOCOLOR, new Vector4(1.0, 1.0, 1.0, 1.0));
 		this._shaderValues.setVector(GPUSkinningToonV2Material.TILINGOFFSET, new Vector4(1.0, 1.0, 0.0, 0.0));
+		this._shaderValues.setVector(GPUSkinningToonV2Material.RIMCOLORA0, this._rimColorA0);
+		this._shaderValues.setVector(GPUSkinningToonV2Material.RIMCOLORA1, this._rimColorA1);
+		this._shaderValues.setVector(GPUSkinningToonV2Material.RIMCOLORB, this._rimColorB);
 		
 		// this._shaderValues.setVector(GPUSkinningToonV2Material.DOTRIMCOLOR, new Vector4(1.0, 0.0, 0.0, 1.0));
 		// 卡通材质 -- 描边粗细

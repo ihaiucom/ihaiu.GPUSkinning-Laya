@@ -121,41 +121,49 @@ export default class GPUSkining
     static resRoot = "res3d/Conventional/";
     static GetAnimName(name: string): string
     {
+      name = name.replace("_Skin1", "");
       return `GPUSKinning_${name}_Anim.bin`;
     }
 
     static GetMeshName(name: string): string
     {
+      name = name.replace("_Skin1", "");
       return `GPUSKinning_${name}_Mesh.bin`;
     }
     
     static GetMatrixTextureName(name: string): string
     {
+      name = name.replace("_Skin1", "");
       return `GPUSKinning_${name}_MatrixTexture.bin`;
     }
     
     static GetMainTextureName(name: string): string
     {
+      name = name.replace("_Skin1", "");
       return `GPUSKinning_${name}_MainTexture.png`;
     }
     
     static GetShadowTextureName(name: string): string
     {
+      name = name.replace("_Skin1", "");
       return `GPUSKinning_${name}_ShadowTexture.png`;
     }
     
     static GetShadowColorTextureName(name: string): string
     {
+      name = name.replace("_Skin1", "");
       return `GPUSKinning_${name}_ShadowColorTexture.png`;
     }
 
     static GetMaskTextureName(name: string): string
     {
+      name = name.replace("_Skin1", "");
       return `GPUSKinning_${name}_MaskTexture.png`;
     }
     
     static GetHeightRimLightTextureName(name: string): string
     {
+      name = name.replace("_Skin1", "");
       return `GPUSKinning_${name}_HeightRimLightTexture.png`;
     }
 
@@ -263,11 +271,16 @@ export default class GPUSkining
       //     var shadowTexturePath = this.GetPath(this.GetShadowTextureName(name));
       //     list.push({url: shadowTexturePath, type: Laya.Loader.TEXTURE2D});
       // }
-      if(name == "1002_Skin1")
-      {
-          var maskTexturePath = this.GetPath(this.GetMaskTextureName(name));
-          list.push({url: maskTexturePath, type: Laya.Loader.TEXTURE2D});
-      }
+      
+      // if (name.indexOf("1") == 0) 
+			// {
+	    //         var maskTexturePath = this.GetPath(this.GetMaskTextureName(name));
+	    //         list.push({ url: maskTexturePath, type: Laya.Loader.TEXTURE2D });
+      // }
+      
+      var maskTexturePath = this.GetPath(this.GetMaskTextureName(name));
+      list.push({ url: maskTexturePath, type: Laya.Loader.TEXTURE2D });
+			
       return list;
     }
 
@@ -281,21 +294,119 @@ export default class GPUSkining
       })
     }
 
+    static materailConfigs = {
+      "1002":{
+        "unitName": "战姬",
+        "rimColorA": [255, 70, 66, 0],
+        "rimColorB": [255, 240, 195, 0],
+        "rimColorC": [50, 65, 140, 0],
+        "outlineColor": [135, 80, 80, 0],
+        "rimViewDir": [30, -5, 10, 0],
+        "rimViewDir2": [-30, -5, 10, 0],
+        "rimRate_A": 0.55,
+        "rimRate_B": 0.6,
+        "rimRange_C": -0.3
+      },
+      "1010":{
+        "unitName": "龙骑",
+        "rimColorA": [200, 20, 20, 0],
+        "rimColorB": [255, 255, 255, 0],
+        "rimColorC": [140, 90, 35, 0],
+        "outlineColor": [25, 60, 110, 0],
+        "rimViewDir": [35, -5, 20, 0],
+        "rimViewDir2": [-40, 15, 25, 0],
+        "rimRate_A": 0.4,
+        "rimRate_B": 0.8,
+        "rimRange_C": -0.3
+      },
+      "1011":{
+        "unitName": "陷阵",
+        "rimColorA": [255, 5, 0, 0],
+        "rimColorB": [255, 255, 255, 0],
+        "rimColorC": [140, 90, 35, 0],
+        "outlineColor": [25, 60, 110, 0],
+        "rimViewDir": [25, -5, 10, 0],
+        "rimViewDir2": [-30, -5, 20, 0],
+        "rimRate_A": 0.4,
+        "rimRate_B": 0.6,
+        "rimRange_C": -0.3
+      },
+      "2001":{
+        "unitName": "华雄",
+        "rimColorA": [255, 0, 0, 0],
+        "rimColorB": [255, 115, 0, 0],
+        "rimColorC": [0, 130, 160, 0],
+        "outlineColor": [150, 105, 0, 0],
+        "rimViewDir": [40, -5, 15, 0],
+        "rimViewDir2": [-10, 0, 10, 0],
+        "rimRate_A": 0.4,
+        "rimRate_B": 0.65,
+        "rimRange_C": 0
+      },
+      "3001_001":{
+        "unitName": "刀兵",
+        "rimColorA": [140, 25, 25, 0],
+        "rimColorB": [255, 255, 255, 0],
+        "rimColorC": [35, 120, 140, 0],
+        "outlineColor": [120, 65, 60, 0],
+        "rimViewDir": [50, 10, 15, 0],
+        "rimViewDir2": [-15, 0, 10, 0],
+        "rimRate_A": 0.55,
+        "rimRate_B": 0.75,
+        "rimRange_C": -0.25
+      },
+      "3002_001":{
+        "unitName": "枪兵",
+        "rimColorA": [140, 25, 25, 0],
+        "rimColorB": [255, 255, 255, 0],
+        "rimColorC": [35, 120, 140, 0],
+        "outlineColor": [120, 65, 60, 0],
+        "rimViewDir": [50, 10, 8, 0],
+        "rimViewDir2": [-15, -5, 10, 0],
+        "rimRate_A": 0.55,
+        "rimRate_B": 0.75,
+        "rimRange_C": -0.25
+      },
+      "2002":{
+        "unitName": "吕布",
+        "rimColorA": [156, 124, 100, 0],
+        "rimColorB": [208, 244, 255, 0],
+        "rimColorC": [48, 106, 144, 0],
+        "outlineColor": [96, 66, 37, 0],
+        "rimViewDir": [145.8, 19.3, 142.4, 0],
+        "rimViewDir2": [-14.4, -0.55, 7.4, 0],
+        "rimRate_A": 0.3,
+        "rimRate_B": 0.35,
+        "rimRange_C": -0.3
+      },
+      "2003":{
+        "unitName": "魔化吕布",
+        "rimColorA": [156, 124, 100, 0],
+        "rimColorB": [208, 244, 255, 0],
+        "rimColorC": [48, 37, 144, 0],
+        "outlineColor": [96, 66, 37, 0],
+        "rimViewDir": [145.85, 19.3, 142.4, 0],
+        "rimViewDir2": [-6.6, -0.55, 7.40, 0],
+        "rimRate_A": 0.3,
+        "rimRate_B": 0.35,
+        "rimRange_C": -0.3
+    }
+  }
+
     static CreateByName(name: string, callback:Laya.Handler, textureSetting: MaterialTextureType = MaterialTextureType.None, materialCls: any = null)
     {
       
-      if(!materialCls)
-      {
-        if(name == "1002_Skin1")
-        {
-          textureSetting =  MaterialTextureType.Mask;
-          materialCls = GPUSkinningToonV2Material;
-        }
-        else
-        {
-          textureSetting =  MaterialTextureType.None;
-          materialCls = GPUSkinningCartoon2TextureMaterial;
-        }
+      if (!materialCls) {
+        textureSetting = MaterialTextureType.Mask;
+        materialCls = GPUSkinningToonV2Material;
+        // if (name.indexOf("1") == 0) {
+        //     textureSetting = MaterialTextureType.Mask;
+        //     materialCls = GPUSkinningToonV2Material;
+        // }
+        // else {
+        //     textureSetting = MaterialTextureType.None;
+        //     materialCls = GPUSkinningCartoon2TextureMaterial;
+        // }
       }
 
       var animPath: string = this.GetPath(this.GetAnimName(name));
@@ -357,6 +468,33 @@ export default class GPUSkining
                             material.albedoTexture = mainTexture;
                             material.GPUSkinning_TextureMatrix = animTexture;
                             material.__mname = name + " prefab";
+                            if(materialCls = GPUSkinningToonV2Material)
+                            {
+                              var materailConfig = this.materailConfigs[name];
+                              if(!materailConfig) materailConfig = this.materailConfigs["1011"];
+                              if(materailConfig)
+                              {
+                                // var vec4 = new Laya.Vector4(v[0], v[1], v[2]);
+                                var v = materailConfig.rimColorA;
+                                material.rimColorA0 = new Laya.Vector4(v[0]/255, v[1]/255, v[2]/255, v[3]/255);
+
+                                var v = materailConfig.rimColorB;
+                                material.rimColorA1 = new Laya.Vector4(v[0]/255, v[1]/255, v[2]/255, v[3]/255);
+
+                                var v = materailConfig.rimColorC;
+                                material.rimColorB = new Laya.Vector4(v[0]/255, v[1]/255, v[2]/255, materailConfig.rimRange_C);
+                                
+                                var v = materailConfig.rimViewDir;
+                                material.rimViewDirA0 = new Laya.Vector4(v[0], v[1], -v[2], materailConfig.rimRate_A);
+
+                                var v = materailConfig.rimViewDir2;
+                                material.rimViewDirB = new Laya.Vector4(v[0], v[1], -v[2], materailConfig.rimRate_B);
+
+                                var v = materailConfig.outlineColor;
+                                material.outlineColor = new Laya.Vector4(v[0]/255, v[1]/255, v[2]/255, v[3]/255);
+                              }
+                            }
+
                             
                             if(shadowTexture)
                             {
