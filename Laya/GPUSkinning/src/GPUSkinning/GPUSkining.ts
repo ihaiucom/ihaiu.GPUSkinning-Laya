@@ -309,12 +309,12 @@ export default class GPUSkining
       },
       "1010":{
         "unitName": "龙骑",
-        "rimColorA": [200, 20, 20, 0],
+        "rimColorA": [255, 5, 0, 0],
         "rimColorB": [255, 255, 255, 0],
-        "rimColorC": [140, 90, 35, 0],
+         "rimColorC": [255, 135, 0, 0],
         "outlineColor": [25, 60, 110, 0],
-        "rimViewDir": [35, -5, 20, 0],
-        "rimViewDir2": [-40, 15, 25, 0],
+        "rimViewDir": [35, -5, 10, 0],
+        "rimViewDir2": [-30, 10, 25, 0],
         "rimRate_A": 0.4,
         "rimRate_B": 0.8,
         "rimRange_C": -0.3
@@ -323,30 +323,30 @@ export default class GPUSkining
         "unitName": "陷阵",
         "rimColorA": [255, 5, 0, 0],
         "rimColorB": [255, 255, 255, 0],
-        "rimColorC": [140, 90, 35, 0],
+        "rimColorC": [255, 135, 0, 0],
         "outlineColor": [25, 60, 110, 0],
         "rimViewDir": [25, -5, 10, 0],
-        "rimViewDir2": [-30, -5, 20, 0],
+        "rimViewDir2": [-40, 10, 20, 0],
         "rimRate_A": 0.4,
         "rimRate_B": 0.6,
         "rimRange_C": -0.3
       },
       "2001":{
         "unitName": "华雄",
-        "rimColorA": [255, 0, 0, 0],
-        "rimColorB": [255, 115, 0, 0],
+        "rimColorA": [280, 120, 125, 0],
+        "rimColorB": [255, 255, 255, 0],
         "rimColorC": [0, 130, 160, 0],
         "outlineColor": [150, 105, 0, 0],
         "rimViewDir": [40, -5, 15, 0],
         "rimViewDir2": [-10, 0, 10, 0],
-        "rimRate_A": 0.4,
+        "rimRate_A": 0.5,
         "rimRate_B": 0.65,
         "rimRange_C": 0
       },
       "3001_001":{
         "unitName": "刀兵",
         "rimColorA": [140, 25, 25, 0],
-        "rimColorB": [255, 255, 255, 0],
+        "rimColorB": [100, 100, 100, 0],
         "rimColorC": [35, 120, 140, 0],
         "outlineColor": [120, 65, 60, 0],
         "rimViewDir": [50, 10, 15, 0],
@@ -370,7 +370,7 @@ export default class GPUSkining
       "2002":{
         "unitName": "吕布",
         "rimColorA": [156, 124, 100, 0],
-        "rimColorB": [208, 244, 255, 0],
+        "rimColorB": [255, 255, 255, 0],
         "rimColorC": [48, 106, 144, 0],
         "outlineColor": [96, 66, 37, 0],
         "rimViewDir": [145.8, 19.3, 142.4, 0],
@@ -381,14 +381,14 @@ export default class GPUSkining
       },
       "2003":{
         "unitName": "魔化吕布",
-        "rimColorA": [156, 124, 100, 0],
-        "rimColorB": [208, 244, 255, 0],
+        "rimColorA": [0, 170, 255, 0],
+        "rimColorB": [255, 255, 255, 0],
         "rimColorC": [48, 37, 144, 0],
         "outlineColor": [96, 66, 37, 0],
         "rimViewDir": [145.85, 19.3, 142.4, 0],
         "rimViewDir2": [-6.6, -0.55, 7.40, 0],
-        "rimRate_A": 0.3,
-        "rimRate_B": 0.35,
+        "rimRate_A": 0.4,
+        "rimRate_B": 0.5,
         "rimRange_C": -0.3
     }
   }
@@ -471,6 +471,7 @@ export default class GPUSkining
                             if(materialCls = GPUSkinningToonV2Material)
                             {
                               var materailConfig = this.materailConfigs[name];
+                              if(!materailConfig) materailConfig = this.materailConfigs[name + "_001"];
                               if(!materailConfig) materailConfig = this.materailConfigs["1011"];
                               if(materailConfig)
                               {

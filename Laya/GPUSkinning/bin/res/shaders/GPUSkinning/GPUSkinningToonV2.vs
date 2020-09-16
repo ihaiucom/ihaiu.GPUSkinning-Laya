@@ -150,6 +150,7 @@ void main()
 	mat3 worldInvMat = INVERSE_MAT(mat3(worldMat * mm_scale  *skinTransform ));
 	
 	v_Normal=normalize(a_Normal*worldInvMat);
+	
 
 	// v_Normal = a_Normal * worldInvMat;
 	// v_Normal = (  (vec4(a_Normal, 1.0) * worldInvMat) ).rgb;

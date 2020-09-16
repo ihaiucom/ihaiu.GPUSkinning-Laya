@@ -215,7 +215,7 @@ void main()
 
 	// 方向B
 	float dotNormalViewB = dot(worldNormal, rimViewDirB);
-	dotNormalViewB = dotNormalViewB * 1.05 - rimRange_C;
+	dotNormalViewB = dotNormalViewB * 1.05 + rimRange_C;
 	dotNormalViewB = max(dotNormalViewB, 0.0);
 	dotNormalViewB = min(dotNormalViewB, 1.0);
 
