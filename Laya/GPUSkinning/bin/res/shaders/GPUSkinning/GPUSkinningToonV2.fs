@@ -158,6 +158,10 @@ void main()
 	float _shadowAngleStep = 0.2;
 	float _ShadowStrength = 0.358;
 	vec4 baseColor = mainTexture * u_AlbedoColor;
+	vec3 basePowerColor = baseColor.rgb;
+	basePowerColor.r = pow(basePowerColor.r, 0.6);
+	basePowerColor.g = pow(basePowerColor.g, 0.6);
+	basePowerColor.b = pow(basePowerColor.b, 0.6);
 
 
 	vec4 finalColor = baseColor;
@@ -184,6 +188,9 @@ void main()
 	vec3 rimColorA1 = u_rimColorA1.rgb;
 	// rim颜色 另一侧
 	vec3 rimColorB = u_rimColorB.rgb;
+	rimColorB.r = pow(rimColorB.r, 3.0);
+	rimColorB.g = pow(rimColorB.g, 3.0);
+	rimColorB.b = pow(rimColorB.b, 3.0);
 
 	vec3 rimViewDirA = normalize(u_rimViewDirA0.rgb);
 	vec3 rimViewDirB = normalize(u_rimViewDirB.rgb);
@@ -192,8 +199,6 @@ void main()
 	float rimRateA0 = u_rimViewDirA0.w;
 	float rimRateA1 = u_rimViewDirB.w;
 	float rimRange_C = u_rimColorB.w;
-
-	float rimCSwitch = 1.0;
 
 
 
@@ -215,7 +220,7 @@ void main()
 
 	// 方向B
 	float dotNormalViewB = dot(worldNormal, rimViewDirB);
-	dotNormalViewB = dotNormalViewB * 1.05 + rimRange_C;
+	dotNormalViewB = dotNormalViewB  + rimRange_C;
 	dotNormalViewB = max(dotNormalViewB, 0.0);
 	dotNormalViewB = min(dotNormalViewB, 1.0);
 
@@ -224,15 +229,16 @@ void main()
 
 	// 方向A, 颜色
 	vec3 rimMainColorA0 = baseColor.rgb * gradientColor * dotNormalViewA * rimMask;
-	vec3 rimMainColorA1 = baseColor.rgb * rimColorA1 * rimMain * (1.0 - rimMask);
+	vec3 rimMainColorA1 = basePowerColor * rimColorA1 * rimMain * (1.0 - rimMask);
 	
 	// 方向B，颜色
-	vec3 rimMainColorB = rimColorB * dotNormalViewB * rimCSwitch;
+	vec3 rimMainColorB = rimColorB * dotNormalViewB;
 	vec3 rimColor =   rimMainColorA0 + rimMainColorA1 + rimMainColorB;
 
 	finalColor.rgb += rimColor;
 
 
+	// finalColor.rgb = basePowerColor;
 
 
 

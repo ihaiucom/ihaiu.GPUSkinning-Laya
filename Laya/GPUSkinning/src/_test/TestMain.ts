@@ -1,6 +1,7 @@
 import TestShader from "./TestShader";
 import GameConfig from "../GameConfig";
 import GPUSkining from "../GPUSkinning/GPUSkining";
+import TestMesh from "./TestMesh";
 
  class TestMain 
 {
@@ -15,9 +16,11 @@ import GPUSkining from "../GPUSkinning/GPUSkining";
 		}
 		
 		// 启动游戏
-		new TestShader();
+		// new TestShader();
+
+		new TestMesh();
 		
-		this.TestFun();
+		// this.TestFun();
 
 	}
 
