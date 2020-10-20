@@ -252,8 +252,8 @@ void main()
 	#ifdef IS_SUPERARMOR
 		float dotSuperarmor = dot(worldNormal, worldViewDir);
 		dotSuperarmor = max(0.0, dotSuperarmor);
-		vec3 superarmorColorA = vec3(1.0, 0.7, 0.0);
-		finalColor.rgb = finalColor.rgb * 0.5 + superarmorColorA * dotSuperarmor ;
+		vec3 superarmorColorA = vec3(1.0, 1.0, 0.0);
+		finalColor.rgb = finalColor.rgb  + superarmorColorA * (1.0 - dotSuperarmor) * 0.8  ;
 	#endif
 
 

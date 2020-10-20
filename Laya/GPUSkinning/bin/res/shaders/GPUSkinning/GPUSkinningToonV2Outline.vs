@@ -145,6 +145,7 @@ void main()
 		v_Color.rgb = v_Color.rgb * (1.0- separation)  + vec3(separation, separation, separation);
 	#endif
 
+	
 
 	
 	v_PositionWorld=(worldMat*position).xyz;

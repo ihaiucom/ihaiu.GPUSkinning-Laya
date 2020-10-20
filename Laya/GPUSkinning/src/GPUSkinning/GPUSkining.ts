@@ -121,49 +121,52 @@ export default class GPUSkining
     static resRoot = "res3d/Conventional/";
     static GetAnimName(name: string): string
     {
-      name = name.replace("_Skin1", "");
-      return `GPUSKinning_${name}_Anim.bin`;
+      // name = name.replace("_Skin1", "");
+      // return `GPUSKinning_${name}_Anim.bin`;
+      return name + ".info.bin";
     }
 
     static GetMeshName(name: string): string
     {
-      name = name.replace("_Skin1", "");
-      return `GPUSKinning_${name}_Mesh.bin`;
+      // name = name.replace("_Skin1", "");
+      // return `GPUSKinning_${name}_Mesh.bin`;
+      return name + ".mesh.bin";
     }
     
     static GetMatrixTextureName(name: string): string
     {
-      name = name.replace("_Skin1", "");
-      return `GPUSKinning_${name}_MatrixTexture.bin`;
+      // name = name.replace("_Skin1", "");
+      // return `GPUSKinning_${name}_MatrixTexture.bin`;
+      return name + ".matrix.bin";
     }
     
     static GetMainTextureName(name: string): string
     {
-      name = name.replace("_Skin1", "");
+      // name = name.replace("_Skin1", "");
       return `GPUSKinning_${name}_MainTexture.png`;
     }
     
     static GetShadowTextureName(name: string): string
     {
-      name = name.replace("_Skin1", "");
+      // name = name.replace("_Skin1", "");
       return `GPUSKinning_${name}_ShadowTexture.png`;
     }
     
     static GetShadowColorTextureName(name: string): string
     {
-      name = name.replace("_Skin1", "");
+      // name = name.replace("_Skin1", "");
       return `GPUSKinning_${name}_ShadowColorTexture.png`;
     }
 
     static GetMaskTextureName(name: string): string
     {
-      name = name.replace("_Skin1", "");
+      // name = name.replace("_Skin1", "");
       return `GPUSKinning_${name}_MaskTexture.png`;
     }
     
     static GetHeightRimLightTextureName(name: string): string
     {
-      name = name.replace("_Skin1", "");
+      // name = name.replace("_Skin1", "");
       return `GPUSKinning_${name}_HeightRimLightTexture.png`;
     }
 
@@ -172,6 +175,39 @@ export default class GPUSkining
       return this.resRoot + name;
     }
 
+    // static LoadAnimTexture(path: string, width: int, height:int, callback:(  (anim: Laya.Texture2D) => any))
+    // {
+    //       Laya.loader.load(path, Laya.Handler.create(this, (arrayBuffer:ArrayBuffer | Laya.Texture2D)=>
+    //       {
+    //         var texture: Laya.Texture2D;
+    //         if(arrayBuffer instanceof ArrayBuffer)
+    //         {
+    //           var f32 = new Float32Array(arrayBuffer);
+    //           texture = new Laya.Texture2D(width, height, Laya.TextureFormat.R32G32B32A32, false, false);
+    //           texture.wrapModeU = Laya.BaseTexture.WARPMODE_CLAMP;
+    //           texture.wrapModeV = Laya.BaseTexture.WARPMODE_CLAMP;
+    //           texture.filterMode = Laya.BaseTexture.FILTERMODE_POINT;
+    //           texture.anisoLevel = 0;
+    //           texture.lock = true;
+    //           texture.setSubPixels(0, 0, width, height, f32, 0);
+    //           texture._url =  Laya.URL.formatURL(path);
+
+
+    //           Laya.Loader.clearRes(path);
+    //           Laya.Loader.cacheRes(path, texture);
+    //         }
+    //         else
+    //         {
+    //           texture = arrayBuffer;
+    //         }
+            
+    //         callback(texture);
+
+    //       }), null, Laya.Loader.BUFFER);
+
+    // }
+
+    
     static LoadAnimTexture(path: string, width: int, height:int, callback:(  (anim: Laya.Texture2D) => any))
     {
           Laya.loader.load(path, Laya.Handler.create(this, (arrayBuffer:ArrayBuffer | Laya.Texture2D)=>
@@ -180,14 +216,20 @@ export default class GPUSkining
             if(arrayBuffer instanceof ArrayBuffer)
             {
               var f32 = new Float32Array(arrayBuffer);
-              texture = new Laya.Texture2D(width, height, Laya.TextureFormat.R32G32B32A32, false, true);
+              
+              var pixelDataArrays:Float32Array = new Float32Array(width*height*4); 
+              pixelDataArrays.set(f32,0);
+    
+              texture = new Laya.Texture2D(width, height, Laya.TextureFormat.R32G32B32A32, false, false);
               texture.wrapModeU = Laya.BaseTexture.WARPMODE_CLAMP;
               texture.wrapModeV = Laya.BaseTexture.WARPMODE_CLAMP;
               texture.filterMode = Laya.BaseTexture.FILTERMODE_POINT;
               texture.anisoLevel = 0;
               texture.lock = true;
-              texture.setSubPixels(0, 0, width, height, f32, 0);
+              texture.setPixels(pixelDataArrays,0);
               texture._url =  Laya.URL.formatURL(path);
+
+              
 
 
               Laya.Loader.clearRes(path);
@@ -523,6 +565,7 @@ export default class GPUSkining
                             var mono: GPUSkinningPlayerMono = sprite.addComponent(GPUSkinningPlayerMono);
                             mono.SetData(anim, mesh, material, animTexture);
                             callback.runWith(mono);
+                            window['sprite'] = sprite;
                           }
 
                           var loadShadowTexture = (...callfuns:Function[])=>{

@@ -33,9 +33,11 @@ export default class TestShader
 
 
         var nameList = [
-            // "1011",
-            "3001",
+            "1011",
+            // "3001",
             // "Hero_1004_Dongzhuo_Skin1",
+            // "Monster_4003_Kuileishi_Skin1",
+            // "longqi_01"
         ];
 
         for(var j = 0; j < nameList.length; j ++)
@@ -61,15 +63,15 @@ export default class TestShader
 
             this.scene.addChild(mono.owner);
 
-            var b = new Laya.Sprite3D();
-            var node2 = <Laya.Sprite3D> node.clone();
-            var mono2:GPUSkinningPlayerMono = node2.getComponent(GPUSkinningPlayerMono);
-            // mono2.Player.material.IsSeparation = true;
-            node2.transform.localRotationEulerY = 90;
-            b.addChild(node2);
-            b.transform.localPositionX += 1.5;
-            b.transform.localScaleX = -1;
-            this.scene.addChild(b);
+            // var b = new Laya.Sprite3D();
+            // var node2 = <Laya.Sprite3D> node.clone();
+            // var mono2:GPUSkinningPlayerMono = node2.getComponent(GPUSkinningPlayerMono);
+            // // mono2.Player.material.IsSeparation = true;
+            // node2.transform.localRotationEulerY = 90;
+            // b.addChild(node2);
+            // b.transform.localPositionX += 1.5;
+            // b.transform.localScaleX = -1;
+            // this.scene.addChild(b);
             break;
         }
        

@@ -2,6 +2,7 @@ import TestShader from "./TestShader";
 import GameConfig from "../GameConfig";
 import GPUSkining from "../GPUSkinning/GPUSkining";
 import TestMesh from "./TestMesh";
+import TestLayaAnim from "./TestLayaAnim";
 
  class TestMain 
 {
@@ -16,9 +17,11 @@ import TestMesh from "./TestMesh";
 		}
 		
 		// 启动游戏
-		// new TestShader();
+		new TestShader();
 
-		new TestMesh();
+		// new TestMesh();
+
+		// new TestLayaAnim();
 		
 		// this.TestFun();
 

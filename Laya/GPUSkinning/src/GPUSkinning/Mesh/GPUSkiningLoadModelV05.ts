@@ -117,7 +117,11 @@ export class GPUSkiningLoadModelV05 {
 		GPUSkiningLoadModelV05._readData.pos = offset + GPUSkiningLoadModelV05._DATA.offset;
 
 		for (var i: number = 0; i < count; i++)
+		{
+
 			GPUSkiningLoadModelV05._strings[i] = GPUSkiningLoadModelV05._readData.readUTFString();
+			console.log(i, GPUSkiningLoadModelV05._strings[i]);
+		}
 
 		GPUSkiningLoadModelV05._readData.pos = prePos;
 	}
@@ -134,6 +138,7 @@ export class GPUSkiningLoadModelV05 {
 		var arrayBuffer: ArrayBuffer = reader.__getBuffer();
 		var vertexBufferCount: number = reader.getInt16();
 		var offset: number = GPUSkiningLoadModelV05._DATA.offset;
+		console.log("READ_MESH", name, vertexBufferCount, offset);
 		for (i = 0; i < vertexBufferCount; i++) {//TODO:始终为1
 			var vbStart: number = offset + reader.getUint32();
 			var vertexCount: number = reader.getUint32();

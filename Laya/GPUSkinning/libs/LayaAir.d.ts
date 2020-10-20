@@ -5431,6 +5431,7 @@ declare module laya.d3.core {
 		 * @override 
 		 */
 		destroy(destroyChild?:boolean):void;
+
 	}
 
 }
@@ -46061,6 +46062,8 @@ declare module Laya {
 	 */
 
 	class MeshSprite3D extends laya.d3.core.MeshSprite3D {
+		_parse(data: any, spriteMap: any): void 
+		_cloneTo(destObject: any, rootSprite: Node, dstSprite: Node): void
 	}
 
 	class MeshSprite3DShaderDeclaration extends laya.d3.core.MeshSprite3DShaderDeclaration {}

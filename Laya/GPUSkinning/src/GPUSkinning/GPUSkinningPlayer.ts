@@ -22,6 +22,7 @@ import Transform3D = Laya.Transform3D;
 import GPUSkinningAnimEvent from "./Datas/GPUSkinningAnimEvent";
 import GPUSkining from "./GPUSkining";
 import { GPUSkinningBaseMaterial } from "./Material/GPUSkinningBaseMaterial";
+import { GPUSkinningToonV2Material } from "./Material/GPUSkinningToonV2";
 
 /** GPU骨骼动画--组件播放控制器 */
 export default class GPUSkinningPlayer
@@ -416,6 +417,18 @@ export default class GPUSkinningPlayer
         this.mtrl = mtrl2;
         this.mr.sharedMaterial = mtrl == null ? null : mtrl.material;
         this.mf.sharedMesh = res.mesh;
+        var subMeshCount = this.mf.sharedMesh.subMeshCount;
+        if(subMeshCount > 1)
+        {
+            var matrices = [mtrl.material];
+            for(var i = 1; i < subMeshCount; i ++)
+            {
+                var m:GPUSkinningToonV2Material = mtrl.material.clone();
+                // m.albedoColor = new Laya.Vector4(1, 0, 0, 1);
+                matrices.push(m);
+            }
+            this.mr.sharedMaterials =  matrices;
+        }
 
 
 
