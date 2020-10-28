@@ -355,7 +355,7 @@ export default class GPUSkining
         "rimColorB": [45, 135, 150, 0],
         "rimColorC": [255, 200, 135, 0],
         "outlineColor": [25, 60, 110, 0],
-        "rimViewDir": [5, 5, 5, 0],
+        "rimViewDir": [3, 5, 5, 0],
         "rimViewDir2": [-30, 15, 15, 0],
         "rimRate_A": 0.55,
         "rimRate_B": 0.65,
@@ -432,8 +432,32 @@ export default class GPUSkining
         "rimRate_A": 0.3,
         "rimRate_B": 0.4,
         "rimRange_C": -0.3
+      },
+      "2005":{
+        "unitName": "徐荣",
+        "rimColorA": [255, 40, 0, 0],
+        "rimColorB": [255, 165, 120, 0],
+        "rimColorC": [0, 225, 245, 0],
+        "outlineColor": [100, 60, 40, 0],
+        "rimViewDir": [10, 0, 10, 0],
+        "rimViewDir2": [-30, -10, 15, 0],
+        "rimRate_A": 0.4,
+        "rimRate_B": 0.55,
+        "rimRange_C": -0.35
+      },
+      "4001":{
+        "unitName": "吕玲绮",
+        "rimColorA": [255, 0, 0, 0],
+        "rimColorB": [105, 255, 255, 0],
+        "rimColorC": [255, 200, 145, 0],
+        "outlineColor": [145, 75, 80, 0],
+        "rimViewDir": [30, 5, 10, 0],
+        "rimViewDir2": [-30, -5, 10, 0],
+        "rimRate_A": 0.5,
+        "rimRate_B": 0.65,
+        "rimRange_C": -0.4
+      }
     }
-  }
 
     static CreateByName(name: string, callback:Laya.Handler, textureSetting: MaterialTextureType = MaterialTextureType.None, materialCls: any = null)
     {
