@@ -67,6 +67,8 @@ export default class GPUSkining
       window['GPUSkinningAnimation'] = GPUSkinningAnimation;
       window['GPUSkinningClip'] = GPUSkinningClip;
       window['SceneMaterial'] = SceneMaterial;
+
+      Laya.ClassUtils.regClass("GPUSkinningToonV2Material", GPUSkinningToonV2Material);
       
       
       var GPUSkinningIncludegGLSL: string = await GPUSkinningBaseMaterial.loadShaderGlslAsync("GPUSkinningInclude");
@@ -143,7 +145,9 @@ export default class GPUSkining
     static GetMainTextureName(name: string): string
     {
       // name = name.replace("_Skin1", "");
-      return `GPUSKinning_${name}_MainTexture.png`;
+      // return `GPUSKinning_${name}_MainTexture.png`;
+      
+      return `${name}_main.png`;
     }
     
     static GetShadowTextureName(name: string): string
@@ -161,13 +165,20 @@ export default class GPUSkining
     static GetMaskTextureName(name: string): string
     {
       // name = name.replace("_Skin1", "");
-      return `GPUSKinning_${name}_MaskTexture.png`;
+      // return `GPUSKinning_${name}_MaskTexture.png`;
+      return `${name}_mask.png`;
     }
     
     static GetHeightRimLightTextureName(name: string): string
     {
       // name = name.replace("_Skin1", "");
       return `GPUSKinning_${name}_HeightRimLightTexture.png`;
+    }
+    
+    static GetMaterailName(name: string): string
+    {
+      // name = name.replace("_Skin1", "");
+      return `${name}.materail.lmat`;
     }
 
     static GetPath(name: string)
@@ -484,6 +495,7 @@ export default class GPUSkining
       var shadowColorTexturePath = this.GetPath(this.GetShadowColorTextureName(name));
       var maskTexturePath = this.GetPath(this.GetMaskTextureName(name));
       var heightRimLightTexturePath = this.GetPath(this.GetHeightRimLightTextureName(name));
+      var materailPath = this.GetPath(this.GetMaterailName(name));
 
       GPUSkinningAnimation.Load(animPath, (anim: GPUSkinningAnimation)=>
       {
@@ -527,62 +539,62 @@ export default class GPUSkining
                           var shadowColorTexture:Laya.Texture2D;
                           var heightRimLightTexture:Laya.Texture2D;
                           var maskTexture:Laya.Texture2D;
+                          var material:GPUSkinningToonV2Material;
 
                           var createFun = ()=>
                           {
-                            var material:GPUSkinningToonV2Material = new materialCls();
-                            material.albedoTexture = mainTexture;
+                            // var material:GPUSkinningToonV2Material = new materialCls();
+                            // material.albedoTexture = mainTexture;
                             material.GPUSkinning_TextureMatrix = animTexture;
                             material.__mname = name + " prefab";
-                            if(materialCls = GPUSkinningToonV2Material)
-                            {
-                              var materailConfig = this.materailConfigs[name];
-                              if(!materailConfig) materailConfig = this.materailConfigs[name + "_001"];
-                              if(!materailConfig) materailConfig = this.materailConfigs["1011"];
-                              if(materailConfig)
-                              {
-                                // var vec4 = new Laya.Vector4(v[0], v[1], v[2]);
-                                var v = materailConfig.rimColorA;
-                                material.rimColorA0 = new Laya.Vector4(v[0]/255, v[1]/255, v[2]/255, v[3]/255);
+                            // if(materialCls = GPUSkinningToonV2Material)
+                            // {
+                            //   var materailConfig = this.materailConfigs[name];
+                            //   if(!materailConfig) materailConfig = this.materailConfigs[name + "_001"];
+                            //   if(!materailConfig) materailConfig = this.materailConfigs["1011"];
+                            //   if(materailConfig)
+                            //   {
+                            //     var v = materailConfig.rimColorA;
+                            //     material.rimColorA0 = new Laya.Vector4(v[0]/255, v[1]/255, v[2]/255, v[3]/255);
 
-                                var v = materailConfig.rimColorB;
-                                material.rimColorA1 = new Laya.Vector4(v[0]/255, v[1]/255, v[2]/255, v[3]/255);
+                            //     var v = materailConfig.rimColorB;
+                            //     material.rimColorA1 = new Laya.Vector4(v[0]/255, v[1]/255, v[2]/255, v[3]/255);
 
-                                var v = materailConfig.rimColorC;
-                                material.rimColorB = new Laya.Vector4(v[0]/255, v[1]/255, v[2]/255, materailConfig.rimRange_C);
+                            //     var v = materailConfig.rimColorC;
+                            //     material.rimColorB = new Laya.Vector4(v[0]/255, v[1]/255, v[2]/255, materailConfig.rimRange_C);
                                 
-                                var v = materailConfig.rimViewDir;
-                                material.rimViewDirA0 = new Laya.Vector4(v[0], v[1], -v[2], materailConfig.rimRate_A);
+                            //     var v = materailConfig.rimViewDir;
+                            //     material.rimViewDirA0 = new Laya.Vector4(v[0], v[1], -v[2], materailConfig.rimRate_A);
 
-                                var v = materailConfig.rimViewDir2;
-                                material.rimViewDirB = new Laya.Vector4(v[0], v[1], -v[2], materailConfig.rimRate_B);
+                            //     var v = materailConfig.rimViewDir2;
+                            //     material.rimViewDirB = new Laya.Vector4(v[0], v[1], -v[2], materailConfig.rimRate_B);
 
-                                var v = materailConfig.outlineColor;
-                                material.outlineColor = new Laya.Vector4(v[0]/255, v[1]/255, v[2]/255, v[3]/255);
-                              }
-                            }
+                            //     var v = materailConfig.outlineColor;
+                            //     material.outlineColor = new Laya.Vector4(v[0]/255, v[1]/255, v[2]/255, v[3]/255);
+                            //   }
+                            // }
 
                             
-                            if(shadowTexture)
-                            {
-                              material.shadowTexture = shadowTexture;
-                            }
+                            // if(shadowTexture)
+                            // {
+                            //   material.shadowTexture = shadowTexture;
+                            // }
                             
-                            if(shadowColorTexture)
-                            {
-                              material.shadowColorTexture = shadowColorTexture;
-                            }
+                            // if(shadowColorTexture)
+                            // {
+                            //   material.shadowColorTexture = shadowColorTexture;
+                            // }
   
-                            if(heightRimLightTexture)
-                            {
-                              material.heightRimLightTexture = heightRimLightTexture;
-                            }
+                            // if(heightRimLightTexture)
+                            // {
+                            //   material.heightRimLightTexture = heightRimLightTexture;
+                            // }
                             
   
-                            if(maskTexture)
-                            {
-                              material.heightRimLightTexture = maskTexture;
-                            }
+                            // if(maskTexture)
+                            // {
+                            //   material.heightRimLightTexture = maskTexture;
+                            // }
 
 
                             var sprite = new Laya.MeshSprite3D();
@@ -592,79 +604,86 @@ export default class GPUSkining
                             window['sprite'] = sprite;
                           }
 
-                          var loadShadowTexture = (...callfuns:Function[])=>{
-                              var callfun = callfuns.shift();
-                              if(hasShadowTexture)
-                              {  
-                                  Laya.loader.create(shadowTexturePath, Laya.Handler.create(this, (texture:Laya.Texture2D)=>
-                                  {
-                                    shadowTexture = texture;
-                                    callfun(...callfuns);
-                                  }), null, Laya.Loader.TEXTURE2D);
-                              }
-                              else
-                              {
-                                callfun(...callfuns);
-                              }
-                          }
+                        //   var loadShadowTexture = (...callfuns:Function[])=>{
+                        //       var callfun = callfuns.shift();
+                        //       if(hasShadowTexture)
+                        //       {  
+                        //           Laya.loader.create(shadowTexturePath, Laya.Handler.create(this, (texture:Laya.Texture2D)=>
+                        //           {
+                        //             shadowTexture = texture;
+                        //             callfun(...callfuns);
+                        //           }), null, Laya.Loader.TEXTURE2D);
+                        //       }
+                        //       else
+                        //       {
+                        //         callfun(...callfuns);
+                        //       }
+                        //   }
 
-                          var loadShadowColorTexture = (...callfuns:Function[])=>{
-                              var callfun = callfuns.shift();
-                              if(hasShadowColorTexture)
-                              {  
-                                  Laya.loader.create(shadowColorTexturePath, Laya.Handler.create(this, (texture:Laya.Texture2D)=>
-                                  {
-                                    shadowColorTexture = texture;
-                                    callfun(...callfuns);
-                                  }), null, Laya.Loader.TEXTURE2D);
-                              }
-                              else
-                              {
-                                callfun(...callfuns);
-                              }
-                          }
-
-                          
-                          var loadMaskTexture = (...callfuns:Function[])=>{
-                            var callfun = callfuns.shift();
-                            if(hasMaskTexture)
-                            {  
-                                Laya.loader.create(maskTexturePath, Laya.Handler.create(this, (texture:Laya.Texture2D)=>
-                                {
-                                  maskTexture = texture;
-                                  callfun(...callfuns);
-                                }), null, Laya.Loader.TEXTURE2D);
-                            }
-                            else
-                            {
-                              callfun(...callfuns);
-                            }
-                        }
+                        //   var loadShadowColorTexture = (...callfuns:Function[])=>{
+                        //       var callfun = callfuns.shift();
+                        //       if(hasShadowColorTexture)
+                        //       {  
+                        //           Laya.loader.create(shadowColorTexturePath, Laya.Handler.create(this, (texture:Laya.Texture2D)=>
+                        //           {
+                        //             shadowColorTexture = texture;
+                        //             callfun(...callfuns);
+                        //           }), null, Laya.Loader.TEXTURE2D);
+                        //       }
+                        //       else
+                        //       {
+                        //         callfun(...callfuns);
+                        //       }
+                        //   }
 
                           
-                          var loadHeightRimLightTexture = (...callfuns:Function[])=>{
-                            var callfun = callfuns.shift();
-                            if(hasHeightRimLightTexture)
-                            {  
-                                Laya.loader.create(heightRimLightTexturePath, Laya.Handler.create(this, (texture:Laya.Texture2D)=>
-                                {
-                                  heightRimLightTexture = texture;
-                                  callfun(...callfuns);
-                                }), null, Laya.Loader.TEXTURE2D);
-                            }
-                            else
-                            {
-                              callfun(...callfuns);
-                            }
-                        }
-
-                        loadShadowTexture(loadShadowColorTexture, loadShadowColorTexture, loadHeightRimLightTexture, loadMaskTexture, createFun);
-
-
-
+                        //   var loadMaskTexture = (...callfuns:Function[])=>{
+                        //     var callfun = callfuns.shift();
+                        //     if(hasMaskTexture)
+                        //     {  
+                        //         Laya.loader.create(maskTexturePath, Laya.Handler.create(this, (texture:Laya.Texture2D)=>
+                        //         {
+                        //           maskTexture = texture;
+                        //           callfun(...callfuns);
+                        //         }), null, Laya.Loader.TEXTURE2D);
+                        //     }
+                        //     else
+                        //     {
+                        //       callfun(...callfuns);
+                        //     }
+                        // }
 
                           
-                         
+                        //   var loadHeightRimLightTexture = (...callfuns:Function[])=>{
+                        //     var callfun = callfuns.shift();
+                        //     if(hasHeightRimLightTexture)
+                        //     {  
+                        //         Laya.loader.create(heightRimLightTexturePath, Laya.Handler.create(this, (texture:Laya.Texture2D)=>
+                        //         {
+                        //           heightRimLightTexture = texture;
+                        //           callfun(...callfuns);
+                        //         }), null, Laya.Loader.TEXTURE2D);
+                        //     }
+                        //     else
+                        //     {
+                        //       callfun(...callfuns);
+                        //     }
+                        // }
+
+
+                        // loadShadowTexture(loadShadowColorTexture, loadShadowColorTexture, loadHeightRimLightTexture, loadMaskTexture, createFun);
+
+
+
+                        Laya.loader.create(materailPath, Laya.Handler.create(this, (m:GPUSkinningToonV2Material)=>
+                        {
+                          material = m;
+
+                          console.log("materail", material);
+                          createFun();
+                        }));
+
+                          
                           
                         
 

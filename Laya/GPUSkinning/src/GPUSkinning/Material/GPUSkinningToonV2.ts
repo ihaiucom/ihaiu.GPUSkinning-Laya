@@ -246,6 +246,10 @@ export class GPUSkinningToonV2Material extends GPUSkinningBaseMaterial
 		this._rimColorA0 = value;
 		this._shaderValues.setVector(GPUSkinningToonV2Material.RIMCOLORA0, finalAlbedo);
 	}
+	
+	set _RimA_Color(value: Vector4) {
+		this.rimColorA0 = value;
+	}
 
 	
 	private _rimColorA1: Vector4 = new Vector4(1.0, 0.9290133, 0.759434);
@@ -257,6 +261,9 @@ export class GPUSkinningToonV2Material extends GPUSkinningBaseMaterial
 		this._shaderValues.setVector(GPUSkinningToonV2Material.RIMCOLORA1, value);
 	}
 
+	set _RimB_Color(value: Vector4) {
+		this.rimColorA1 = value;
+	}
 
 	
 	private _rimColorB: Vector4 = new Vector4(1.0, 0.501811, 0.0);
@@ -269,13 +276,29 @@ export class GPUSkinningToonV2Material extends GPUSkinningBaseMaterial
 	}
 
 	
-	private _outlineColor: Vector4 = new Vector4(0.0, 0, 0.0);
+	set _RimC_Color(value: Vector4) {
+		this.rimColorB = value;
+	}
+
+	
+	set _RimC_Range(value: number) {
+		this._rimColorB.w = value;
+		this.rimColorB = this._rimColorB;
+	}
+
+	
+	private __outlineColor: Vector4 = new Vector4(0.0, 0, 0.0);
 	get outlineColor(): Vector4 {
-		return this._outlineColor;
+		return this.__outlineColor;
 	}
 	set outlineColor(value: Vector4) {
-		this._outlineColor = value;
+		this.__outlineColor = value;
 		this._shaderValues.setVector(GPUSkinningToonV2Material.OUTLINECOLOR, value);
+	}
+
+	
+	set _OutlineColor(value: Vector4) {
+		this.outlineColor = value;
 	}
 
 	
@@ -287,6 +310,19 @@ export class GPUSkinningToonV2Material extends GPUSkinningBaseMaterial
 		this._rimViewDirA0 = value;
 		this._shaderValues.setVector(GPUSkinningToonV2Material.RIMVIEWDIRA0, value);
 	}
+
+	
+	set _RimAB_Direction(value: Vector4) {
+		this.rimViewDirA0 = value;
+	}
+
+	set _RimA_Rate(value: number)
+	{
+		this._rimViewDirA0.w = value;
+		this.rimViewDirA0 = this._rimViewDirA0;
+	}
+
+	
 	
 	
 	private _rimViewDirB: Vector4 = new Vector4(-30, -5, 20, 0.6);
@@ -298,8 +334,22 @@ export class GPUSkinningToonV2Material extends GPUSkinningBaseMaterial
 		this._shaderValues.setVector(GPUSkinningToonV2Material.RIMVIEWDIRB, value);
 	}
 
+	
+	set _RimC_Direction(value: Vector4) {
+		this.rimViewDirB = value;
+	}
+	
+	
+	set _RimB_Rate(value: number)
+	{
+		this._rimViewDirB.w = value;
+		this.rimViewDirB = this._rimViewDirB;
+	}
+
+
 
 	private _albedoColor: Vector4 = new Vector4(1.0, 1.0, 1.0, 1.0);
+	
 
 
 	/**
@@ -330,6 +380,11 @@ export class GPUSkinningToonV2Material extends GPUSkinningBaseMaterial
 		else
 			this._shaderValues.removeDefine(GPUSkinningToonV2Material.SHADERDEFINE_ALBEDOTEXTURE);
 		this._shaderValues.setTexture(GPUSkinningToonV2Material.ALBEDOTEXTURE, value);
+	}
+
+	
+	set _MainTex(value: BaseTexture) {
+		this.albedoTexture = value;
 	}
 
 	
@@ -379,6 +434,14 @@ export class GPUSkinningToonV2Material extends GPUSkinningBaseMaterial
 			this._shaderValues.removeDefine(GPUSkinningToonV2Material.SHADERDEFINE_HEIGHTRIMLIGHTTEXTURE);
 		this._shaderValues.setTexture(GPUSkinningToonV2Material.HEIGHTRIMLIGHTTEXTURE, value);
 	}
+
+	
+	set _MaskTex(value: BaseTexture) {
+		this.heightRimLightTexture = value;
+	}
+	
+
+
 
 	
 	/**
@@ -517,7 +580,12 @@ export class GPUSkinningToonV2Material extends GPUSkinningBaseMaterial
     }
     set CartoonOutlineWidth(value) {
         this._shaderValues.setNumber(GPUSkinningToonV2Material.CARTOON_OUTLINEWIDTH, value);
-    }
+	}
+	
+	
+    set _OutlineWidth(value) {
+		this.CartoonOutlineWidth = value;
+	}
 
 
 	constructor() {
@@ -551,7 +619,7 @@ export class GPUSkinningToonV2Material extends GPUSkinningBaseMaterial
 	clone(): any {
 		var dest: GPUSkinningToonV2Material = new GPUSkinningToonV2Material();
 		this.cloneTo(dest);
-        this._albedoColor.cloneTo(dest._albedoColor);
+		this._albedoColor.cloneTo(dest._albedoColor);
 		return dest;
 	}
 
@@ -560,6 +628,14 @@ export class GPUSkinningToonV2Material extends GPUSkinningBaseMaterial
 		super.cloneTo(destObject);
 		var destMaterial: GPUSkinningToonV2Material = (<GPUSkinningToonV2Material>destObject);
 		this._albedoColor.cloneTo(destMaterial._albedoColor);
+		
+		// this._rimColorA0.cloneTo(destMaterial._rimColorA0);
+		// this._rimColorA1.cloneTo(destMaterial._rimColorA1);
+		// this._rimColorB.cloneTo(destMaterial._rimColorB);
+
+		// destMaterial.rimColorA0 = destMaterial._rimColorA0;
+		// destMaterial.rimColorA1 = destMaterial._rimColorA1;
+		// destMaterial.rimColorB = destMaterial._rimColorB;
 		
 	}
 
