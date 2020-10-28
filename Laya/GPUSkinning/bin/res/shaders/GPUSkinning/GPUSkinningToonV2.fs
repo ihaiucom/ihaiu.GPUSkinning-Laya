@@ -248,20 +248,37 @@ void main()
 	dotNV = max(0.0, dotNV);
 	finalColor.rgb = finalColor.rgb + u_DotRimColor.rgb * u_DotRimColor.a  * dotNV ;
 
+
+	// 无敌
+	#ifdef IS_INVINCIBLE
+		float dotSuperarmor = dot(worldNormal, worldViewDir);
+		dotSuperarmor = 1.0 - dotSuperarmor;
+		dotSuperarmor = pow(dotSuperarmor, 1.5);
+		dotSuperarmor = max(0.0, dotSuperarmor);
+		vec3 superarmorColorA = vec3(1.0, 1.0, 1.0);
+		finalColor.rgb = baseColor.rgb  + superarmorColorA * dotSuperarmor * 1.0  ;
+	#endif
+	
+	
+
+	
 	// 霸体
 	#ifdef IS_SUPERARMOR
 		float dotSuperarmor = dot(worldNormal, worldViewDir);
 		dotSuperarmor = max(0.0, dotSuperarmor);
-		vec3 superarmorColorA = vec3(1.0, 0.7, 0.0);
-		finalColor.rgb = finalColor.rgb * 0.5 + superarmorColorA * dotSuperarmor ;
+		vec3 superarmorColorA = vec3(1.0, 1.0, 0.0);
+		finalColor.rgb = finalColor.rgb  + superarmorColorA * (1.0 - dotSuperarmor) * 0.8  ;
 	#endif
 
 
 	// 分身
 	#ifdef IS_SPEARATION
-		float separation = 0.5;
-		finalColor.rgb = finalColor.rgb * (1.0- separation)  + vec3(separation, separation, separation);
+		float dotSuperarmor = dot(worldNormal, worldViewDir);
+		dotSuperarmor = max(0.0, dotSuperarmor);
+		vec3 superarmorColorA = vec3(1.0, 1.0, 1.0);
+		finalColor.rgb =  superarmorColorA * (1.0 - dotSuperarmor) * 0.5  ;
 	#endif
+	
 
 	gl_FragColor = finalColor;
 

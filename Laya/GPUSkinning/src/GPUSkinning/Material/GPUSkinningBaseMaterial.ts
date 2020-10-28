@@ -72,12 +72,14 @@ export class GPUSkinningBaseMaterial extends Laya.Material
 	static SHADERDEFINE_GPUSKINING_MATRIX_TEXTURE: ShaderDefine;
     static SHADERDEFINE_IS_SPEARATION: ShaderDefine;
     static SHADERDEFINE_IS_SUPERARMOR: ShaderDefine;
+    static SHADERDEFINE_IS_INVINCIBLE: ShaderDefine;
     
 
     static __initDefine__(): void {
 		this.SHADERDEFINE_GPUSKINING_MATRIX_TEXTURE = Shader3D.getDefineByName("GPUSKINING_MATRIX_TEXTURE");
 		this.SHADERDEFINE_IS_SPEARATION = Shader3D.getDefineByName("IS_SPEARATION");
 		this.SHADERDEFINE_IS_SUPERARMOR = Shader3D.getDefineByName("IS_SUPERARMOR");
+		this.SHADERDEFINE_IS_INVINCIBLE = Shader3D.getDefineByName("IS_INVINCIBLE");
 	}
     
 	/**
@@ -118,6 +120,28 @@ export class GPUSkinningBaseMaterial extends Laya.Material
         else
             this._shaderValues.removeDefine(GPUSkinningBaseMaterial.SHADERDEFINE_IS_SPEARATION);
     }
+
+    private _IsInvincible: boolean = false;
+    /**
+     * 是否是无敌
+     */
+    
+    get IsInvincible()
+    {
+        return this._IsInvincible;
+    }
+
+    set IsInvincible(value: boolean)
+    {
+        this._IsInvincible = value;
+        
+		if (value)
+            this._shaderValues.addDefine(GPUSkinningBaseMaterial.SHADERDEFINE_IS_INVINCIBLE);
+        else
+            this._shaderValues.removeDefine(GPUSkinningBaseMaterial.SHADERDEFINE_IS_INVINCIBLE);
+    }
+
+
 
 	private _IsSuperarmor: boolean = false;
     /**

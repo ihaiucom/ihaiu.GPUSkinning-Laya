@@ -16,9 +16,9 @@ import TestMesh from "./TestMesh";
 		}
 		
 		// 启动游戏
-		// new TestShader();
+		new TestShader();
 
-		new TestMesh();
+		// new TestMesh();
 		
 		// this.TestFun();
 
