@@ -33,7 +33,7 @@ export default class TestShader
 
 
         var nameList = [
-            "1011",
+            ["1010_000", "1010_000"],
             // "3001",
             // "Hero_1004_Dongzhuo_Skin1",
             // "Monster_4003_Kuileishi_Skin1",
@@ -44,7 +44,7 @@ export default class TestShader
         {
             var resId = nameList[j];
             var hasShadowTexture = false;
-            var mono = await GPUSkining.CreateByNameAsync(nameList[j], MaterialTextureType.Mask, GPUSkinningToonV2Material);
+            var mono = await GPUSkining.CreateByNameAsync(nameList[j][0], nameList[j][1]);
             // mono.Player.material.IsSeparation = true;
             // mono.Player.material.IsSuperarmor = true;
             // var mono = await GPUSkining.CreateByNameAsync(nameList[j], MaterialTextureType.ShadowColor_And_HeightRimLight);
@@ -53,7 +53,7 @@ export default class TestShader
             node.transform.localRotationEulerY = 90;
             // node.addComponent(TestRotation);
             window['mono'] = mono;
-            mono.Player.Play("Idle");
+            mono.Player.Play("idle");
             for(var i = 0; i < mono.anim.clips.length; i ++)
             {
                 mono.anim.clips[i].wrapMode = GPUSkinningWrapMode.Loop;
@@ -61,7 +61,13 @@ export default class TestShader
             }
             // mono.Player.isRandomPlayClip = true;
 
-            this.scene.addChild(mono.owner);
+            var b = new Laya.Sprite3D();
+            b.addChild(mono.owner);
+            this.scene.addChild(b);
+            // b.transform.localScaleX = -1;
+            mono.Player.SetWeapon("D_R_weapon", "w_1010_r_000", "w_1011_r_000");
+
+            b.transform.setWorldLossyScale(new Laya.Vector3(-1, 1, 1));
 
             // var b = new Laya.Sprite3D();
             // var node2 = <Laya.Sprite3D> node.clone();

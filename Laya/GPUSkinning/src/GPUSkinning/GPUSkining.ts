@@ -19,6 +19,7 @@ import LayaExtends_Node from "../LayaExtends/LayaExtends_Node";
 import { GPUSkinningCartoon2TextureMaterial } from "./Material/GPUSkinningCartoon2TextureMaterial";
 import SceneMaterial from "./Material/SceneMaterial";
 import { GPUSkinningToonV2Material } from "./Material/GPUSkinningToonV2";
+import { GPUSkinningToonWeaponV2Material } from "./Material/GPUSkinningToonWeaponV2";
 // import LayaExtends_Laya3D from "../LayaExtends/LayaExtends_Laya3D";
 // import LayaExtends_Texture2D from "../LayaExtends/LayaExtends_Texture2D";
 
@@ -64,11 +65,13 @@ export default class GPUSkining
       window['GPUSkinningBaseMaterial'] = GPUSkinningBaseMaterial;
       window['GPUSkinningCartoon2TextureMaterial'] = GPUSkinningCartoon2TextureMaterial;
       window['GPUSkinningToonV2Material'] = GPUSkinningToonV2Material;
+      window['GPUSkinningToonWeaponV2Material'] = GPUSkinningToonWeaponV2Material;
       window['GPUSkinningAnimation'] = GPUSkinningAnimation;
       window['GPUSkinningClip'] = GPUSkinningClip;
       window['SceneMaterial'] = SceneMaterial;
 
       Laya.ClassUtils.regClass("GPUSkinningToonV2Material", GPUSkinningToonV2Material);
+      Laya.ClassUtils.regClass("GPUSkinningToonWeaponV2Material", GPUSkinningToonWeaponV2Material);
       
       
       var GPUSkinningIncludegGLSL: string = await GPUSkinningBaseMaterial.loadShaderGlslAsync("GPUSkinningInclude");
@@ -80,9 +83,11 @@ export default class GPUSkining
       GPUSkinningBaseMaterial.__initDefine__();
       // await GPUSkinningUnlitMaterial.install();
       // await GPUSkinningCartoonMaterial.install();
-      await GPUSkinningCartoon2TextureMaterial.install();
+      // await GPUSkinningCartoon2TextureMaterial.install();
       // await GPUSkinningToonMaterial.install();
       await GPUSkinningToonV2Material.install();
+      await GPUSkinningToonWeaponV2Material.install();
+
 
 
       LayaExtends_Node.Init();
@@ -337,165 +342,24 @@ export default class GPUSkining
       return list;
     }
 
-    static async CreateByNameAsync(name: string, textureSetting: MaterialTextureType = MaterialTextureType.None, materialCls: any = null): Promise<GPUSkinningPlayerMono>
+    static async CreateByNameAsync(skinName: string, animName:string): Promise<GPUSkinningPlayerMono>
     {
       return new Promise<GPUSkinningPlayerMono>((resolve)=>
       {
-            this.CreateByName(name, Laya.Handler.create(this, (mono: GPUSkinningPlayerMono)=>{
+            this.CreateByName(skinName, animName, Laya.Handler.create(this, (mono: GPUSkinningPlayerMono)=>{
               resolve(mono);
-            }), textureSetting, materialCls);
+            }));
       })
     }
 
-    static materailConfigs = {
-      "1002":{
-        "unitName": "战姬",
-        "rimColorA": [255, 70, 65, 0],
-        "rimColorB": [255, 240, 195, 0],
-        "rimColorC": [135, 180, 255, 0],
-        "outlineColor": [135, 80, 80, 0],
-        "rimViewDir": [30, -5, 10, 0],
-        "rimViewDir2": [-30, -5, 10, 0],
-        "rimRate_A": 0.5,
-        "rimRate_B": 0.6,
-        "rimRange_C": -0.3
-      },
-      "1010":{
-        "unitName": "龙骑",
-        "rimColorA": [255, 0, 0, 0],
-        "rimColorB": [45, 135, 150, 0],
-        "rimColorC": [255, 200, 135, 0],
-        "outlineColor": [25, 60, 110, 0],
-        "rimViewDir": [3, 5, 5, 0],
-        "rimViewDir2": [-30, 15, 15, 0],
-        "rimRate_A": 0.55,
-        "rimRate_B": 0.65,
-        "rimRange_C": -0.3
-      },
-      "1011":{
-        "unitName": "陷阵",
-        "rimColorA": [255, 0, 0, 0],
-        "rimColorB": [45, 135, 150, 0],
-        "rimColorC": [255, 200, 135, 0],
-        "outlineColor": [25, 60, 110, 0],
-        "rimViewDir": [25, 5, 10, 0],
-        "rimViewDir2": [-40, 10, 20, 0],
-        "rimRate_A": 0.4,
-        "rimRate_B": 0.5,
-        "rimRange_C": -0.3
-      },
-      "2001":{
-        "unitName": "华雄",
-        "rimColorA": [80, 120, 125, 0],
-        "rimColorB": [255, 255, 255, 0],
-        "rimColorC": [250, 190, 70, 0],
-        "outlineColor": [150, 105, 0, 0],
-        "rimViewDir": [30, -5, 15, 0],
-        "rimViewDir2": [-25, 5, 5, 0],
-        "rimRate_A": 0.5,
-        "rimRate_B": 0.6,
-        "rimRange_C": 0
-      },
-      "3001":{
-        "unitName": "刀兵",
-        "rimColorA": [140, 25, 25, 0],
-        "rimColorB": [200, 200, 200, 0],
-        "rimColorC": [110, 225, 250, 0],
-        "outlineColor": [120, 65, 60, 0],
-        "rimViewDir": [30, 5, 10, 0],
-        "rimViewDir2": [-15, 0, 10, 0],
-        "rimRate_A": 0.55,
-        "rimRate_B": 0.65,
-        "rimRange_C": -0.3
-      },
-      "3002":{
-        "unitName": "枪兵",
-        "rimColorA": [140, 25, 25, 0],
-        "rimColorB": [200, 220, 200, 0],
-        "rimColorC": [80, 220, 225, 0],
-        "outlineColor": [120, 65, 60, 0],
-        "rimViewDir": [30, 5, 10, 0],
-        "rimViewDir2": [-20, 0, 10, 0],
-        "rimRate_A": 0.55,
-        "rimRate_B": 0.65,
-        "rimRange_C": -0.3
-      },
-      "2002":{
-        "unitName": "吕布",
-        "rimColorA": [255, 110, 0, 0],
-        "rimColorB": [255, 185, 165, 0],
-        "rimColorC": [70, 200, 210, 0],
-        "outlineColor": [100, 60, 40, 0],
-        "rimViewDir": [5, 5, 8, 0],
-        "rimViewDir2": [-30, -10, 15, 0],
-        "rimRate_A": 0.3,
-        "rimRate_B": 0.4,
-        "rimRange_C": -0.3
-      },
-      "2003":{
-        "unitName": "魔化吕布",
-        "rimColorA": [0, 100, 255, 0],
-        "rimColorB": [80, 255, 255, 0],
-        "rimColorC": [255, 220, 110, 0],
-        "outlineColor": [100, 60, 40, 0],
-        "rimViewDir": [5, 5, 8, 0],
-        "rimViewDir2": [-30, -10, 15, 0],
-        "rimRate_A": 0.3,
-        "rimRate_B": 0.4,
-        "rimRange_C": -0.3
-      },
-      "2005":{
-        "unitName": "徐荣",
-        "rimColorA": [255, 40, 0, 0],
-        "rimColorB": [255, 165, 120, 0],
-        "rimColorC": [0, 225, 245, 0],
-        "outlineColor": [100, 60, 40, 0],
-        "rimViewDir": [10, 0, 10, 0],
-        "rimViewDir2": [-30, -10, 15, 0],
-        "rimRate_A": 0.4,
-        "rimRate_B": 0.55,
-        "rimRange_C": -0.35
-      },
-      "4001":{
-        "unitName": "吕玲绮",
-        "rimColorA": [255, 0, 0, 0],
-        "rimColorB": [105, 255, 255, 0],
-        "rimColorC": [255, 200, 145, 0],
-        "outlineColor": [145, 75, 80, 0],
-        "rimViewDir": [30, 5, 10, 0],
-        "rimViewDir2": [-30, -5, 10, 0],
-        "rimRate_A": 0.5,
-        "rimRate_B": 0.65,
-        "rimRange_C": -0.4
-      }
-    }
 
-    static CreateByName(name: string, callback:Laya.Handler, textureSetting: MaterialTextureType = MaterialTextureType.None, materialCls: any = null)
+    static CreateByName(skinName: string, animName:string, callback:Laya.Handler)
     {
-      
-      if (!materialCls) {
-        textureSetting = MaterialTextureType.Mask;
-        materialCls = GPUSkinningToonV2Material;
-        // if (name.indexOf("1") == 0) {
-        //     textureSetting = MaterialTextureType.Mask;
-        //     materialCls = GPUSkinningToonV2Material;
-        // }
-        // else {
-        //     textureSetting = MaterialTextureType.None;
-        //     materialCls = GPUSkinningCartoon2TextureMaterial;
-        // }
-      }
 
-      var animPath: string = this.GetPath(this.GetAnimName(name));
-      var meshPath: string = this.GetPath(this.GetMeshName(name));
-      var matrixTexturePath: string = this.GetPath(this.GetMatrixTextureName(name));
-      var mainTexturePath = this.GetPath(this.GetMainTextureName(name));
-
-      var shadowTexturePath = this.GetPath(this.GetShadowTextureName(name));
-      var shadowColorTexturePath = this.GetPath(this.GetShadowColorTextureName(name));
-      var maskTexturePath = this.GetPath(this.GetMaskTextureName(name));
-      var heightRimLightTexturePath = this.GetPath(this.GetHeightRimLightTextureName(name));
-      var materailPath = this.GetPath(this.GetMaterailName(name));
+      var animPath: string = this.GetPath(this.GetAnimName(animName));
+      var matrixTexturePath: string = this.GetPath(this.GetMatrixTextureName(animName));
+      var meshPath: string = this.GetPath(this.GetMeshName(skinName));
+      var materailPath = this.GetPath(this.GetMaterailName(skinName));
 
       GPUSkinningAnimation.Load(animPath, (anim: GPUSkinningAnimation)=>
       {
@@ -523,171 +387,38 @@ export default class GPUSkining
                         callback.runWith(null);
                       }
                       
-                      Laya.loader.create(mainTexturePath, Laya.Handler.create(this, (mainTexture:Laya.Texture2D)=>
+
+
+                      var material:GPUSkinningToonV2Material;
+
+                      var createFun = ()=>
                       {
-                          if(mainTexture == null)
-                          {
-                            console.error("GPUSkinning.CreateByName资源加载失败", mainTexturePath);
-                          }
-
-                          var hasShadowTexture = textureSetting & MaterialTextureType.Shadow;
-                          var hasShadowColorTexture = textureSetting & MaterialTextureType.ShadowColor;
-                          var hasHeightRimLightTexture = textureSetting & MaterialTextureType.HeightRimLight;
-                          var hasMaskTexture = textureSetting & MaterialTextureType.Mask;
-
-                          var shadowTexture:Laya.Texture2D;
-                          var shadowColorTexture:Laya.Texture2D;
-                          var heightRimLightTexture:Laya.Texture2D;
-                          var maskTexture:Laya.Texture2D;
-                          var material:GPUSkinningToonV2Material;
-
-                          var createFun = ()=>
-                          {
-                            // var material:GPUSkinningToonV2Material = new materialCls();
-                            // material.albedoTexture = mainTexture;
-                            material.GPUSkinning_TextureMatrix = animTexture;
-                            material.__mname = name + " prefab";
-                            // if(materialCls = GPUSkinningToonV2Material)
-                            // {
-                            //   var materailConfig = this.materailConfigs[name];
-                            //   if(!materailConfig) materailConfig = this.materailConfigs[name + "_001"];
-                            //   if(!materailConfig) materailConfig = this.materailConfigs["1011"];
-                            //   if(materailConfig)
-                            //   {
-                            //     var v = materailConfig.rimColorA;
-                            //     material.rimColorA0 = new Laya.Vector4(v[0]/255, v[1]/255, v[2]/255, v[3]/255);
-
-                            //     var v = materailConfig.rimColorB;
-                            //     material.rimColorA1 = new Laya.Vector4(v[0]/255, v[1]/255, v[2]/255, v[3]/255);
-
-                            //     var v = materailConfig.rimColorC;
-                            //     material.rimColorB = new Laya.Vector4(v[0]/255, v[1]/255, v[2]/255, materailConfig.rimRange_C);
-                                
-                            //     var v = materailConfig.rimViewDir;
-                            //     material.rimViewDirA0 = new Laya.Vector4(v[0], v[1], -v[2], materailConfig.rimRate_A);
-
-                            //     var v = materailConfig.rimViewDir2;
-                            //     material.rimViewDirB = new Laya.Vector4(v[0], v[1], -v[2], materailConfig.rimRate_B);
-
-                            //     var v = materailConfig.outlineColor;
-                            //     material.outlineColor = new Laya.Vector4(v[0]/255, v[1]/255, v[2]/255, v[3]/255);
-                            //   }
-                            // }
-
-                            
-                            // if(shadowTexture)
-                            // {
-                            //   material.shadowTexture = shadowTexture;
-                            // }
-                            
-                            // if(shadowColorTexture)
-                            // {
-                            //   material.shadowColorTexture = shadowColorTexture;
-                            // }
-  
-                            // if(heightRimLightTexture)
-                            // {
-                            //   material.heightRimLightTexture = heightRimLightTexture;
-                            // }
-                            
-  
-                            // if(maskTexture)
-                            // {
-                            //   material.heightRimLightTexture = maskTexture;
-                            // }
+                        material.GPUSkinning_TextureMatrix = animTexture;
+                        material.__mname = skinName + " prefab";
 
 
-                            var sprite = new Laya.MeshSprite3D();
-                            var mono: GPUSkinningPlayerMono = sprite.addComponent(GPUSkinningPlayerMono);
-                            mono.SetData(anim, mesh, material, animTexture);
-                            callback.runWith(mono);
-                            window['sprite'] = sprite;
-                          }
-
-                        //   var loadShadowTexture = (...callfuns:Function[])=>{
-                        //       var callfun = callfuns.shift();
-                        //       if(hasShadowTexture)
-                        //       {  
-                        //           Laya.loader.create(shadowTexturePath, Laya.Handler.create(this, (texture:Laya.Texture2D)=>
-                        //           {
-                        //             shadowTexture = texture;
-                        //             callfun(...callfuns);
-                        //           }), null, Laya.Loader.TEXTURE2D);
-                        //       }
-                        //       else
-                        //       {
-                        //         callfun(...callfuns);
-                        //       }
-                        //   }
-
-                        //   var loadShadowColorTexture = (...callfuns:Function[])=>{
-                        //       var callfun = callfuns.shift();
-                        //       if(hasShadowColorTexture)
-                        //       {  
-                        //           Laya.loader.create(shadowColorTexturePath, Laya.Handler.create(this, (texture:Laya.Texture2D)=>
-                        //           {
-                        //             shadowColorTexture = texture;
-                        //             callfun(...callfuns);
-                        //           }), null, Laya.Loader.TEXTURE2D);
-                        //       }
-                        //       else
-                        //       {
-                        //         callfun(...callfuns);
-                        //       }
-                        //   }
-
-                          
-                        //   var loadMaskTexture = (...callfuns:Function[])=>{
-                        //     var callfun = callfuns.shift();
-                        //     if(hasMaskTexture)
-                        //     {  
-                        //         Laya.loader.create(maskTexturePath, Laya.Handler.create(this, (texture:Laya.Texture2D)=>
-                        //         {
-                        //           maskTexture = texture;
-                        //           callfun(...callfuns);
-                        //         }), null, Laya.Loader.TEXTURE2D);
-                        //     }
-                        //     else
-                        //     {
-                        //       callfun(...callfuns);
-                        //     }
-                        // }
-
-                          
-                        //   var loadHeightRimLightTexture = (...callfuns:Function[])=>{
-                        //     var callfun = callfuns.shift();
-                        //     if(hasHeightRimLightTexture)
-                        //     {  
-                        //         Laya.loader.create(heightRimLightTexturePath, Laya.Handler.create(this, (texture:Laya.Texture2D)=>
-                        //         {
-                        //           heightRimLightTexture = texture;
-                        //           callfun(...callfuns);
-                        //         }), null, Laya.Loader.TEXTURE2D);
-                        //     }
-                        //     else
-                        //     {
-                        //       callfun(...callfuns);
-                        //     }
-                        // }
-
-
-                        // loadShadowTexture(loadShadowColorTexture, loadShadowColorTexture, loadHeightRimLightTexture, loadMaskTexture, createFun);
+                        var sprite = new Laya.MeshSprite3D();
+                        var mono: GPUSkinningPlayerMono = sprite.addComponent(GPUSkinningPlayerMono);
+                        mono.SetData(anim, mesh, material, animTexture);
+                        callback.runWith(mono);
+                        window['sprite'] = sprite;
+                      }
 
 
 
-                        Laya.loader.create(materailPath, Laya.Handler.create(this, (m:GPUSkinningToonV2Material)=>
-                        {
-                          material = m;
-
-                          console.log("materail", material);
-                          createFun();
-                        }));
+                    Laya.loader.create(materailPath, Laya.Handler.create(this, (m:GPUSkinningToonV2Material)=>
+                    {
+                      if(m == null)
+                      {
+                        console.error("GPUSkinning.CreateByName资源加载失败", materailPath);
+                      }
+                      material = m;
+                      createFun();
+                    }));
 
                           
                           
                         
-
-                      }), null, Laya.Loader.TEXTURE2D);
 
                   });
 

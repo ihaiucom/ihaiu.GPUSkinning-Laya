@@ -34,6 +34,10 @@ export class TestScene extends Laya.Scene3D
         window['warScene'] = this;
 
         this.initCamera();
+
+        // var box = new Laya.MeshSprite3D(Laya.PrimitiveMesh.createBox(10, 5, 1))
+        // box.transform.localPositionZ = -10;
+        // this.addChild(box);
     }
 
     
@@ -80,6 +84,7 @@ export class TestScene extends Laya.Scene3D
 
         SceneMaterial.Init(this);
         // SceneMaterial.LoadSceneLightingTexture("res3d/GPUSKinning-30/scene_lighting.png"); 
+
 
         
     }

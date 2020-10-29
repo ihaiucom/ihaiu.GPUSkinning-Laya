@@ -8760,8 +8760,8 @@
 	    }
 	    add(element) {
 	        var index = element._getIndexInList();
-	        if (index !== -1)
-	            throw "SimpleSingletonList:" + element + " has  in  SingletonList.";
+			if (index !== -1)
+				return;
 	        this._add(element);
 	        element._setIndexInList(this.length++);
 	    }
@@ -8769,9 +8769,13 @@
 	        var index = element._getIndexInList();
 	        this.length--;
 	        if (index !== this.length) {
-	            var end = this.elements[this.length];
-	            this.elements[index] = end;
-	            end._setIndexInList(index);
+				var end = this.elements[this.length];
+				if (end){
+					this.elements[index] = end;
+					end._setIndexInList(index);
+				} else {
+					this.elements[index] = null;
+				}
 	        }
 	        element._setIndexInList(-1);
 	    }

@@ -47,6 +47,10 @@ export default class GPUSkinningAnimation extends Laya.Resource
     /** 骨骼品质 */
     skinQuality:GPUSkinningQuality = GPUSkinningQuality.Bone4;
 
+    
+    /** 动作字典 */
+    clipMap = new Map<string, GPUSkinningClip>();
+
     FromBytes(arrayBuffer: ArrayBuffer): void
     {
         
@@ -101,6 +105,7 @@ export default class GPUSkinningAnimation extends Laya.Resource
         // 剪辑列表 数据块
         var clipList: GPUSkinningClip[] = [];
         this.clips = clipList;
+        var clipItem: GPUSkinningClip;
         for(var i = 0; i < clipCount; i ++)
         {
             var itemInfo:int[] = clipPosLengthList[i];
@@ -110,8 +115,9 @@ export default class GPUSkinningAnimation extends Laya.Resource
             b.pos = pos;
 
             var itemBuffer = b.readArrayBuffer(len);
-            var item:any = GPUSkinningClip.CreateFromBytes(itemBuffer);
+            var item:any = clipItem = GPUSkinningClip.CreateFromBytes(itemBuffer);
             clipList.push(item);
+            this.clipMap.set(clipItem.name, clipItem);
         }
 
         

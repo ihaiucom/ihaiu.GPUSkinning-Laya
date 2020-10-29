@@ -14,11 +14,11 @@ import GPUSkiningVertexMesh from "../Mesh/GPUSkiningVertexMesh";
 
 
 
-export class GPUSkinningToonV2Material extends GPUSkinningBaseMaterial
+export class GPUSkinningToonWeaponV2Material extends GPUSkinningBaseMaterial
 {
     
     /** Shader名称 */
-    public static shaderName = "GPUSkinningToonV2";
+    public static shaderName = "GPUSkinningToonWeaponV2";
     public static outlinePass = "GPUSkinningToonV2Outline";
 
 	private static _isInstalled: boolean = false;
@@ -29,21 +29,21 @@ export class GPUSkinningToonV2Material extends GPUSkinningBaseMaterial
 			return;
 		}
 		this._isInstalled = true;
-        GPUSkinningToonV2Material.__initDefine__();
-        await GPUSkinningToonV2Material.initShader();
+        GPUSkinningToonWeaponV2Material.__initDefine__();
+        await GPUSkinningToonWeaponV2Material.initShader();
 
-        GPUSkinningToonV2Material.defaultMaterial = new GPUSkinningToonV2Material();
-        GPUSkinningToonV2Material.defaultMaterial.lock = true;
+        GPUSkinningToonWeaponV2Material.defaultMaterial = new GPUSkinningToonWeaponV2Material();
+        GPUSkinningToonWeaponV2Material.defaultMaterial.lock = true;
     }
 
     private static async initShader()
     {
 		
-        var outlineVS: string = await this.loadShaderVSAsync(GPUSkinningToonV2Material.outlinePass);
-		var outlinePS: string = await this.loadShaderPSAsync(GPUSkinningToonV2Material.outlinePass);
+        // var outlineVS: string = await this.loadShaderVSAsync(GPUSkinningToonWeaponV2Material.outlinePass);
+		// var outlinePS: string = await this.loadShaderPSAsync(GPUSkinningToonWeaponV2Material.outlinePass);
 		
-        var vs: string = await GPUSkinningToonV2Material.loadShaderVSAsync(GPUSkinningToonV2Material.shaderName);
-        var ps: string = await GPUSkinningToonV2Material.loadShaderPSAsync(GPUSkinningToonV2Material.shaderName);
+        var vs: string = await GPUSkinningToonWeaponV2Material.loadShaderVSAsync("GPUSkinningToonV2");
+        var ps: string = await GPUSkinningToonWeaponV2Material.loadShaderPSAsync("GPUSkinningToonV2");
         
         
         var attributeMap: object;
@@ -147,14 +147,14 @@ export class GPUSkinningToonV2Material extends GPUSkinningBaseMaterial
 		};
 
         
-        shader = Shader3D.add(GPUSkinningToonV2Material.shaderName, null, null, true);
+        shader = Shader3D.add(GPUSkinningToonWeaponV2Material.shaderName, null, null, true);
         subShader =  new SubShader(attributeMap, uniformMap);
 		shader.addSubShader(subShader);
 		
 		
-        var outlinePass = subShader.addShaderPass(outlineVS, outlinePS);
-		outlinePass.renderState.cull = Laya.RenderState.CULL_FRONT;
-		// outlinePass.renderState.depthWrite = false;
+        // var outlinePass = subShader.addShaderPass(outlineVS, outlinePS);
+		// outlinePass.renderState.cull = Laya.RenderState.CULL_FRONT;
+		// // outlinePass.renderState.depthWrite = false;
 
         
 
@@ -218,19 +218,19 @@ export class GPUSkinningToonV2Material extends GPUSkinningBaseMaterial
 	static DEPTH_WRITE: number = Shader3D.propertyNameToID("s_DepthWrite");
 
 	/** 默认材质，禁止修改*/
-	static defaultMaterial: GPUSkinningToonV2Material;
+	static defaultMaterial: GPUSkinningToonWeaponV2Material;
 
 	/**
 	 * @internal
 	 */
 	static __initDefine__(): void {
-		GPUSkinningToonV2Material.SHADERDEFINE_ALBEDOTEXTURE = Shader3D.getDefineByName("ALBEDOTEXTURE");
-		GPUSkinningToonV2Material.SHADERDEFINE_SHADOWTEXTURE = Shader3D.getDefineByName("SHADOWTEXTURE");
-		GPUSkinningToonV2Material.SHADERDEFINE_SHADOWCOLORTEXTURE = Shader3D.getDefineByName("SHADOWCOLORTEXTURE");
-		GPUSkinningToonV2Material.SHADERDEFINE_HEIGHTRIMLIGHTTEXTURE = Shader3D.getDefineByName("HEIGHTRIMLIGHTTEXTURE");
-		GPUSkinningToonV2Material.SHADERDEFINE_SCENELIGHTINGTEXTURE = Shader3D.getDefineByName("SCENELIGHTING");
-		GPUSkinningToonV2Material.SHADERDEFINE_TILINGOFFSET = Shader3D.getDefineByName("TILINGOFFSET");
-		GPUSkinningToonV2Material.SHADERDEFINE_ENABLEVERTEXCOLOR = Shader3D.getDefineByName("ENABLEVERTEXCOLOR");
+		GPUSkinningToonWeaponV2Material.SHADERDEFINE_ALBEDOTEXTURE = Shader3D.getDefineByName("ALBEDOTEXTURE");
+		GPUSkinningToonWeaponV2Material.SHADERDEFINE_SHADOWTEXTURE = Shader3D.getDefineByName("SHADOWTEXTURE");
+		GPUSkinningToonWeaponV2Material.SHADERDEFINE_SHADOWCOLORTEXTURE = Shader3D.getDefineByName("SHADOWCOLORTEXTURE");
+		GPUSkinningToonWeaponV2Material.SHADERDEFINE_HEIGHTRIMLIGHTTEXTURE = Shader3D.getDefineByName("HEIGHTRIMLIGHTTEXTURE");
+		GPUSkinningToonWeaponV2Material.SHADERDEFINE_SCENELIGHTINGTEXTURE = Shader3D.getDefineByName("SCENELIGHTING");
+		GPUSkinningToonWeaponV2Material.SHADERDEFINE_TILINGOFFSET = Shader3D.getDefineByName("TILINGOFFSET");
+		GPUSkinningToonWeaponV2Material.SHADERDEFINE_ENABLEVERTEXCOLOR = Shader3D.getDefineByName("ENABLEVERTEXCOLOR");
 	}
 
 	
@@ -240,11 +240,11 @@ export class GPUSkinningToonV2Material extends GPUSkinningBaseMaterial
 	}
 	set rimColorA0(value: Vector4) {
 		
-		var finalAlbedo: Vector4 = (<Vector4>this._shaderValues.getVector(GPUSkinningToonV2Material.RIMCOLORA0));
+		var finalAlbedo: Vector4 = (<Vector4>this._shaderValues.getVector(GPUSkinningToonWeaponV2Material.RIMCOLORA0));
 		Vector4.scale(value, 1, finalAlbedo);
 
 		this._rimColorA0 = value;
-		this._shaderValues.setVector(GPUSkinningToonV2Material.RIMCOLORA0, finalAlbedo);
+		this._shaderValues.setVector(GPUSkinningToonWeaponV2Material.RIMCOLORA0, finalAlbedo);
 	}
 	
 	set _RimA_Color(value: Vector4) {
@@ -258,7 +258,7 @@ export class GPUSkinningToonV2Material extends GPUSkinningBaseMaterial
 	}
 	set rimColorA1(value: Vector4) {
 		this._rimColorA1 = value;
-		this._shaderValues.setVector(GPUSkinningToonV2Material.RIMCOLORA1, value);
+		this._shaderValues.setVector(GPUSkinningToonWeaponV2Material.RIMCOLORA1, value);
 	}
 
 	set _RimB_Color(value: Vector4) {
@@ -272,7 +272,7 @@ export class GPUSkinningToonV2Material extends GPUSkinningBaseMaterial
 	}
 	set rimColorB(value: Vector4) {
 		this._rimColorB = value;
-		this._shaderValues.setVector(GPUSkinningToonV2Material.RIMCOLORB, value);
+		this._shaderValues.setVector(GPUSkinningToonWeaponV2Material.RIMCOLORB, value);
 	}
 
 	
@@ -293,7 +293,7 @@ export class GPUSkinningToonV2Material extends GPUSkinningBaseMaterial
 	}
 	set outlineColor(value: Vector4) {
 		this.__outlineColor = value;
-		this._shaderValues.setVector(GPUSkinningToonV2Material.OUTLINECOLOR, value);
+		this._shaderValues.setVector(GPUSkinningToonWeaponV2Material.OUTLINECOLOR, value);
 	}
 
 	
@@ -308,7 +308,7 @@ export class GPUSkinningToonV2Material extends GPUSkinningBaseMaterial
 	}
 	set rimViewDirA0(value: Vector4) {
 		this._rimViewDirA0 = value;
-		this._shaderValues.setVector(GPUSkinningToonV2Material.RIMVIEWDIRA0, value);
+		this._shaderValues.setVector(GPUSkinningToonWeaponV2Material.RIMVIEWDIRA0, value);
 	}
 
 	
@@ -331,7 +331,7 @@ export class GPUSkinningToonV2Material extends GPUSkinningBaseMaterial
 	}
 	set rimViewDirB(value: Vector4) {
 		this._rimViewDirB = value;
-		this._shaderValues.setVector(GPUSkinningToonV2Material.RIMVIEWDIRB, value);
+		this._shaderValues.setVector(GPUSkinningToonWeaponV2Material.RIMVIEWDIRB, value);
 	}
 
 	
@@ -360,10 +360,10 @@ export class GPUSkinningToonV2Material extends GPUSkinningBaseMaterial
 	}
 
 	set albedoColor(value: Vector4) {
-		var finalAlbedo: Vector4 = (<Vector4>this._shaderValues.getVector(GPUSkinningToonV2Material.ALBEDOCOLOR));
+		var finalAlbedo: Vector4 = (<Vector4>this._shaderValues.getVector(GPUSkinningToonWeaponV2Material.ALBEDOCOLOR));
 		Vector4.scale(value, 1, finalAlbedo);
 		this._albedoColor = value;
-		this._shaderValues.setVector(GPUSkinningToonV2Material.ALBEDOCOLOR, finalAlbedo);
+		this._shaderValues.setVector(GPUSkinningToonWeaponV2Material.ALBEDOCOLOR, finalAlbedo);
 	}
 
 
@@ -371,15 +371,15 @@ export class GPUSkinningToonV2Material extends GPUSkinningBaseMaterial
 	 * 反照率贴图。
 	 */
 	get albedoTexture(): BaseTexture {
-		return this._shaderValues.getTexture(GPUSkinningToonV2Material.ALBEDOTEXTURE);
+		return this._shaderValues.getTexture(GPUSkinningToonWeaponV2Material.ALBEDOTEXTURE);
 	}
 
 	set albedoTexture(value: BaseTexture) {
 		if (value)
-			this._shaderValues.addDefine(GPUSkinningToonV2Material.SHADERDEFINE_ALBEDOTEXTURE);
+			this._shaderValues.addDefine(GPUSkinningToonWeaponV2Material.SHADERDEFINE_ALBEDOTEXTURE);
 		else
-			this._shaderValues.removeDefine(GPUSkinningToonV2Material.SHADERDEFINE_ALBEDOTEXTURE);
-		this._shaderValues.setTexture(GPUSkinningToonV2Material.ALBEDOTEXTURE, value);
+			this._shaderValues.removeDefine(GPUSkinningToonWeaponV2Material.SHADERDEFINE_ALBEDOTEXTURE);
+		this._shaderValues.setTexture(GPUSkinningToonWeaponV2Material.ALBEDOTEXTURE, value);
 	}
 
 	
@@ -392,30 +392,30 @@ export class GPUSkinningToonV2Material extends GPUSkinningBaseMaterial
 	 * 阴影贴图
 	 */
 	get shadowTexture(): BaseTexture {
-		return this._shaderValues.getTexture(GPUSkinningToonV2Material.SHADOWTEXTURE);
+		return this._shaderValues.getTexture(GPUSkinningToonWeaponV2Material.SHADOWTEXTURE);
 	}
 
 	set shadowTexture(value: BaseTexture) {
 		if (value)
-			this._shaderValues.addDefine(GPUSkinningToonV2Material.SHADERDEFINE_SHADOWTEXTURE);
+			this._shaderValues.addDefine(GPUSkinningToonWeaponV2Material.SHADERDEFINE_SHADOWTEXTURE);
 		else
-			this._shaderValues.removeDefine(GPUSkinningToonV2Material.SHADERDEFINE_SHADOWTEXTURE);
-		this._shaderValues.setTexture(GPUSkinningToonV2Material.SHADOWTEXTURE, value);
+			this._shaderValues.removeDefine(GPUSkinningToonWeaponV2Material.SHADERDEFINE_SHADOWTEXTURE);
+		this._shaderValues.setTexture(GPUSkinningToonWeaponV2Material.SHADOWTEXTURE, value);
 	}
 
 	/**
 	 * 阴影颜色贴图
 	 */
 	get shadowColorTexture(): BaseTexture {
-		return this._shaderValues.getTexture(GPUSkinningToonV2Material.SHADOWCOLORTEXTURE);
+		return this._shaderValues.getTexture(GPUSkinningToonWeaponV2Material.SHADOWCOLORTEXTURE);
 	}
 
 	set shadowColorTexture(value: BaseTexture) {
 		if (value)
-			this._shaderValues.addDefine(GPUSkinningToonV2Material.SHADERDEFINE_SHADOWCOLORTEXTURE);
+			this._shaderValues.addDefine(GPUSkinningToonWeaponV2Material.SHADERDEFINE_SHADOWCOLORTEXTURE);
 		else
-			this._shaderValues.removeDefine(GPUSkinningToonV2Material.SHADERDEFINE_SHADOWCOLORTEXTURE);
-		this._shaderValues.setTexture(GPUSkinningToonV2Material.SHADOWCOLORTEXTURE, value);
+			this._shaderValues.removeDefine(GPUSkinningToonWeaponV2Material.SHADERDEFINE_SHADOWCOLORTEXTURE);
+		this._shaderValues.setTexture(GPUSkinningToonWeaponV2Material.SHADOWCOLORTEXTURE, value);
 	}
 
 	
@@ -424,15 +424,15 @@ export class GPUSkinningToonV2Material extends GPUSkinningBaseMaterial
 	 * 高光和边缘光贴图
 	 */
 	get heightRimLightTexture(): BaseTexture {
-		return this._shaderValues.getTexture(GPUSkinningToonV2Material.HEIGHTRIMLIGHTTEXTURE);
+		return this._shaderValues.getTexture(GPUSkinningToonWeaponV2Material.HEIGHTRIMLIGHTTEXTURE);
 	}
 
 	set heightRimLightTexture(value: BaseTexture) {
 		if (value)
-			this._shaderValues.addDefine(GPUSkinningToonV2Material.SHADERDEFINE_HEIGHTRIMLIGHTTEXTURE);
+			this._shaderValues.addDefine(GPUSkinningToonWeaponV2Material.SHADERDEFINE_HEIGHTRIMLIGHTTEXTURE);
 		else
-			this._shaderValues.removeDefine(GPUSkinningToonV2Material.SHADERDEFINE_HEIGHTRIMLIGHTTEXTURE);
-		this._shaderValues.setTexture(GPUSkinningToonV2Material.HEIGHTRIMLIGHTTEXTURE, value);
+			this._shaderValues.removeDefine(GPUSkinningToonWeaponV2Material.SHADERDEFINE_HEIGHTRIMLIGHTTEXTURE);
+		this._shaderValues.setTexture(GPUSkinningToonWeaponV2Material.HEIGHTRIMLIGHTTEXTURE, value);
 	}
 
 	
@@ -448,15 +448,15 @@ export class GPUSkinningToonV2Material extends GPUSkinningBaseMaterial
 	 * 场景光照
 	 */
 	get sceneLightingTexture(): BaseTexture {
-		return this._shaderValues.getTexture(GPUSkinningToonV2Material.SCENELIGHTINGTEXTURE);
+		return this._shaderValues.getTexture(GPUSkinningToonWeaponV2Material.SCENELIGHTINGTEXTURE);
 	}
 
 	set sceneLightingTexture(value: BaseTexture) {
 		if (value)
-			this._shaderValues.addDefine(GPUSkinningToonV2Material.SHADERDEFINE_SCENELIGHTINGTEXTURE);
+			this._shaderValues.addDefine(GPUSkinningToonWeaponV2Material.SHADERDEFINE_SCENELIGHTINGTEXTURE);
 		else
-			this._shaderValues.removeDefine(GPUSkinningToonV2Material.SHADERDEFINE_SCENELIGHTINGTEXTURE);
-		this._shaderValues.setTexture(GPUSkinningToonV2Material.SCENELIGHTINGTEXTURE, value);
+			this._shaderValues.removeDefine(GPUSkinningToonWeaponV2Material.SHADERDEFINE_SCENELIGHTINGTEXTURE);
+		this._shaderValues.setTexture(GPUSkinningToonWeaponV2Material.SCENELIGHTINGTEXTURE, value);
 	}
 
 
@@ -465,7 +465,7 @@ export class GPUSkinningToonV2Material extends GPUSkinningBaseMaterial
 	 */
 	set renderMode(value: number) {
 		switch (value) {
-			case GPUSkinningToonV2Material.RENDERMODE_OPAQUE:
+			case GPUSkinningToonWeaponV2Material.RENDERMODE_OPAQUE:
 				this.alphaTest = false;
 				this.renderQueue = Material.RENDERQUEUE_OPAQUE;
 				this.depthWrite = true;
@@ -473,7 +473,7 @@ export class GPUSkinningToonV2Material extends GPUSkinningBaseMaterial
 				this.blend = RenderState.BLEND_DISABLE;
 				this.depthTest = RenderState.DEPTHTEST_LESS;
 				break;
-			case GPUSkinningToonV2Material.RENDERMODE_CUTOUT:
+			case GPUSkinningToonWeaponV2Material.RENDERMODE_CUTOUT:
 				this.renderQueue = Material.RENDERQUEUE_ALPHATEST;
 				this.alphaTest = true;
 				this.depthWrite = true;
@@ -481,7 +481,7 @@ export class GPUSkinningToonV2Material extends GPUSkinningBaseMaterial
 				this.blend = RenderState.BLEND_DISABLE;
 				this.depthTest = RenderState.DEPTHTEST_LESS;
 				break;
-			case GPUSkinningToonV2Material.RENDERMODE_TRANSPARENT:
+			case GPUSkinningToonWeaponV2Material.RENDERMODE_TRANSPARENT:
 				this.renderQueue = Material.RENDERQUEUE_TRANSPARENT;
 				this.alphaTest = false;
 				this.depthWrite = false;
@@ -492,7 +492,7 @@ export class GPUSkinningToonV2Material extends GPUSkinningBaseMaterial
 				this.depthTest = RenderState.DEPTHTEST_LESS;
 				break;
 			default:
-				throw new Error("GPUSkinningToonV2Material : renderMode value error.");
+				throw new Error("GPUSkinningToonWeaponV2Material : renderMode value error.");
 		}
 	}
 
@@ -502,11 +502,11 @@ export class GPUSkinningToonV2Material extends GPUSkinningBaseMaterial
 	 * 是否写入深度。
 	 */
 	get depthWrite(): boolean {
-		return this._shaderValues.getBool(GPUSkinningToonV2Material.DEPTH_WRITE);
+		return this._shaderValues.getBool(GPUSkinningToonWeaponV2Material.DEPTH_WRITE);
 	}
 
 	set depthWrite(value: boolean) {
-		this._shaderValues.setBool(GPUSkinningToonV2Material.DEPTH_WRITE, value);
+		this._shaderValues.setBool(GPUSkinningToonWeaponV2Material.DEPTH_WRITE, value);
 	}
 
 
@@ -515,11 +515,11 @@ export class GPUSkinningToonV2Material extends GPUSkinningBaseMaterial
 	 * 剔除方式。
 	 */
 	get cull(): number {
-		return this._shaderValues.getInt(GPUSkinningToonV2Material.CULL);
+		return this._shaderValues.getInt(GPUSkinningToonWeaponV2Material.CULL);
 	}
 
 	set cull(value: number) {
-		this._shaderValues.setInt(GPUSkinningToonV2Material.CULL, value);
+		this._shaderValues.setInt(GPUSkinningToonWeaponV2Material.CULL, value);
 	}
 
 
@@ -527,11 +527,11 @@ export class GPUSkinningToonV2Material extends GPUSkinningBaseMaterial
 	 * 混合方式。
 	 */
 	get blend(): number {
-		return this._shaderValues.getInt(GPUSkinningToonV2Material.BLEND);
+		return this._shaderValues.getInt(GPUSkinningToonWeaponV2Material.BLEND);
 	}
 
 	set blend(value: number) {
-		this._shaderValues.setInt(GPUSkinningToonV2Material.BLEND, value);
+		this._shaderValues.setInt(GPUSkinningToonWeaponV2Material.BLEND, value);
 	}
 
 
@@ -539,11 +539,11 @@ export class GPUSkinningToonV2Material extends GPUSkinningBaseMaterial
 	 * 混合源。
 	 */
 	get blendSrc(): number {
-		return this._shaderValues.getInt(GPUSkinningToonV2Material.BLEND_SRC);
+		return this._shaderValues.getInt(GPUSkinningToonWeaponV2Material.BLEND_SRC);
 	}
 
 	set blendSrc(value: number) {
-		this._shaderValues.setInt(GPUSkinningToonV2Material.BLEND_SRC, value);
+		this._shaderValues.setInt(GPUSkinningToonWeaponV2Material.BLEND_SRC, value);
 	}
 
 
@@ -552,11 +552,11 @@ export class GPUSkinningToonV2Material extends GPUSkinningBaseMaterial
 	 * 混合目标。
 	 */
 	get blendDst(): number {
-		return this._shaderValues.getInt(GPUSkinningToonV2Material.BLEND_DST);
+		return this._shaderValues.getInt(GPUSkinningToonWeaponV2Material.BLEND_DST);
 	}
 
 	set blendDst(value: number) {
-		this._shaderValues.setInt(GPUSkinningToonV2Material.BLEND_DST, value);
+		this._shaderValues.setInt(GPUSkinningToonWeaponV2Material.BLEND_DST, value);
 	}
 
 
@@ -564,11 +564,11 @@ export class GPUSkinningToonV2Material extends GPUSkinningBaseMaterial
 	 * 深度测试方式。
 	 */
 	get depthTest(): number {
-		return this._shaderValues.getInt(GPUSkinningToonV2Material.DEPTH_TEST);
+		return this._shaderValues.getInt(GPUSkinningToonWeaponV2Material.DEPTH_TEST);
 	}
 
 	set depthTest(value: number) {
-		this._shaderValues.setInt(GPUSkinningToonV2Material.DEPTH_TEST, value);
+		this._shaderValues.setInt(GPUSkinningToonWeaponV2Material.DEPTH_TEST, value);
 	}
 
 	
@@ -576,10 +576,10 @@ export class GPUSkinningToonV2Material extends GPUSkinningBaseMaterial
 	
     /** 卡通材质 -- 描边粗细 */
     get CartoonOutlineWidth() {
-        return this._shaderValues.getNumber(GPUSkinningToonV2Material.CARTOON_OUTLINEWIDTH);
+        return this._shaderValues.getNumber(GPUSkinningToonWeaponV2Material.CARTOON_OUTLINEWIDTH);
     }
     set CartoonOutlineWidth(value) {
-        this._shaderValues.setNumber(GPUSkinningToonV2Material.CARTOON_OUTLINEWIDTH, value);
+        this._shaderValues.setNumber(GPUSkinningToonWeaponV2Material.CARTOON_OUTLINEWIDTH, value);
 	}
 	
 	
@@ -590,21 +590,21 @@ export class GPUSkinningToonV2Material extends GPUSkinningBaseMaterial
 
 	constructor() {
 		super();
-		this.setShaderName(GPUSkinningToonV2Material.shaderName);
-		this._shaderValues.setVector(GPUSkinningToonV2Material.ALBEDOCOLOR, new Vector4(1.0, 1.0, 1.0, 1.0));
-		this._shaderValues.setVector(GPUSkinningToonV2Material.TILINGOFFSET, new Vector4(1.0, 1.0, 0.0, 0.0));
-		this._shaderValues.setVector(GPUSkinningToonV2Material.RIMCOLORA0, this._rimColorA0);
-		this._shaderValues.setVector(GPUSkinningToonV2Material.RIMCOLORA1, this._rimColorA1);
-		this._shaderValues.setVector(GPUSkinningToonV2Material.RIMCOLORB, this._rimColorB);
+		this.setShaderName(GPUSkinningToonWeaponV2Material.shaderName);
+		this._shaderValues.setVector(GPUSkinningToonWeaponV2Material.ALBEDOCOLOR, new Vector4(1.0, 1.0, 1.0, 1.0));
+		this._shaderValues.setVector(GPUSkinningToonWeaponV2Material.TILINGOFFSET, new Vector4(1.0, 1.0, 0.0, 0.0));
+		this._shaderValues.setVector(GPUSkinningToonWeaponV2Material.RIMCOLORA0, this._rimColorA0);
+		this._shaderValues.setVector(GPUSkinningToonWeaponV2Material.RIMCOLORA1, this._rimColorA1);
+		this._shaderValues.setVector(GPUSkinningToonWeaponV2Material.RIMCOLORB, this._rimColorB);
 		
-		// this._shaderValues.setVector(GPUSkinningToonV2Material.DOTRIMCOLOR, new Vector4(1.0, 0.0, 0.0, 1.0));
+		// this._shaderValues.setVector(GPUSkinningToonWeaponV2Material.DOTRIMCOLOR, new Vector4(1.0, 0.0, 0.0, 1.0));
 		// 卡通材质 -- 描边粗细
 		this.CartoonOutlineWidth = 0.004;
 
 
         this._shaderValues.setNumber(Material.ALPHATESTVALUE, 0.5);
 
-		this.renderMode = GPUSkinningToonV2Material.RENDERMODE_OPAQUE;
+		this.renderMode = GPUSkinningToonWeaponV2Material.RENDERMODE_OPAQUE;
 
 		// this._shaderValues.addDefine(Shader3D.getDefineByName("SKIN_4"));
 		
@@ -617,7 +617,7 @@ export class GPUSkinningToonV2Material extends GPUSkinningBaseMaterial
 	 * @override
 	 */
 	clone(): any {
-		var dest: GPUSkinningToonV2Material = new GPUSkinningToonV2Material();
+		var dest: GPUSkinningToonWeaponV2Material = new GPUSkinningToonWeaponV2Material();
 		this.cloneTo(dest);
 		this._albedoColor.cloneTo(dest._albedoColor);
 		return dest;
@@ -626,7 +626,7 @@ export class GPUSkinningToonV2Material extends GPUSkinningBaseMaterial
 	
 	cloneTo(destObject: any): void {
 		super.cloneTo(destObject);
-		var destMaterial: GPUSkinningToonV2Material = (<GPUSkinningToonV2Material>destObject);
+		var destMaterial: GPUSkinningToonWeaponV2Material = (<GPUSkinningToonWeaponV2Material>destObject);
 		this._albedoColor.cloneTo(destMaterial._albedoColor);
 		
 		// this._rimColorA0.cloneTo(destMaterial._rimColorA0);

@@ -23,6 +23,7 @@ import GPUSkinningAnimEvent from "./Datas/GPUSkinningAnimEvent";
 import GPUSkining from "./GPUSkining";
 import { GPUSkinningBaseMaterial } from "./Material/GPUSkinningBaseMaterial";
 import { GPUSkinningToonV2Material } from "./Material/GPUSkinningToonV2";
+import GPUSkinningPlayerMono from "./GPUSkinningPlayerMono";
 
 /** GPU骨骼动画--组件播放控制器 */
 export default class GPUSkinningPlayer
@@ -52,7 +53,18 @@ export default class GPUSkinningPlayer
     private res: GPUSkinningPlayerResources = null;
     private rootMotionFrameIndex:int = -1;
 
-    public speed: float = 1;
+    private _speed: float = 1;
+    
+    public get speed(): float
+    {
+        return this._speed;
+    }
+
+    public set speed(value: float)
+    {
+        this._speed = value;
+        this.SetWeapSpeed(value);
+    }
     /** 动画事件 */
     sAnimEvent:Typed2Signal<GPUSkinningPlayer, int> = new Typed2Signal<GPUSkinningPlayer, int>();
 
@@ -665,6 +677,7 @@ export default class GPUSkinningPlayer
         this.rootMotionFrameIndex = -1;
         this.time = nomrmalizeTime * clip.length;
         this.timeDiff = Random.range(0, clip.length);
+        this.SetWeapClip(clip.name, nomrmalizeTime, this.timeDiff);
     }
 
 
@@ -854,10 +867,15 @@ export default class GPUSkinningPlayer
 
     }
 
+    
+    private _tmp_p = new Vector3();
+    private _tmp_r = new Quaternion();
+    private _tmp_s = new Vector3();
 
     /** 刷新骨骼节点位置 */
     private UpdateJoints(frame: GPUSkinningFrame )
     {
+        if(window['DONT_UPDATE_JOIN']) return
         if(this.joints == null)
         {
             return;
@@ -887,7 +905,17 @@ export default class GPUSkinningPlayer
                     jointMatrix = outM;
                 }
 
-                jointTransform.localMatrix = jointMatrix;
+                // var p = new Vector3();
+                // var r = new Quaternion();
+                // var s = new Vector3();
+                
+                jointMatrix.decomposeTransRotScale(this._tmp_p, this._tmp_r, this._tmp_s);
+
+                // jointTransform.localMatrix = jointMatrix;
+                // jointTransform.localScale = new Vector3(1, 1, 1);
+                jointTransform.localPosition = this._tmp_p;
+                jointTransform.localRotation = this._tmp_r;
+                // jointTransform['_onWorldScaleTransform']();
 
 
                 // var vec3 = new Vector3();
@@ -962,6 +990,66 @@ export default class GPUSkinningPlayer
             }
         }
     }
+
+
+    /** 当前武器字典 */
+    weaponMap = new Map<string, GPUSkinningPlayerMono>();
+
+    /** 设置武器 */
+    public SetWeapon(boneName: string, skinName: string, animName:string)
+    {
+        var bone = this.FindJointGameObject(boneName);
+        if(bone == null)
+        {
+            return;
+        }
+
+
+        GPUSkining.CreateByName(skinName, animName, Laya.Handler.create(this, (mono: GPUSkinningPlayerMono)=>{
+            if(this.weaponMap.has(boneName))
+            {
+                var preWeapon = this.weaponMap.get(boneName);
+                preWeapon.owner.removeSelf();
+                preWeapon.owner.destroy();
+                this.weaponMap.delete(boneName);
+            }
+            bone.addChild(mono.owner);
+            var sprite = <Laya.Sprite3D> mono.owner;
+            sprite.transform.localPosition = new Vector3(0, 0, 0);
+            sprite.transform.localRotationEuler = new Vector3(0, 0, 0);
+            // sprite.transform.setWorldLossyScale(this.transform.getWorldLossyScale());
+            this.weaponMap.set(boneName, mono);
+            var clipName = this.PlayingClipName;
+            
+            if(!mono.Player.res.anim.clipMap.has(clipName))
+            {
+                clipName = "standby";
+            }
+            mono.Player.Play(clipName, this.NormalizedTime);
+        }));
+    }
+
+    /** 设置武器动作 */
+    private SetWeapClip(clipName: string, nomrmalizeTime: number, timeDiff: number)
+    {
+        this.weaponMap.forEach((v, k)=>{
+            if(!v.Player.res.anim.clipMap.has(clipName))
+            {
+                clipName = "standby";
+            }
+            v.Player.Play(clipName, nomrmalizeTime);
+            v.Player.timeDiff = timeDiff;
+        })
+    }
+
+    /** 设置武器播放速度 */
+    private SetWeapSpeed(speed: number)
+    {
+        this.weaponMap.forEach((v, k)=>{
+            v.Player.speed = speed;
+        })
+    }
+
 
 
 
