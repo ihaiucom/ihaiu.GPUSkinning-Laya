@@ -568,6 +568,8 @@ var laya = (function () {
 	            case "walk":
 	            case "standby":
 	            case "skin_10b":
+	            case "walk_tui":
+	            case "skin_10b":
 	                this.wrapMode = GPUSkinningWrapMode.Loop;
 	                break;
 	        }
@@ -1186,6 +1188,13 @@ var laya = (function () {
 	        this.BoneIndex = boneIndex;
 	        this.BoneGUID = boneGUID;
 	    }
+	    _cloneTo(dest) {
+	        dest.bone = this.bone;
+	        dest.index = this.index;
+	        dest.BoneIndex = this.BoneIndex;
+	        dest.BoneGUID = this.BoneGUID;
+	        dest.onAwake();
+	    }
 	}
 
 	var Vector3$2 = Laya.Vector3;
@@ -1476,6 +1485,11 @@ var laya = (function () {
 	            if (existingJoints != null) {
 	                for (let j = 0; j < existingJoints.length; j++) {
 	                    let existingJoint = existingJoints[j];
+	                    if (existingJoint) {
+	                        for (var ii = existingJoint.owner.numChildren - 1; ii >= 0; ii--) {
+	                            GPUSkinningPlayer.RecoverWeaponItem(existingJoint.owner.getChildAt(ii));
+	                        }
+	                    }
 	                    if (existingJoint && existingJoint.BoneGUID == bone.guid) {
 	                        if (existingJoint.index != i) {
 	                            existingJoint.Init(bone, i, bone.boneIndex, bone.guid);
@@ -1746,16 +1760,41 @@ var laya = (function () {
 	            }
 	        }
 	    }
+	    static RecoverWeaponItem(item) {
+	        var mono;
+	        if (item instanceof Laya.Sprite3D) {
+	            mono = item.getComponent(GPUSkinningPlayerMono);
+	            if (mono == null) {
+	                console.error("~~~weapon 不是GPUSkinningPlayerMono" + item.name);
+	                item.removeSelf();
+	                return;
+	            }
+	        }
+	        mono.owner.removeSelf();
+	        var key = mono.skinName + "&" + mono.animName;
+	        Laya.Pool.recover(key, mono);
+	    }
+	    static GetWeaponItem(skinName, animName, callback) {
+	        var key = skinName + "&" + animName;
+	        var item = Laya.Pool.getItem(key);
+	        if (item) {
+	            callback && callback(item);
+	        }
+	        else {
+	            GPUSkining.CreateByName(skinName, animName, Laya.Handler.create(this, (item) => {
+	                callback && callback(item);
+	            }));
+	        }
+	    }
 	    SetWeapon(boneName, skinName, animName) {
 	        var bone = this.FindJointGameObject(boneName);
 	        if (bone == null) {
 	            return;
 	        }
-	        GPUSkining.CreateByName(skinName, animName, Laya.Handler.create(this, (mono) => {
+	        GPUSkinningPlayer.GetWeaponItem(skinName, animName, (mono) => {
 	            if (this.weaponMap.has(boneName)) {
 	                var preWeapon = this.weaponMap.get(boneName);
-	                preWeapon.owner.removeSelf();
-	                preWeapon.owner.destroy();
+	                GPUSkinningPlayer.RecoverWeaponItem(preWeapon);
 	                this.weaponMap.delete(boneName);
 	            }
 	            bone.addChild(mono.owner);
@@ -1768,7 +1807,7 @@ var laya = (function () {
 	                clipName = "standby";
 	            }
 	            mono.Player.Play(clipName, this.NormalizedTime);
-	        }));
+	        });
 	    }
 	    SetWeapClip(clipName, nomrmalizeTime, timeDiff) {
 	        this.weaponMap.forEach((v, k) => {
@@ -1808,6 +1847,8 @@ var laya = (function () {
 	        }
 	    }
 	    _cloneTo(dest) {
+	        dest.skinName = this.skinName;
+	        dest.animName = this.animName;
 	        dest.anim = this.anim;
 	        dest.mesh = this.mesh;
 	        dest.mtrl = this.mtrl;
@@ -3400,7 +3441,10 @@ var laya = (function () {
 	                        material.GPUSkinning_TextureMatrix = animTexture;
 	                        material.__mname = skinName + " prefab";
 	                        var sprite = new Laya.MeshSprite3D();
+	                        sprite.name = skinName + "&" + animName;
 	                        var mono = sprite.addComponent(GPUSkinningPlayerMono);
+	                        mono.skinName = skinName;
+	                        mono.animName = animName;
 	                        mono.SetData(anim, mesh, material, animTexture);
 	                        callback.runWith(mono);
 	                        window['sprite'] = sprite;

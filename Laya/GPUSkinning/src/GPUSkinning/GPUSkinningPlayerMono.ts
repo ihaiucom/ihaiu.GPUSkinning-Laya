@@ -12,6 +12,9 @@ import GPUSkining from "./GPUSkining";
 /** GPU骨骼动画--组件 */
 export default class GPUSkinningPlayerMono extends Laya.Script3D
 {
+    skinName: string;
+    animName: string;
+
     isEnable: boolean = false;
     /** 烘焙动画--全部数据信息 */
     anim: GPUSkinningAnimation;
@@ -64,6 +67,9 @@ export default class GPUSkinningPlayerMono extends Laya.Script3D
 
     _cloneTo(dest: GPUSkinningPlayerMono): void 
     {
+        dest.skinName = this.skinName;
+        dest.animName = this.animName;
+
         dest.anim = this.anim;
         dest.mesh = this.mesh;
         dest.mtrl = this.mtrl;

@@ -33,7 +33,7 @@ export default class TestShader
 
 
         var nameList = [
-            ["1010_000", "1010_000"],
+            ["1011_000", "1011_000"],
             // "3001",
             // "Hero_1004_Dongzhuo_Skin1",
             // "Monster_4003_Kuileishi_Skin1",
@@ -65,19 +65,25 @@ export default class TestShader
             b.addChild(mono.owner);
             this.scene.addChild(b);
             // b.transform.localScaleX = -1;
-            mono.Player.SetWeapon("D_R_weapon", "w_1010_r_000", "w_1011_r_000");
+            mono.Player.SetWeapon("D_R_weapon", "w_1010_r_000", "w_1010_r_000");
 
-            b.transform.setWorldLossyScale(new Laya.Vector3(-1, 1, 1));
+            // b.transform.setWorldLossyScale(new Laya.Vector3(-1, 1, 1));
 
-            // var b = new Laya.Sprite3D();
-            // var node2 = <Laya.Sprite3D> node.clone();
-            // var mono2:GPUSkinningPlayerMono = node2.getComponent(GPUSkinningPlayerMono);
-            // // mono2.Player.material.IsSeparation = true;
-            // node2.transform.localRotationEulerY = 90;
-            // b.addChild(node2);
-            // b.transform.localPositionX += 1.5;
-            // b.transform.localScaleX = -1;
-            // this.scene.addChild(b);
+            setTimeout(() => {
+                
+            var b = new Laya.Sprite3D();
+            var node2 = <Laya.Sprite3D> node.clone();
+            var mono2:GPUSkinningPlayerMono = node2.getComponent(GPUSkinningPlayerMono);
+            window['mono2'] = mono2;
+            // mono2.Player.material.IsSeparation = true;
+            node2.transform.localRotationEulerY = 90;
+            b.addChild(node2);
+            b.transform.localPositionX += 1.5;
+            b.transform.localScaleX = -1;
+            this.scene.addChild(b);
+            mono2.Player.SetWeapon("D_R_weapon", "w_1010_r_000", "w_1010_r_000");
+            }, 1000);
+
             break;
         }
        

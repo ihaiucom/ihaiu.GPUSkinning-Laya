@@ -398,10 +398,14 @@ export default class GPUSkining
 
 
                         var sprite = new Laya.MeshSprite3D();
+                        sprite.name = skinName+"&"+animName;
                         var mono: GPUSkinningPlayerMono = sprite.addComponent(GPUSkinningPlayerMono);
+                        mono.skinName = skinName;
+                        mono.animName = animName;
                         mono.SetData(anim, mesh, material, animTexture);
                         callback.runWith(mono);
                         window['sprite'] = sprite;
+                        
                       }
 
 

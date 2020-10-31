@@ -37,4 +37,13 @@ export default class GPUSkinningPlayerJoint extends Laya.Script3D
         this.BoneIndex = boneIndex;
         this.BoneGUID = boneGUID;
     }
+    
+	_cloneTo(dest: GPUSkinningPlayerJoint): void {
+        dest.bone = this.bone;
+        dest.index = this.index;
+        dest.BoneIndex = this.BoneIndex;
+        dest.BoneGUID = this.BoneGUID;
+        dest.onAwake();
+
+	}
 }

@@ -493,6 +493,14 @@ export default class GPUSkinningPlayer
                 for(let j = 0; j < existingJoints.length; j ++)
                 {
                     let existingJoint = existingJoints[j];
+                    if(existingJoint)
+                    {
+                        for(var ii = existingJoint.owner.numChildren - 1; ii >= 0; ii --)
+                        {
+                            GPUSkinningPlayer.RecoverWeaponItem(<Laya.Sprite3D>existingJoint.owner.getChildAt(ii));
+                        }
+                    }
+                    
                     if(existingJoint && existingJoint.BoneGUID == bone.guid)
                     {
                         if(existingJoint.index != i)
@@ -991,6 +999,40 @@ export default class GPUSkinningPlayer
         }
     }
 
+    public static RecoverWeaponItem(item: GPUSkinningPlayerMono | Laya.Sprite3D)
+    {
+        var mono:GPUSkinningPlayerMono = <GPUSkinningPlayerMono>item;
+        if(item instanceof Laya.Sprite3D)
+        {
+            mono = item.getComponent(GPUSkinningPlayerMono);
+            if(mono == null)
+            {
+                console.error("~~~weapon 不是GPUSkinningPlayerMono"+item.name);
+                item.removeSelf();
+                return;
+            }
+        }
+
+        mono.owner.removeSelf();
+        var key = mono.skinName + "&" + mono.animName;
+        Laya.Pool.recover(key, mono);
+    }
+
+    public static GetWeaponItem(skinName: string, animName: string, callback:(mono: GPUSkinningPlayerMono)=>void)
+    {
+        var key = skinName + "&" + animName;
+        var item = Laya.Pool.getItem(key);
+        if(item)
+        {
+            callback && callback(item);
+        }
+        else
+        {
+            GPUSkining.CreateByName(skinName, animName, Laya.Handler.create(this, (item: GPUSkinningPlayerMono)=>{
+                callback && callback(item);
+            }));
+        }
+    }
 
     /** 当前武器字典 */
     weaponMap = new Map<string, GPUSkinningPlayerMono>();
@@ -1004,15 +1046,14 @@ export default class GPUSkinningPlayer
             return;
         }
 
-
-        GPUSkining.CreateByName(skinName, animName, Laya.Handler.create(this, (mono: GPUSkinningPlayerMono)=>{
+        GPUSkinningPlayer.GetWeaponItem(skinName, animName, (mono: GPUSkinningPlayerMono)=>{
             if(this.weaponMap.has(boneName))
             {
                 var preWeapon = this.weaponMap.get(boneName);
-                preWeapon.owner.removeSelf();
-                preWeapon.owner.destroy();
+                GPUSkinningPlayer.RecoverWeaponItem(preWeapon);
                 this.weaponMap.delete(boneName);
             }
+
             bone.addChild(mono.owner);
             var sprite = <Laya.Sprite3D> mono.owner;
             sprite.transform.localPosition = new Vector3(0, 0, 0);
@@ -1026,7 +1067,9 @@ export default class GPUSkinningPlayer
                 clipName = "standby";
             }
             mono.Player.Play(clipName, this.NormalizedTime);
-        }));
+
+        })
+
     }
 
     /** 设置武器动作 */

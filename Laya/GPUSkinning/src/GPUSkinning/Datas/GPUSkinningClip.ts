@@ -58,6 +58,8 @@ export default class GPUSkinningClip
             case "walk":
             case "standby":
             case "skin_10b":
+            case "walk_tui":
+            case "skin_10b":
                 this.wrapMode = GPUSkinningWrapMode.Loop;
                 break;
         }
