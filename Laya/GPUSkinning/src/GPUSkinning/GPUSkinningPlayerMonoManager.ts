@@ -22,13 +22,15 @@ export default class GPUSkinningPlayerMonoManager
             return;
         }
 
+        let key = player.skinName + "&" + player.animName;
+
         let item: GPUSkinningPlayerResources  = null;
 
         let items = this.items;
         let numItems = items.length;
         for(let i = 0; i < numItems; ++i)
         {
-            if(items[i].anim.guid == anim.guid)
+            if(items[i].key == key)
             {
                 item = items[i];
                 break;
@@ -38,6 +40,7 @@ export default class GPUSkinningPlayerMonoManager
         if(item == null)
         {
             item = new GPUSkinningPlayerResources();
+            item.key = key;
             items.push(item);
         }
 

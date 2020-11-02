@@ -26,6 +26,7 @@ import { GPUSkinningBaseMaterial } from "./Material/GPUSkinningBaseMaterial";
 /** GPU骨骼动画--资源 */
 export default class GPUSkinningPlayerResources
 {
+    public key:string;
 
     /** 烘焙动画--全部数据信息 */
     public anim: GPUSkinningAnimation  = null;

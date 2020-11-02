@@ -844,6 +844,7 @@ export default class GPUSkinningPlayer
         var mpb = currMtrl.material._shaderValues;
 
         let frame: GPUSkinningFrame = playingClip.frames[frameIndex];
+        let nextFrame: GPUSkinningFrame = playingClip.frames[this.nextFrameIndex];
         if (this.Visible || 
             this.CullingMode == GPUSKinningCullingMode.AlwaysAnimate)
         {
@@ -857,7 +858,7 @@ export default class GPUSkinningPlayer
             );
 
             // this.mr.SetPropertyBlock(mpb);
-            this.UpdateJoints(frame);
+            this.UpdateJoints(frame, nextFrame, nextFrameFade);
         }
 
         if (playingClip.rootMotionEnabled && this.rootMotionEnabled && frameIndex != this.rootMotionFrameIndex)
@@ -879,9 +880,19 @@ export default class GPUSkinningPlayer
     private _tmp_p = new Vector3();
     private _tmp_r = new Quaternion();
     private _tmp_s = new Vector3();
+    private _tmp_jointMatrix = new Matrix4x4();
+    private _tmp_jointMatrixBlend = new Matrix4x4();
+
+    static BlendMatrix(l:Matrix4x4, r:Matrix4x4, t:number, o:Matrix4x4)
+    {
+        for(var i = 0; i < 16; i ++)
+        {
+            o.elements[i] = l.elements[i] * (1 -t) + r.elements[i] * t;
+        }
+    }
 
     /** 刷新骨骼节点位置 */
-    private UpdateJoints(frame: GPUSkinningFrame )
+    private UpdateJoints(frame: GPUSkinningFrame,nextFrame: GPUSkinningFrame,  nextFrameFade: float)
     {
         if(window['DONT_UPDATE_JOIN']) return
         if(this.joints == null)
@@ -903,9 +914,15 @@ export default class GPUSkinningPlayer
             if (jointTransform != null)
             {
                 // TODO: Update Joint when Animation Blend
-                var jointMatrix: Matrix4x4 = new Matrix4x4();
+                var jointMatrix: Matrix4x4 = this._tmp_jointMatrix;
 
-                Matrix4x4.multiply(frame.matrices[joint.index], bones[joint.index].BindposeInv, jointMatrix);
+                var frameM = frame.matrices[joint.index];
+                var nextFrameM = nextFrame.matrices[joint.index];
+                var blendFrameM = this._tmp_jointMatrixBlend;
+                GPUSkinningPlayer.BlendMatrix(frameM, nextFrameM, nextFrameFade, blendFrameM);
+
+
+                Matrix4x4.multiply(blendFrameM, bones[joint.index].BindposeInv, jointMatrix);
                 if(playingClip.rootMotionEnabled && this.rootMotionEnabled)
                 {
                     let outM: Matrix4x4 = new Matrix4x4();

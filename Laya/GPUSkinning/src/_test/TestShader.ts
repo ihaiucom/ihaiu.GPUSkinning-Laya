@@ -53,7 +53,7 @@ export default class TestShader
             node.transform.localRotationEulerY = 90;
             // node.addComponent(TestRotation);
             window['mono'] = mono;
-            mono.Player.Play("idle");
+            mono.Player.Play("attack_01");
             for(var i = 0; i < mono.anim.clips.length; i ++)
             {
                 mono.anim.clips[i].wrapMode = GPUSkinningWrapMode.Loop;

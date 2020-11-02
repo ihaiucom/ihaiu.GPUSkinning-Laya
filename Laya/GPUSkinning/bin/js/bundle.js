@@ -1113,17 +1113,19 @@ var laya = (function () {
 	        if (anim == null || originalMtrl == null || textureRawData == null || player == null) {
 	            return;
 	        }
+	        let key = player.skinName + "&" + player.animName;
 	        let item = null;
 	        let items = this.items;
 	        let numItems = items.length;
 	        for (let i = 0; i < numItems; ++i) {
-	            if (items[i].anim.guid == anim.guid) {
+	            if (items[i].key == key) {
 	                item = items[i];
 	                break;
 	            }
 	        }
 	        if (item == null) {
 	            item = new GPUSkinningPlayerResources();
+	            item.key = key;
 	            items.push(item);
 	        }
 	        if (item.anim == null) {
@@ -1230,6 +1232,8 @@ var laya = (function () {
 	        this._tmp_p = new Vector3$2();
 	        this._tmp_r = new Quaternion$1();
 	        this._tmp_s = new Vector3$2();
+	        this._tmp_jointMatrix = new Matrix4x4$4();
+	        this._tmp_jointMatrixBlend = new Matrix4x4$4();
 	        this.weaponMap = new Map();
 	        this.go = go;
 	        this.transform = go.transform;
@@ -1692,11 +1696,12 @@ var laya = (function () {
 	        let nextFrameFade = res.CrossFadeBlendFactor(this.nextLerpProgress, playingClip.fps * 0.001);
 	        var mpb = currMtrl.material._shaderValues;
 	        let frame = playingClip.frames[frameIndex];
+	        let nextFrame = playingClip.frames[this.nextFrameIndex];
 	        if (this.Visible ||
 	            this.CullingMode == GPUSKinningCullingMode.AlwaysAnimate) {
 	            res.Update(deltaTime, currMtrl);
 	            res.UpdatePlayingData(mpb, this.spriteShaderData, playingClip, frameIndex, this.nextFrameIndex, nextFrameFade, frame, playingClip.rootMotionEnabled && this.rootMotionEnabled, lastPlayedClip, this.GetCrossFadeFrameIndex(), this.crossFadeTime, this.crossFadeProgress);
-	            this.UpdateJoints(frame);
+	            this.UpdateJoints(frame, nextFrame, nextFrameFade);
 	        }
 	        if (playingClip.rootMotionEnabled && this.rootMotionEnabled && frameIndex != this.rootMotionFrameIndex) {
 	            if (this.CullingMode != GPUSKinningCullingMode.CullCompletely) {
@@ -1707,7 +1712,12 @@ var laya = (function () {
 	        }
 	        this.UpdateEvents(playingClip, frameIndex, frame_crossFade == null ? null : lastPlayedClip, frameIndex_crossFade);
 	    }
-	    UpdateJoints(frame) {
+	    static BlendMatrix(l, r, t, o) {
+	        for (var i = 0; i < 16; i++) {
+	            o.elements[i] = l.elements[i] * (1 - t) + r.elements[i] * t;
+	        }
+	    }
+	    UpdateJoints(frame, nextFrame, nextFrameFade) {
 	        if (window['DONT_UPDATE_JOIN'])
 	            return;
 	        if (this.joints == null) {
@@ -1723,8 +1733,12 @@ var laya = (function () {
 	            let joint = joints[i];
 	            let jointTransform = joint.Transform;
 	            if (jointTransform != null) {
-	                var jointMatrix = new Matrix4x4$4();
-	                Matrix4x4$4.multiply(frame.matrices[joint.index], bones[joint.index].BindposeInv, jointMatrix);
+	                var jointMatrix = this._tmp_jointMatrix;
+	                var frameM = frame.matrices[joint.index];
+	                var nextFrameM = nextFrame.matrices[joint.index];
+	                var blendFrameM = this._tmp_jointMatrixBlend;
+	                GPUSkinningPlayer.BlendMatrix(frameM, nextFrameM, nextFrameFade, blendFrameM);
+	                Matrix4x4$4.multiply(blendFrameM, bones[joint.index].BindposeInv, jointMatrix);
 	                if (playingClip.rootMotionEnabled && this.rootMotionEnabled) {
 	                    let outM = new Matrix4x4$4();
 	                    Matrix4x4$4.multiply(frame.RootMotionInv(res.anim.rootBoneIndex), jointMatrix, outM);
@@ -1761,7 +1775,7 @@ var laya = (function () {
 	        }
 	    }
 	    static RecoverWeaponItem(item) {
-	        var mono;
+	        var mono = item;
 	        if (item instanceof Laya.Sprite3D) {
 	            mono = item.getComponent(GPUSkinningPlayerMono);
 	            if (mono == null) {
