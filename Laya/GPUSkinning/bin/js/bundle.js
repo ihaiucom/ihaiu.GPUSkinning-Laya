@@ -97,473 +97,6 @@
         }
     }
 
-    var GPUSKinningCullingMode;
-    (function (GPUSKinningCullingMode) {
-        GPUSKinningCullingMode[GPUSKinningCullingMode["AlwaysAnimate"] = 0] = "AlwaysAnimate";
-        GPUSKinningCullingMode[GPUSKinningCullingMode["CullUpdateTransforms"] = 1] = "CullUpdateTransforms";
-        GPUSKinningCullingMode[GPUSKinningCullingMode["CullCompletely"] = 2] = "CullCompletely";
-    })(GPUSKinningCullingMode || (GPUSKinningCullingMode = {}));
-
-    class GPUSkinningBetterList {
-        constructor(bufferIncrement) {
-            this.size = 0;
-            this.bufferIncrement = 0;
-            this.bufferIncrement = Math.max(1, bufferIncrement);
-        }
-        Get(i) {
-            return this.buffer[i];
-        }
-        Set(i, value) {
-            this.buffer[i] = value;
-        }
-        AllocateMore() {
-            let newList = (this.buffer != null)
-                ? new Array(this.buffer.length + this.bufferIncrement)
-                : new Array(this.bufferIncrement);
-            if (this.buffer != null && this.size > 0) {
-                arrayCopyValue(this.buffer, newList, false);
-            }
-            this.buffer = newList;
-        }
-        Clear() {
-            this.size = 0;
-        }
-        Release() {
-            this.size = 0;
-            this.buffer = null;
-        }
-        Add(item) {
-            if (this.buffer == null || this.size == this.buffer.length) {
-                this.AllocateMore();
-            }
-            this.buffer[this.size++] = item;
-        }
-        AddRange(items) {
-            if (items == null) {
-                return;
-            }
-            let length = items.length;
-            if (length == 0) {
-                return;
-            }
-            if (this.buffer == null) {
-                this.buffer = new Array(Math.max(this.bufferIncrement, length));
-                arrayCopyValue(items, this.buffer, false);
-                this.size = length;
-            }
-            else {
-                if (this.size + length > this.buffer.length) {
-                    let newList = new Array(Math.max(this.buffer.length + this.bufferIncrement, this.size + length));
-                    arrayCopyValue(this.buffer, newList, false);
-                    this.buffer = newList;
-                    for (var i = 0; i < length; i++) {
-                        this.buffer[this.size + i] = items[i];
-                    }
-                }
-                else {
-                    for (var i = 0; i < length; i++) {
-                        this.buffer[this.size + i] = items[i];
-                    }
-                }
-                this.size += length;
-            }
-        }
-        RemoveAt(index) {
-            if (this.buffer != null && index > -1 && index < this.size) {
-                this.size--;
-                this.buffer[index] = null;
-                for (let b = index; b < this.size; ++b) {
-                    this.buffer[b] = this.buffer[b + 1];
-                }
-                this.buffer[this.size] = null;
-            }
-        }
-        Pop() {
-            if (this.buffer == null || this.size == 0) {
-                return null;
-            }
-            --this.size;
-            let t = this.buffer[this.size];
-            this.buffer[this.size] = null;
-            return t;
-        }
-        Peek() {
-            if (this.buffer == null || this.size == 0) {
-                return null;
-            }
-            return this.buffer[this.size - 1];
-        }
-    }
-
-    class GPUSkinningExecuteOncePerFrame {
-        constructor() {
-            this.frameCount = -1;
-        }
-        CanBeExecute() {
-            return this.frameCount != Laya.timer.currFrame;
-        }
-        MarkAsExecuted() {
-            this.frameCount = Laya.timer.currFrame;
-        }
-    }
-
-    class GPUSkinningMaterial {
-        constructor() {
-            this.executeOncePerFrame = new GPUSkinningExecuteOncePerFrame();
-        }
-        Destroy() {
-            if (this.material) {
-                this.material.destroy();
-                this.material = null;
-            }
-        }
-    }
-
-    var MaterialState;
-    (function (MaterialState) {
-        MaterialState[MaterialState["RootOn_BlendOff"] = 0] = "RootOn_BlendOff";
-        MaterialState[MaterialState["RootOn_BlendOn_CrossFadeRootOn"] = 1] = "RootOn_BlendOn_CrossFadeRootOn";
-        MaterialState[MaterialState["RootOn_BlendOn_CrossFadeRootOff"] = 2] = "RootOn_BlendOn_CrossFadeRootOff";
-        MaterialState[MaterialState["RootOff_BlendOff"] = 3] = "RootOff_BlendOff";
-        MaterialState[MaterialState["RootOff_BlendOn_CrossFadeRootOn"] = 4] = "RootOff_BlendOn_CrossFadeRootOn";
-        MaterialState[MaterialState["RootOff_BlendOn_CrossFadeRootOff"] = 5] = "RootOff_BlendOn_CrossFadeRootOff";
-        MaterialState[MaterialState["Count"] = 6] = "Count";
-    })(MaterialState || (MaterialState = {}));
-
-    var GPUSkinningQuality;
-    (function (GPUSkinningQuality) {
-        GPUSkinningQuality[GPUSkinningQuality["Bone1"] = 0] = "Bone1";
-        GPUSkinningQuality[GPUSkinningQuality["Bone2"] = 1] = "Bone2";
-        GPUSkinningQuality[GPUSkinningQuality["Bone4"] = 2] = "Bone4";
-    })(GPUSkinningQuality || (GPUSkinningQuality = {}));
-
-    var BoundSphere = Laya.BoundSphere;
-    var Vector4$1 = Laya.Vector4;
-    var Vector3$1 = Laya.Vector3;
-    var Shader3D$1 = Laya.Shader3D;
-    class GPUSkinningPlayerResources {
-        constructor() {
-            this.anim = null;
-            this.mesh = null;
-            this.players = [];
-            this.cullingGroup = null;
-            this.cullingBounds = new GPUSkinningBetterList(100);
-            this.mtrls = null;
-            this.executeOncePerFrame = new GPUSkinningExecuteOncePerFrame();
-            this.time = 0;
-            GPUSkinningPlayerResources.Init();
-        }
-        get Time() {
-            return this.time;
-        }
-        set Time(value) {
-            this.time = value;
-        }
-        static Init() {
-            if (this._isInited)
-                return;
-            this._isInited = true;
-            for (let key of this.keywords) {
-                this.keywordDefines.push(Shader3D$1.getDefineByName(key));
-            }
-            this.ShaderDefine_SKIN_1 = Shader3D$1.getDefineByName("SKIN_1");
-            this.ShaderDefine_SKIN_2 = Shader3D$1.getDefineByName("SKIN_2");
-            this.ShaderDefine_SKIN_4 = Shader3D$1.getDefineByName("SKIN_4");
-            this.shaderPropID_GPUSkinning_TextureMatrix = Shader3D$1.propertyNameToID("u_GPUSkinning_TextureMatrix");
-            this.shaderPropID_GPUSkinning_TextureSize_NumPixelsPerFrame = Shader3D$1.propertyNameToID("u_GPUSkinning_TextureSize_NumPixelsPerFrame");
-            this.shaderPorpID_GPUSkinning_FrameIndex_PixelSegmentation = Shader3D$1.propertyNameToID("u_GPUSkinning_FrameIndex_PixelSegmentation");
-            this.shaderPropID_GPUSkinning_RootMotion = Shader3D$1.propertyNameToID("u_GPUSkinning_RootMotion");
-            this.shaderPorpID_GPUSkinning_FrameIndex_PixelSegmentation_Blend_CrossFade = Shader3D$1.propertyNameToID("u_GPUSkinning_FrameIndex_PixelSegmentation_Blend_CrossFade");
-            this.shaderPropID_GPUSkinning_RootMotion_CrossFade = Shader3D$1.propertyNameToID("u_GPUSkinning_RootMotion_CrossFade");
-        }
-        Destroy() {
-            return;
-            if (this.anim != null) {
-                this.anim.destroy();
-                this.anim = null;
-            }
-            if (this.mesh != null) {
-                this.mesh.destroy();
-                this.mesh = null;
-            }
-            if (this.mtrls != null) {
-                for (let i = 0; i < this.mtrls.length; i++) {
-                    this.mtrls[i].Destroy();
-                    this.mtrls[i] = null;
-                }
-                this.mtrls = null;
-            }
-            if (this.texture != null) {
-                this.texture.destroy();
-                this.texture = null;
-            }
-            if (this.players != null) {
-                this.players.length = 0;
-                this.players = null;
-            }
-        }
-        AddCullingBounds() {
-            this.cullingBounds.Add(new BoundSphere(new Vector3$1(0, 0, 0), 0));
-        }
-        RemoveCullingBounds(index) {
-            this.cullingBounds.RemoveAt(index);
-        }
-        LODSettingChanged(player) {
-            if (player.LODEnabled) {
-                let players = this.players;
-                let numPlayers = players.length;
-                for (let i = 0; i < numPlayers; i++) {
-                    if (players[i].Player == player) {
-                        let distanceIndex = 0;
-                        this.SetLODMeshByDistanceIndex(distanceIndex, players[i].Player);
-                        break;
-                    }
-                }
-            }
-            else {
-                player.SetLODMesh(null);
-            }
-        }
-        SetLODMeshByDistanceIndex(index, player) {
-            let lodMesh = null;
-            if (index == 0) {
-                lodMesh = this.mesh;
-            }
-            else {
-                let lodMeshes = this.anim.lodMeshes;
-                lodMesh = lodMeshes == null || lodMeshes.length == 0 ? this.mesh : lodMeshes[Math.min(index - 1, lodMeshes.length - 1)];
-                if (lodMesh == null)
-                    lodMesh = this.mesh;
-            }
-            player.SetLODMesh(lodMesh);
-        }
-        UpdateCullingBounds() {
-            let numPlayers = this.players.length;
-            for (let i = 0; i < numPlayers; ++i) {
-                let player = this.players[i];
-                if (!player.isEnable) {
-                    continue;
-                }
-                if (!player.Player || !player.Player.Position) {
-                    console.error("player.Player =null");
-                    return;
-                }
-                let bounds = this.cullingBounds.Get(i);
-                bounds.center = player.Player.Position;
-                bounds.radius = this.anim.sphereRadius;
-                this.cullingBounds[i] = bounds;
-            }
-        }
-        Update(deltaTime, mtrl) {
-            if (this.executeOncePerFrame.CanBeExecute()) {
-                this.executeOncePerFrame.MarkAsExecuted();
-                this.time += deltaTime;
-            }
-            if (mtrl.executeOncePerFrame.CanBeExecute()) {
-                let anim = this.anim;
-                mtrl.executeOncePerFrame.MarkAsExecuted();
-                mtrl.material._shaderValues.setTexture(GPUSkinningPlayerResources.shaderPropID_GPUSkinning_TextureMatrix, this.texture);
-                mtrl.material._shaderValues.setVector(GPUSkinningPlayerResources.shaderPropID_GPUSkinning_TextureSize_NumPixelsPerFrame, new Vector4$1(anim.textureWidth, anim.textureHeight, anim.bonesCount * 3, 0));
-            }
-        }
-        UpdatePlayingData(mpb, spriteShaderData, playingClip, frameIndex, nextFrameIndex, nextFrameFade, frame, rootMotionEnabled, lastPlayedClip, frameIndex_crossFade, crossFadeTime, crossFadeProgress) {
-            spriteShaderData.setVector(GPUSkinningPlayerResources.shaderPorpID_GPUSkinning_FrameIndex_PixelSegmentation, new Vector4$1(frameIndex, playingClip.pixelSegmentation, nextFrameIndex, nextFrameFade));
-            if (rootMotionEnabled) {
-                let rootMotionInv = frame.RootMotionInv(this.anim.rootBoneIndex);
-                mpb.setMatrix4x4(GPUSkinningPlayerResources.shaderPropID_GPUSkinning_RootMotion, rootMotionInv);
-            }
-            if (this.IsCrossFadeBlending(lastPlayedClip, crossFadeTime, crossFadeProgress)) {
-                if (lastPlayedClip.rootMotionEnabled) {
-                    mpb.setMatrix4x4(GPUSkinningPlayerResources.shaderPropID_GPUSkinning_RootMotion_CrossFade, lastPlayedClip.frames[frameIndex_crossFade].RootMotionInv(this.anim.rootBoneIndex));
-                }
-                console.log(spriteShaderData["__id"], "frameIndex_crossFade", frameIndex_crossFade, "CrossFadeBlendFactor", this.CrossFadeBlendFactor(crossFadeProgress, crossFadeTime), playingClip.name, "frameIndex=", frameIndex, "pixelSegmentation", playingClip.pixelSegmentation);
-                spriteShaderData.setVector(GPUSkinningPlayerResources.shaderPorpID_GPUSkinning_FrameIndex_PixelSegmentation_Blend_CrossFade, new Vector4$1(frameIndex_crossFade, lastPlayedClip.pixelSegmentation, this.CrossFadeBlendFactor(crossFadeProgress, crossFadeTime)));
-            }
-        }
-        CrossFadeBlendFactor(crossFadeProgress, crossFadeTime) {
-            return Mathf.Clamp01(crossFadeProgress / crossFadeTime);
-        }
-        IsCrossFadeBlending(lastPlayedClip, crossFadeTime, crossFadeProgress) {
-            return lastPlayedClip != null && crossFadeTime > 0 && crossFadeProgress <= crossFadeTime;
-        }
-        GetMaterial(state) {
-            return this.mtrls[state];
-        }
-        InitMaterial(originalMaterial, skinningQuality) {
-            if (this.mtrls != null) {
-                return;
-            }
-            let SKILL_N;
-            switch (skinningQuality) {
-                case GPUSkinningQuality.Bone1:
-                    SKILL_N = GPUSkinningPlayerResources.ShaderDefine_SKIN_1;
-                    break;
-                case GPUSkinningQuality.Bone2:
-                    SKILL_N = GPUSkinningPlayerResources.ShaderDefine_SKIN_2;
-                    break;
-                case GPUSkinningQuality.Bone4:
-                    SKILL_N = GPUSkinningPlayerResources.ShaderDefine_SKIN_4;
-                    break;
-            }
-            let mtrls = this.mtrls = [];
-            for (let i = 0; i < MaterialState.Count; ++i) {
-                let materialItem = new GPUSkinningMaterial();
-                let material = materialItem.material = originalMaterial.clone();
-                material.lock = true;
-                material.__mname = originalMaterial.__mname + " " + GPUSkinningPlayerResources.keywords[i];
-                mtrls[i] = materialItem;
-                material.name = GPUSkinningPlayerResources.keywords[i];
-                material._shaderValues.addDefine(SKILL_N);
-                this.EnableKeywords(i, materialItem);
-            }
-        }
-        CloneMaterial(originalMaterial, skinningQuality) {
-            if (originalMaterial == null) {
-                console.error("GPUSkinningPlayerResources.CloneMaterial originalMaterial=null");
-            }
-            let material = originalMaterial.clone();
-            material.__mname = originalMaterial.__mname + " CloneMaterial";
-            let SKILL_N;
-            switch (skinningQuality) {
-                case GPUSkinningQuality.Bone1:
-                    SKILL_N = GPUSkinningPlayerResources.ShaderDefine_SKIN_1;
-                    break;
-                case GPUSkinningQuality.Bone2:
-                    SKILL_N = GPUSkinningPlayerResources.ShaderDefine_SKIN_2;
-                    break;
-                case GPUSkinningQuality.Bone4:
-                    SKILL_N = GPUSkinningPlayerResources.ShaderDefine_SKIN_4;
-                    break;
-            }
-            material._shaderValues.addDefine(SKILL_N);
-            material._shaderValues.addDefine(GPUSkinningPlayerResources.keywordDefines[3]);
-            return material;
-        }
-        EnableKeywords(ki, mtrl) {
-            for (let i = 0; i < this.mtrls.length; ++i) {
-                if (i == ki) {
-                    mtrl.material._shaderValues.addDefine(GPUSkinningPlayerResources.keywordDefines[i]);
-                }
-                else {
-                    mtrl.material._shaderValues.removeDefine(GPUSkinningPlayerResources.keywordDefines[i]);
-                }
-            }
-        }
-    }
-    GPUSkinningPlayerResources.keywords = [
-        "ROOTON_BLENDOFF", "ROOTON_BLENDON_CROSSFADEROOTON", "ROOTON_BLENDON_CROSSFADEROOTOFF",
-        "ROOTOFF_BLENDOFF", "ROOTOFF_BLENDON_CROSSFADEROOTON", "ROOTOFF_BLENDON_CROSSFADEROOTOFF"
-    ];
-    GPUSkinningPlayerResources.keywordDefines = [];
-    GPUSkinningPlayerResources.shaderPropID_GPUSkinning_TextureMatrix = -1;
-    GPUSkinningPlayerResources.shaderPropID_GPUSkinning_TextureSize_NumPixelsPerFrame = 0;
-    GPUSkinningPlayerResources.shaderPorpID_GPUSkinning_FrameIndex_PixelSegmentation = 0;
-    GPUSkinningPlayerResources.shaderPorpID_GPUSkinning_FrameIndex_PixelSegmentation_Last = 0;
-    GPUSkinningPlayerResources.shaderPropID_GPUSkinning_RootMotion = 0;
-    GPUSkinningPlayerResources.shaderPorpID_GPUSkinning_FrameIndex_PixelSegmentation_Blend_CrossFade = 0;
-    GPUSkinningPlayerResources.shaderPropID_GPUSkinning_RootMotion_CrossFade = 0;
-    GPUSkinningPlayerResources._isInited = false;
-
-    class GPUSkinningPlayerMonoManager {
-        constructor() {
-            this.items = [];
-        }
-        Register(anim, mesh, originalMtrl, textureRawData, player) {
-            if (anim == null || originalMtrl == null || textureRawData == null || player == null) {
-                return;
-            }
-            let key = player.skinName + "&" + player.animName;
-            let item = null;
-            let items = this.items;
-            let numItems = items.length;
-            for (let i = 0; i < numItems; ++i) {
-                if (items[i].key == key) {
-                    item = items[i];
-                    break;
-                }
-            }
-            if (item == null) {
-                item = new GPUSkinningPlayerResources();
-                item.key = key;
-                items.push(item);
-            }
-            if (item.anim == null) {
-                item.anim = anim;
-            }
-            if (item.mesh == null) {
-                item.mesh = mesh;
-            }
-            item.InitMaterial(originalMtrl, anim.skinQuality);
-            if (item.texture == null) {
-                item.texture = textureRawData;
-            }
-            if (item.players.indexOf(player) == -1) {
-                item.players.push(player);
-                item.AddCullingBounds();
-                player.isEnable = true;
-            }
-            return item;
-        }
-        Unregister(player) {
-            if (player == null) {
-                return;
-            }
-            let items = this.items;
-            let numItems = items.length;
-            for (let i = 0; i < numItems; ++i) {
-                let playerIndex = items[i].players.indexOf(player);
-                if (playerIndex != -1) {
-                    items[i].players.splice(playerIndex, 1);
-                    items[i].RemoveCullingBounds(playerIndex);
-                    player.isEnable = false;
-                    if (items[i].players.length == 0) {
-                        items[i].Destroy();
-                        items.splice(i, 1);
-                    }
-                    break;
-                }
-            }
-        }
-    }
-
-    class GPUSkinningPlayerJoint extends Laya.Script3D {
-        constructor() {
-            super(...arguments);
-            this.index = 0;
-            this.BoneIndex = 0;
-            this.BoneGUID = null;
-        }
-        get Transform() {
-            return this.transform;
-        }
-        get GameObject() {
-            return this.go;
-        }
-        onAwake() {
-            this.go = this.owner;
-            this.transform = this.go.transform;
-        }
-        Init(bone, index, boneIndex, boneGUID) {
-            this.bone = bone;
-            this.index = index;
-            this.BoneIndex = boneIndex;
-            this.BoneGUID = boneGUID;
-        }
-        _cloneTo(dest) {
-            dest.bone = this.bone;
-            dest.index = this.index;
-            dest.BoneIndex = this.BoneIndex;
-            dest.BoneGUID = this.BoneGUID;
-            dest.onAwake();
-        }
-    }
-
-    var GPUSkinningWrapMode;
-    (function (GPUSkinningWrapMode) {
-        GPUSkinningWrapMode[GPUSkinningWrapMode["Once"] = 0] = "Once";
-        GPUSkinningWrapMode[GPUSkinningWrapMode["Loop"] = 1] = "Loop";
-    })(GPUSkinningWrapMode || (GPUSkinningWrapMode = {}));
-
     var VertexMesh = Laya.VertexMesh;
     var VertexDeclaration = Laya.VertexDeclaration;
     var VertexElement = Laya.VertexElement;
@@ -962,7 +495,7 @@
     }
 
     var Bounds = Laya.Bounds;
-    var Vector3$2 = Laya.Vector3;
+    var Vector3$1 = Laya.Vector3;
     var Quaternion = Laya.Quaternion;
     var Matrix4x4$1 = Laya.Matrix4x4;
     class ByteReadUtil {
@@ -975,7 +508,7 @@
             return v;
         }
         static ReadVector3(b) {
-            var v = new Vector3$2();
+            var v = new Vector3$1();
             v.x = b.readFloat32() * -1;
             v.y = b.readFloat32();
             v.z = b.readFloat32();
@@ -1042,6 +575,12 @@
             return obj;
         }
     }
+
+    var GPUSkinningWrapMode;
+    (function (GPUSkinningWrapMode) {
+        GPUSkinningWrapMode[GPUSkinningWrapMode["Once"] = 0] = "Once";
+        GPUSkinningWrapMode[GPUSkinningWrapMode["Loop"] = 1] = "Loop";
+    })(GPUSkinningWrapMode || (GPUSkinningWrapMode = {}));
 
     class GPUSkinningAnimEvent {
         constructor() {
@@ -1181,6 +720,13 @@
         }
     }
 
+    var GPUSkinningQuality;
+    (function (GPUSkinningQuality) {
+        GPUSkinningQuality[GPUSkinningQuality["Bone1"] = 0] = "Bone1";
+        GPUSkinningQuality[GPUSkinningQuality["Bone2"] = 1] = "Bone2";
+        GPUSkinningQuality[GPUSkinningQuality["Bone4"] = 2] = "Bone4";
+    })(GPUSkinningQuality || (GPUSkinningQuality = {}));
+
     var Byte$2 = Laya.Byte;
     class GPUSkinningAnimation extends Laya.Resource {
         constructor() {
@@ -1294,6 +840,1104 @@
             super.destroy();
         }
     }
+
+    var GPUSKinningCullingMode;
+    (function (GPUSKinningCullingMode) {
+        GPUSKinningCullingMode[GPUSKinningCullingMode["AlwaysAnimate"] = 0] = "AlwaysAnimate";
+        GPUSKinningCullingMode[GPUSKinningCullingMode["CullUpdateTransforms"] = 1] = "CullUpdateTransforms";
+        GPUSKinningCullingMode[GPUSKinningCullingMode["CullCompletely"] = 2] = "CullCompletely";
+    })(GPUSKinningCullingMode || (GPUSKinningCullingMode = {}));
+
+    class GPUSkinningExecuteOncePerFrame {
+        constructor() {
+            this.frameCount = -1;
+        }
+        CanBeExecute() {
+            return this.frameCount != Laya.timer.currFrame;
+        }
+        MarkAsExecuted() {
+            this.frameCount = Laya.timer.currFrame;
+        }
+    }
+
+    class GPUSkinningMaterial {
+        constructor() {
+            this.executeOncePerFrame = new GPUSkinningExecuteOncePerFrame();
+        }
+        Destroy() {
+            if (this.material) {
+                this.material.destroy();
+                this.material = null;
+            }
+        }
+    }
+
+    var MaterialState;
+    (function (MaterialState) {
+        MaterialState[MaterialState["RootOn_BlendOff"] = 0] = "RootOn_BlendOff";
+        MaterialState[MaterialState["RootOn_BlendOn_CrossFadeRootOn"] = 1] = "RootOn_BlendOn_CrossFadeRootOn";
+        MaterialState[MaterialState["RootOn_BlendOn_CrossFadeRootOff"] = 2] = "RootOn_BlendOn_CrossFadeRootOff";
+        MaterialState[MaterialState["RootOff_BlendOff"] = 3] = "RootOff_BlendOff";
+        MaterialState[MaterialState["RootOff_BlendOn_CrossFadeRootOn"] = 4] = "RootOff_BlendOn_CrossFadeRootOn";
+        MaterialState[MaterialState["RootOff_BlendOn_CrossFadeRootOff"] = 5] = "RootOff_BlendOn_CrossFadeRootOff";
+        MaterialState[MaterialState["Count"] = 6] = "Count";
+    })(MaterialState || (MaterialState = {}));
+
+    var Vector4$1 = Laya.Vector4;
+    var Shader3D$1 = Laya.Shader3D;
+    class GPUSkinningPlayerResources {
+        constructor() {
+            this.anim = null;
+            this.mesh = null;
+            this.players = [];
+            this.mtrls = null;
+            this.executeOncePerFrame = new GPUSkinningExecuteOncePerFrame();
+            this.time = 0;
+            GPUSkinningPlayerResources.Init();
+        }
+        get Time() {
+            return this.time;
+        }
+        set Time(value) {
+            this.time = value;
+        }
+        static Init() {
+            if (this._isInited)
+                return;
+            this._isInited = true;
+            for (let key of this.keywords) {
+                this.keywordDefines.push(Shader3D$1.getDefineByName(key));
+            }
+            this.ShaderDefine_SKIN_1 = Shader3D$1.getDefineByName("SKIN_1");
+            this.ShaderDefine_SKIN_2 = Shader3D$1.getDefineByName("SKIN_2");
+            this.ShaderDefine_SKIN_4 = Shader3D$1.getDefineByName("SKIN_4");
+            this.shaderPropID_GPUSkinning_TextureMatrix = Shader3D$1.propertyNameToID("u_GPUSkinning_TextureMatrix");
+            this.shaderPropID_GPUSkinning_TextureSize_NumPixelsPerFrame = Shader3D$1.propertyNameToID("u_GPUSkinning_TextureSize_NumPixelsPerFrame");
+            this.shaderPorpID_GPUSkinning_FrameIndex_PixelSegmentation = Shader3D$1.propertyNameToID("u_GPUSkinning_FrameIndex_PixelSegmentation");
+            this.shaderPropID_GPUSkinning_RootMotion = Shader3D$1.propertyNameToID("u_GPUSkinning_RootMotion");
+            this.shaderPorpID_GPUSkinning_FrameIndex_PixelSegmentation_Blend_CrossFade = Shader3D$1.propertyNameToID("u_GPUSkinning_FrameIndex_PixelSegmentation_Blend_CrossFade");
+            this.shaderPropID_GPUSkinning_RootMotion_CrossFade = Shader3D$1.propertyNameToID("u_GPUSkinning_RootMotion_CrossFade");
+        }
+        Destroy() {
+            return;
+            if (this.anim != null) {
+                this.anim.destroy();
+                this.anim = null;
+            }
+            if (this.mesh != null) {
+                this.mesh.destroy();
+                this.mesh = null;
+            }
+            if (this.mtrls != null) {
+                for (let i = 0; i < this.mtrls.length; i++) {
+                    this.mtrls[i].Destroy();
+                    this.mtrls[i] = null;
+                }
+                this.mtrls = null;
+            }
+            if (this.texture != null) {
+                this.texture.destroy();
+                this.texture = null;
+            }
+            if (this.players != null) {
+                this.players.length = 0;
+                this.players = null;
+            }
+        }
+        LODSettingChanged(player) {
+            if (player.LODEnabled) {
+                let players = this.players;
+                let numPlayers = players.length;
+                for (let i = 0; i < numPlayers; i++) {
+                    if (players[i].Player == player) {
+                        let distanceIndex = 0;
+                        this.SetLODMeshByDistanceIndex(distanceIndex, players[i].Player);
+                        break;
+                    }
+                }
+            }
+            else {
+                player.SetLODMesh(null);
+            }
+        }
+        SetLODMeshByDistanceIndex(index, player) {
+            let lodMesh = null;
+            if (index == 0) {
+                lodMesh = this.mesh;
+            }
+            else {
+                let lodMeshes = this.anim.lodMeshes;
+                lodMesh = lodMeshes == null || lodMeshes.length == 0 ? this.mesh : lodMeshes[Math.min(index - 1, lodMeshes.length - 1)];
+                if (lodMesh == null)
+                    lodMesh = this.mesh;
+            }
+            player.SetLODMesh(lodMesh);
+        }
+        Update(deltaTime, mtrl) {
+            if (this.executeOncePerFrame.CanBeExecute()) {
+                this.executeOncePerFrame.MarkAsExecuted();
+                this.time += deltaTime;
+            }
+            if (mtrl.executeOncePerFrame.CanBeExecute()) {
+                let anim = this.anim;
+                mtrl.executeOncePerFrame.MarkAsExecuted();
+                mtrl.material._shaderValues.setTexture(GPUSkinningPlayerResources.shaderPropID_GPUSkinning_TextureMatrix, this.texture);
+                mtrl.material._shaderValues.setVector(GPUSkinningPlayerResources.shaderPropID_GPUSkinning_TextureSize_NumPixelsPerFrame, new Vector4$1(anim.textureWidth, anim.textureHeight, anim.bonesCount * 3, 0));
+            }
+        }
+        UpdatePlayingData(mpb, spriteShaderData, playingClip, frameIndex, nextFrameIndex, nextFrameFade, frame, rootMotionEnabled, lastPlayedClip, frameIndex_crossFade, crossFadeTime, crossFadeProgress) {
+            spriteShaderData.setVector(GPUSkinningPlayerResources.shaderPorpID_GPUSkinning_FrameIndex_PixelSegmentation, new Vector4$1(frameIndex, playingClip.pixelSegmentation, nextFrameIndex, nextFrameFade));
+            if (rootMotionEnabled) {
+                let rootMotionInv = frame.RootMotionInv(this.anim.rootBoneIndex);
+                mpb.setMatrix4x4(GPUSkinningPlayerResources.shaderPropID_GPUSkinning_RootMotion, rootMotionInv);
+            }
+            if (this.IsCrossFadeBlending(lastPlayedClip, crossFadeTime, crossFadeProgress)) {
+                if (lastPlayedClip.rootMotionEnabled) {
+                    mpb.setMatrix4x4(GPUSkinningPlayerResources.shaderPropID_GPUSkinning_RootMotion_CrossFade, lastPlayedClip.frames[frameIndex_crossFade].RootMotionInv(this.anim.rootBoneIndex));
+                }
+                console.log(spriteShaderData["__id"], "frameIndex_crossFade", frameIndex_crossFade, "CrossFadeBlendFactor", this.CrossFadeBlendFactor(crossFadeProgress, crossFadeTime), playingClip.name, "frameIndex=", frameIndex, "pixelSegmentation", playingClip.pixelSegmentation);
+                spriteShaderData.setVector(GPUSkinningPlayerResources.shaderPorpID_GPUSkinning_FrameIndex_PixelSegmentation_Blend_CrossFade, new Vector4$1(frameIndex_crossFade, lastPlayedClip.pixelSegmentation, this.CrossFadeBlendFactor(crossFadeProgress, crossFadeTime)));
+            }
+        }
+        CrossFadeBlendFactor(crossFadeProgress, crossFadeTime) {
+            return Mathf.Clamp01(crossFadeProgress / crossFadeTime);
+        }
+        IsCrossFadeBlending(lastPlayedClip, crossFadeTime, crossFadeProgress) {
+            return lastPlayedClip != null && crossFadeTime > 0 && crossFadeProgress <= crossFadeTime;
+        }
+        GetMaterial(state) {
+            return this.mtrls[state];
+        }
+        InitMaterial(originalMaterial, skinningQuality) {
+            if (this.mtrls != null) {
+                return;
+            }
+            let SKILL_N;
+            switch (skinningQuality) {
+                case GPUSkinningQuality.Bone1:
+                    SKILL_N = GPUSkinningPlayerResources.ShaderDefine_SKIN_1;
+                    break;
+                case GPUSkinningQuality.Bone2:
+                    SKILL_N = GPUSkinningPlayerResources.ShaderDefine_SKIN_2;
+                    break;
+                case GPUSkinningQuality.Bone4:
+                    SKILL_N = GPUSkinningPlayerResources.ShaderDefine_SKIN_4;
+                    break;
+            }
+            let mtrls = this.mtrls = [];
+            for (let i = 0; i < MaterialState.Count; ++i) {
+                let materialItem = new GPUSkinningMaterial();
+                let material = materialItem.material = originalMaterial.clone();
+                material.lock = true;
+                material.__mname = originalMaterial.__mname + " " + GPUSkinningPlayerResources.keywords[i];
+                mtrls[i] = materialItem;
+                material.name = GPUSkinningPlayerResources.keywords[i];
+                material._shaderValues.addDefine(SKILL_N);
+                this.EnableKeywords(i, materialItem);
+            }
+        }
+        CloneMaterial(originalMaterial, skinningQuality) {
+            if (originalMaterial == null) {
+                console.error("GPUSkinningPlayerResources.CloneMaterial originalMaterial=null");
+            }
+            let material = originalMaterial.clone();
+            material.__mname = originalMaterial.__mname + " CloneMaterial";
+            let SKILL_N;
+            switch (skinningQuality) {
+                case GPUSkinningQuality.Bone1:
+                    SKILL_N = GPUSkinningPlayerResources.ShaderDefine_SKIN_1;
+                    break;
+                case GPUSkinningQuality.Bone2:
+                    SKILL_N = GPUSkinningPlayerResources.ShaderDefine_SKIN_2;
+                    break;
+                case GPUSkinningQuality.Bone4:
+                    SKILL_N = GPUSkinningPlayerResources.ShaderDefine_SKIN_4;
+                    break;
+            }
+            material._shaderValues.addDefine(SKILL_N);
+            material._shaderValues.addDefine(GPUSkinningPlayerResources.keywordDefines[3]);
+            return material;
+        }
+        EnableKeywords(ki, mtrl) {
+            for (let i = 0; i < this.mtrls.length; ++i) {
+                if (i == ki) {
+                    mtrl.material._shaderValues.addDefine(GPUSkinningPlayerResources.keywordDefines[i]);
+                }
+                else {
+                    mtrl.material._shaderValues.removeDefine(GPUSkinningPlayerResources.keywordDefines[i]);
+                }
+            }
+        }
+    }
+    GPUSkinningPlayerResources.keywords = [
+        "ROOTON_BLENDOFF", "ROOTON_BLENDON_CROSSFADEROOTON", "ROOTON_BLENDON_CROSSFADEROOTOFF",
+        "ROOTOFF_BLENDOFF", "ROOTOFF_BLENDON_CROSSFADEROOTON", "ROOTOFF_BLENDON_CROSSFADEROOTOFF"
+    ];
+    GPUSkinningPlayerResources.keywordDefines = [];
+    GPUSkinningPlayerResources.shaderPropID_GPUSkinning_TextureMatrix = -1;
+    GPUSkinningPlayerResources.shaderPropID_GPUSkinning_TextureSize_NumPixelsPerFrame = 0;
+    GPUSkinningPlayerResources.shaderPorpID_GPUSkinning_FrameIndex_PixelSegmentation = 0;
+    GPUSkinningPlayerResources.shaderPorpID_GPUSkinning_FrameIndex_PixelSegmentation_Last = 0;
+    GPUSkinningPlayerResources.shaderPropID_GPUSkinning_RootMotion = 0;
+    GPUSkinningPlayerResources.shaderPorpID_GPUSkinning_FrameIndex_PixelSegmentation_Blend_CrossFade = 0;
+    GPUSkinningPlayerResources.shaderPropID_GPUSkinning_RootMotion_CrossFade = 0;
+    GPUSkinningPlayerResources._isInited = false;
+
+    class GPUSkinningPlayerMonoManager {
+        constructor() {
+            this.items = [];
+        }
+        Register(anim, mesh, originalMtrl, textureRawData, player) {
+            if (anim == null || originalMtrl == null || textureRawData == null || player == null) {
+                return;
+            }
+            let key = player.skinName + "&" + player.animName;
+            let item = null;
+            let items = this.items;
+            let numItems = items.length;
+            for (let i = 0; i < numItems; ++i) {
+                if (items[i].key == key) {
+                    item = items[i];
+                    break;
+                }
+            }
+            if (item == null) {
+                item = new GPUSkinningPlayerResources();
+                item.key = key;
+                items.push(item);
+            }
+            if (item.anim == null) {
+                item.anim = anim;
+            }
+            if (item.mesh == null) {
+                item.mesh = mesh;
+            }
+            item.InitMaterial(originalMtrl, anim.skinQuality);
+            if (item.texture == null) {
+                item.texture = textureRawData;
+            }
+            if (item.players.indexOf(player) == -1) {
+                item.players.push(player);
+                player.isEnable = true;
+            }
+            return item;
+        }
+        Unregister(player) {
+            if (player == null) {
+                return;
+            }
+            let items = this.items;
+            let numItems = items.length;
+            for (let i = 0; i < numItems; ++i) {
+                let playerIndex = items[i].players.indexOf(player);
+                if (playerIndex != -1) {
+                    items[i].players.splice(playerIndex, 1);
+                    player.isEnable = false;
+                    if (items[i].players.length == 0) {
+                        items[i].Destroy();
+                        items.splice(i, 1);
+                    }
+                    break;
+                }
+            }
+        }
+    }
+
+    class GPUSkinningPlayerJoint extends Laya.Script3D {
+        constructor() {
+            super(...arguments);
+            this.index = 0;
+            this.BoneIndex = 0;
+            this.BoneGUID = null;
+        }
+        get Transform() {
+            return this.transform;
+        }
+        get GameObject() {
+            return this.go;
+        }
+        onAwake() {
+            this.go = this.owner;
+            this.transform = this.go.transform;
+        }
+        Init(bone, index, boneIndex, boneGUID) {
+            this.bone = bone;
+            this.index = index;
+            this.BoneIndex = boneIndex;
+            this.BoneGUID = boneGUID;
+        }
+        _cloneTo(dest) {
+            dest.bone = this.bone;
+            dest.index = this.index;
+            dest.BoneIndex = this.BoneIndex;
+            dest.BoneGUID = this.BoneGUID;
+            dest.onAwake();
+        }
+    }
+
+    var Vector3$2 = Laya.Vector3;
+    var Matrix4x4$4 = Laya.Matrix4x4;
+    var Quaternion$1 = Laya.Quaternion;
+    class GPUSkinningPlayer {
+        constructor(go, res) {
+            this.time = 0;
+            this.timeDiff = 0;
+            this.crossFadeTime = -1;
+            this.crossFadeProgress = 0;
+            this.lastPlayedTime = 0;
+            this.lastPlayedClip = null;
+            this.lastPlayingFrameIndex = -1;
+            this.lastPlayingClip = null;
+            this.playingClip = null;
+            this.nextFrameIndex = -1;
+            this.nextLerpProgress = 0;
+            this.res = null;
+            this.rootMotionFrameIndex = -1;
+            this._speed = 1;
+            this.sAnimEvent = new Typed2Signal();
+            this.rootMotionEnabled = false;
+            this.cullingMode = GPUSKinningCullingMode.CullUpdateTransforms;
+            this.visible = true;
+            this.lodEnabled = false;
+            this.isPlaying = false;
+            this.jointMap = new Map();
+            this.joints = null;
+            this.__frameIndex = 0;
+            this.isRandomPlayClip = false;
+            this.randomPlayClipI = 0;
+            this._tmp_p = new Vector3$2();
+            this._tmp_r = new Quaternion$1();
+            this._tmp_s = new Vector3$2();
+            this._tmp_jointMatrix = new Matrix4x4$4();
+            this._tmp_jointMatrixBlend = new Matrix4x4$4();
+            this.weaponMap = new Map();
+            this.go = go;
+            this.transform = go.transform;
+            this.res = res;
+            this.mr = go.meshRenderer;
+            this.mf = go.meshFilter;
+            this.spriteShaderData = go.meshRenderer._shaderValues;
+            go.meshRenderer['__id'] = this.spriteShaderData['__id'] = GPUSkinningPlayer._ShaderUID++;
+            let mtrl = this.GetCurrentMaterial();
+            this.mtrl = mtrl;
+            var mtrl2 = new GPUSkinningMaterial();
+            mtrl2.material = res.CloneMaterial(mtrl.material, res.anim.skinQuality);
+            mtrl = mtrl2;
+            this.mtrl = mtrl2;
+            this.mr.sharedMaterial = mtrl == null ? null : mtrl.material;
+            this.mf.sharedMesh = res.mesh;
+            var subMeshCount = this.mf.sharedMesh.subMeshCount;
+            if (subMeshCount > 1) {
+                var matrices = [mtrl.material];
+                for (var i = 1; i < subMeshCount; i++) {
+                    var m = mtrl.material.clone();
+                    matrices.push(m);
+                }
+                this.mr.sharedMaterials = matrices;
+            }
+            this.ConstructJoints();
+        }
+        get speed() {
+            return this._speed;
+        }
+        set speed(value) {
+            this._speed = value;
+            this.SetWeapSpeed(value);
+        }
+        get RootMotionEnabled() {
+            return this.rootMotionEnabled;
+        }
+        set RootMotionEnabled(value) {
+            this.rootMotionFrameIndex = -1;
+            this.rootMotionEnabled = value;
+        }
+        get CullingMode() {
+            return this.cullingMode;
+        }
+        set CullingMode(value) {
+            this.cullingMode = value;
+        }
+        get Visible() {
+            return this.visible;
+        }
+        set Visible(value) {
+            this.visible = value;
+        }
+        get LODEnabled() {
+            return this.lodEnabled;
+        }
+        set LODEnabled(value) {
+            this.lodEnabled = value;
+            this.res.LODSettingChanged(this);
+        }
+        get IsPlaying() {
+            return this.isPlaying;
+        }
+        get PlayingClipName() {
+            return this.playingClip == null ? null : this.playingClip.name;
+        }
+        get Position() {
+            return this.transform == null ? new Vector3$2() : this.transform.position;
+        }
+        get LocalPosition() {
+            return this.transform == null ? new Vector3$2() : this.transform.localPosition;
+        }
+        get Joints() {
+            return this.joints;
+        }
+        get WrapMode() {
+            return this.playingClip == null ? GPUSkinningWrapMode.Once : this.playingClip.wrapMode;
+        }
+        get ClipTimeLength() {
+            if (!this.playingClip) {
+                return 0;
+            }
+            return this.playingClip.length;
+        }
+        get IsTimeAtTheEndOfLoop() {
+            if (this.playingClip == null) {
+                return false;
+            }
+            else {
+                return this.GetFrameIndex() == (Math.floor(this.playingClip.length * this.playingClip.fps) - 1);
+            }
+        }
+        get NormalizedTime() {
+            if (this.playingClip == null) {
+                return 0;
+            }
+            else {
+                return this.GetFrameIndex() / (Math.floor(this.playingClip.length * this.playingClip.fps) - 1);
+            }
+        }
+        set NormalizedTime(value) {
+            if (this.playingClip != null) {
+                var v = Mathf.Clamp01(value);
+                if (this.WrapMode == GPUSkinningWrapMode.Once) {
+                    this.time = v * this.playingClip.length;
+                }
+                else if (this.WrapMode == GPUSkinningWrapMode.Loop) {
+                    this.time = v * this.playingClip.length;
+                }
+                else {
+                    console.error(`GPUSkinningPlayer.NormalizedTime 未知 播放模式 WrapMode=${this.WrapMode}`);
+                }
+            }
+        }
+        GetCurrentTime() {
+            let time = 0;
+            switch (this.WrapMode) {
+                case GPUSkinningWrapMode.Once:
+                    time = this.time;
+                    break;
+                case GPUSkinningWrapMode.Loop:
+                    time = this.time;
+                    break;
+                default:
+                    console.error(`GPUSkinningPlayer.GetCurrentTime 未知 播放模式 WrapMode=${this.WrapMode}`);
+                    break;
+            }
+            return time;
+        }
+        GetFrameIndex() {
+            let time = this.GetCurrentTime();
+            if (this.playingClip.length == time) {
+                return this.GetTheLastFrameIndex_WrapMode_Once(this.playingClip);
+            }
+            else {
+                return this.GetFrameIndex_WrapMode_Loop(this.playingClip, time);
+            }
+        }
+        GetNextFrameIndex(currentFrameIndex) {
+            var frameIndex = currentFrameIndex;
+            var frameEnd = Math.floor(this.playingClip.length * this.playingClip.fps) - 1;
+            if (frameIndex == frameEnd) {
+                switch (this.WrapMode) {
+                    case GPUSkinningWrapMode.Once:
+                        frameIndex = frameEnd;
+                        break;
+                    case GPUSkinningWrapMode.Loop:
+                        frameIndex = 0;
+                        break;
+                    default:
+                        console.error(`GPUSkinningPlayer.GetNextFrameIndex 未知 播放模式 WrapMode=${this.WrapMode}`);
+                        break;
+                }
+            }
+            else {
+                frameIndex++;
+            }
+            return frameIndex;
+        }
+        GetCrossFadeFrameIndex() {
+            if (this.lastPlayedClip == null) {
+                return 0;
+            }
+            switch (this.lastPlayedClip.wrapMode) {
+                case GPUSkinningWrapMode.Once:
+                    if (this.lastPlayedTime >= this.lastPlayedClip.length) {
+                        return this.GetTheLastFrameIndex_WrapMode_Once(this.lastPlayedClip);
+                    }
+                    else {
+                        return this.GetFrameIndex_WrapMode_Loop(this.lastPlayedClip, this.lastPlayedTime);
+                    }
+                    break;
+                case GPUSkinningWrapMode.Loop:
+                    return this.GetFrameIndex_WrapMode_Loop(this.lastPlayedClip, this.lastPlayedTime);
+                    break;
+                default:
+                    console.error(`GPUSkinningPlayer.GetCrossFadeFrameIndex 未知 播放模式 this.lastPlayedClip.wrapMode=${this.lastPlayedClip.wrapMode}`);
+                    break;
+            }
+        }
+        GetTheLastFrameIndex_WrapMode_Once(clip) {
+            return clip.frameLastIndex;
+        }
+        GetFrameIndex_WrapMode_Loop(clip, time) {
+            return Math.floor(time * clip.fps) % Math.floor(clip.length * clip.fps);
+        }
+        GetCurrentMaterial() {
+            if (this.res == null) {
+                return null;
+            }
+            if (this.playingClip == null) {
+                return this.res.GetMaterial(MaterialState.RootOff_BlendOff);
+            }
+            let res = this.res;
+            let playingClip = this.playingClip;
+            let lastPlayedClip = this.lastPlayedClip;
+            let rootMotionEnabled = this.rootMotionEnabled;
+            let crossFadeTime = this.crossFadeTime;
+            let crossFadeProgress = this.crossFadeProgress;
+            if (playingClip.rootMotionEnabled && rootMotionEnabled) {
+                if (res.IsCrossFadeBlending(lastPlayedClip, crossFadeTime, crossFadeProgress)) {
+                    if (lastPlayedClip.rootMotionEnabled) {
+                        return res.GetMaterial(MaterialState.RootOn_BlendOn_CrossFadeRootOn);
+                    }
+                    return res.GetMaterial(MaterialState.RootOn_BlendOn_CrossFadeRootOff);
+                }
+                return res.GetMaterial(MaterialState.RootOn_BlendOff);
+            }
+            if (res.IsCrossFadeBlending(lastPlayedClip, crossFadeTime, crossFadeProgress)) {
+                if (lastPlayedClip.rootMotionEnabled) {
+                    return res.GetMaterial(MaterialState.RootOff_BlendOn_CrossFadeRootOn);
+                }
+                return res.GetMaterial(MaterialState.RootOff_BlendOn_CrossFadeRootOff);
+            }
+            else {
+                return res.GetMaterial(MaterialState.RootOff_BlendOff);
+            }
+        }
+        SetLODMesh(mesh) {
+            if (!this.LODEnabled) {
+                mesh = this.res.mesh;
+            }
+            if (this.mf != null && this.mf.sharedMesh != mesh) {
+                this.mf.sharedMesh = mesh;
+            }
+        }
+        get material() {
+            return this.mtrl.material;
+        }
+        onDestroy() {
+            if (this.mtrl) {
+                this.mtrl.Destroy();
+                this.mtrl = null;
+            }
+        }
+        ConstructJoints() {
+            if (this.joints)
+                return;
+            this.jointMap.clear();
+            let existingJoints = this.go.getComponentsInChildren(GPUSkinningPlayerJoint);
+            let bones = this.res.anim.bones;
+            let numBones = bones == null ? 0 : bones.length;
+            for (let i = 0; i < numBones; i++) {
+                let bone = bones[i];
+                if (!bone.isExposed) {
+                    continue;
+                }
+                if (this.joints == null) {
+                    this.joints = [];
+                }
+                let joints = this.joints;
+                let inTheExistingJoints = false;
+                if (existingJoints != null) {
+                    for (let j = 0; j < existingJoints.length; j++) {
+                        let existingJoint = existingJoints[j];
+                        if (existingJoint) {
+                            for (var ii = existingJoint.owner.numChildren - 1; ii >= 0; ii--) {
+                                GPUSkinningPlayer.RecoverWeaponItem(existingJoint.owner.getChildAt(ii));
+                            }
+                        }
+                        if (existingJoint && existingJoint.BoneGUID == bone.guid) {
+                            if (existingJoint.index != i) {
+                                existingJoint.Init(bone, i, bone.boneIndex, bone.guid);
+                            }
+                            existingJoint.GameObject.name = bone.name;
+                            joints.push(existingJoint);
+                            this.jointMap.set(bone.name, existingJoint);
+                            existingJoints[j] = null;
+                            inTheExistingJoints = true;
+                            break;
+                        }
+                    }
+                }
+                if (!inTheExistingJoints) {
+                    let joinGO = new Laya.Sprite3D(bone.name);
+                    this.go.addChild(joinGO);
+                    joinGO.transform.localPosition = new Vector3$2();
+                    joinGO.transform.localScale = new Vector3$2(1, 1, 1);
+                    let join = joinGO.addComponent(GPUSkinningPlayerJoint);
+                    join.onAwake();
+                    joints.push(join);
+                    join.Init(bone, i, bone.boneIndex, bone.guid);
+                    this.jointMap.set(bone.name, join);
+                }
+            }
+            this.DeleteInvalidJoints(existingJoints);
+        }
+        DeleteInvalidJoints(joints) {
+            if (joints) {
+                for (let i = 0; i < joints.length; i++) {
+                    let join = joints[i];
+                    if (!join)
+                        continue;
+                    let joinGO = join.owner;
+                    for (let j = joinGO.numChildren - 1; j >= 0; j--) {
+                        let child = joinGO.getChildAt(j);
+                        this.go.addChild(child);
+                        child.transform.localPosition = new Vector3$2();
+                    }
+                    joinGO.removeSelf();
+                    joinGO.destroy();
+                    if (join.bone) {
+                        this.jointMap.delete(join.bone.name);
+                    }
+                }
+            }
+        }
+        FindJoint(boneName) {
+            if (this.jointMap.has(boneName)) {
+                return this.jointMap.get(boneName);
+            }
+            return null;
+        }
+        FindJointGameObject(boneName) {
+            var joint = this.FindJoint(boneName);
+            if (joint) {
+                return joint.GameObject;
+            }
+            else {
+                return null;
+            }
+        }
+        GotoAndStop(clipName, nomrmalizeTime = 0) {
+            this.Play(clipName, nomrmalizeTime);
+            this.Stop();
+        }
+        Play(clipName, nomrmalizeTime = 0) {
+            clipName = clipName.toLowerCase();
+            let clips = this.res.anim.clips;
+            let numClips = clips == null ? 0 : clips.length;
+            let playingClip = this.playingClip;
+            for (let i = 0; i < numClips; ++i) {
+                if (clips[i].name == clipName) {
+                    let item = clips[i];
+                    if (playingClip != item
+                        || (playingClip != null && playingClip.wrapMode == GPUSkinningWrapMode.Once && this.IsTimeAtTheEndOfLoop)
+                        || (playingClip != null && !this.isPlaying)) {
+                        this.SetNewPlayingClip(item, nomrmalizeTime);
+                    }
+                    this.time = nomrmalizeTime * item.length;
+                    return;
+                }
+            }
+        }
+        CrossFade(clipName, fadeLength, nomrmalizeTime = 0) {
+            this.Play(clipName, nomrmalizeTime);
+            return;
+            if (this.playingClip == null) {
+                this.Play(clipName, nomrmalizeTime);
+            }
+            else {
+                let playingClip = this.playingClip;
+                let clips = this.res.anim.clips;
+                let numClips = clips == null ? 0 : clips.length;
+                for (let i = 0; i < numClips; ++i) {
+                    if (clips[i].name == clipName) {
+                        let item = clips[i];
+                        if (playingClip != item) {
+                            this.crossFadeProgress = nomrmalizeTime;
+                            this.crossFadeTime = fadeLength;
+                            this.SetNewPlayingClip(item, nomrmalizeTime);
+                            return;
+                        }
+                        if ((playingClip != null && playingClip.wrapMode == GPUSkinningWrapMode.Once && this.IsTimeAtTheEndOfLoop)
+                            || (playingClip != null && !this.isPlaying)) {
+                            this.SetNewPlayingClip(item, nomrmalizeTime);
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+        SetNewPlayingClip(clip, nomrmalizeTime = 0) {
+            this.lastPlayedClip = this.playingClip;
+            this.lastPlayedTime = this.GetCurrentTime();
+            this.isPlaying = true;
+            this.playingClip = clip;
+            this.rootMotionFrameIndex = -1;
+            this.time = nomrmalizeTime * clip.length;
+            this.timeDiff = Random.range(0, clip.length);
+            this.SetWeapClip(clip.name, nomrmalizeTime, this.timeDiff);
+        }
+        Stop() {
+            this.speed = 0;
+        }
+        Resume() {
+            if (this.playingClip != null) {
+                this.speed = 1;
+            }
+        }
+        Update(timeDelta) {
+            if (!this.isPlaying || this.playingClip == null) {
+                return;
+            }
+            timeDelta *= this.speed;
+            if (this.isRandomPlayClip) {
+                this.randomPlayClipI++;
+                if (this.randomPlayClipI >= Random.range(100, 500)) {
+                    this.randomPlayClipI = 0;
+                    var i = Random.range(0, this.res.anim.clips.length);
+                    i = Math.floor(i);
+                    this.Play(this.res.anim.clips[i].name);
+                }
+            }
+            let currMtrl = this.mtrl;
+            let playingClip = this.playingClip;
+            switch (playingClip.wrapMode) {
+                case GPUSkinningWrapMode.Loop:
+                    this.UpdateMaterial(timeDelta, currMtrl);
+                    this.time += timeDelta;
+                    break;
+                case GPUSkinningWrapMode.Once:
+                    if (this.time >= playingClip.length) {
+                        this.time = playingClip.length;
+                        this.UpdateMaterial(timeDelta, currMtrl);
+                    }
+                    else {
+                        this.UpdateMaterial(timeDelta, currMtrl);
+                        this.time += timeDelta;
+                        if (this.time > playingClip.length || this.__frameIndex == this.GetTheLastFrameIndex_WrapMode_Once(this.playingClip)) {
+                            this.time = playingClip.length;
+                        }
+                    }
+                    break;
+                default:
+                    console.error(`GPUSkinningPlayer.Update 未知 播放模式 playingClip.wrapMode=${playingClip.wrapMode}`);
+                    break;
+            }
+            this.crossFadeProgress += timeDelta;
+            this.lastPlayedTime += timeDelta;
+            this.lastPlayingClip = this.playingClip;
+            this.lastPlayingFrameIndex = this.__frameIndex;
+            this.nextFrameIndex = this.__frameIndex;
+            this.nextLerpProgress += timeDelta;
+        }
+        onRenderUpdate(context, transform, render) {
+            console.log(render['__id'], "onRenderUpdate");
+        }
+        UpdateMaterial(deltaTime, currMtrl) {
+            let res = this.res;
+            let frameIndex = this.GetFrameIndex();
+            this.__frameIndex = frameIndex;
+            {
+                this.nextFrameIndex = this.GetNextFrameIndex(frameIndex);
+            }
+            if (this.lastPlayingClip == this.playingClip && this.lastPlayingFrameIndex == frameIndex) ;
+            else {
+                this.nextLerpProgress = 0;
+            }
+            let lastPlayedClip = this.lastPlayingClip;
+            let playingClip = this.playingClip;
+            let blend_crossFade = 1;
+            let frameIndex_crossFade = -1;
+            let frame_crossFade = null;
+            if (res.IsCrossFadeBlending(lastPlayedClip, this.crossFadeTime, this.crossFadeProgress)) {
+                frameIndex_crossFade = this.GetCrossFadeFrameIndex();
+                frame_crossFade = lastPlayedClip.frames[frameIndex_crossFade];
+                blend_crossFade = res.CrossFadeBlendFactor(this.crossFadeProgress, this.crossFadeTime);
+            }
+            let nextFrameFade = res.CrossFadeBlendFactor(this.nextLerpProgress, playingClip.fps * 0.001);
+            var mpb = currMtrl.material._shaderValues;
+            let frame = playingClip.frames[frameIndex];
+            let nextFrame = playingClip.frames[this.nextFrameIndex];
+            if (this.Visible ||
+                this.CullingMode == GPUSKinningCullingMode.AlwaysAnimate) {
+                res.Update(deltaTime, currMtrl);
+                res.UpdatePlayingData(mpb, this.spriteShaderData, playingClip, frameIndex, this.nextFrameIndex, nextFrameFade, frame, playingClip.rootMotionEnabled && this.rootMotionEnabled, lastPlayedClip, this.GetCrossFadeFrameIndex(), this.crossFadeTime, this.crossFadeProgress);
+                this.UpdateJoints(frame, nextFrame, nextFrameFade);
+            }
+            if (playingClip.rootMotionEnabled && this.rootMotionEnabled && frameIndex != this.rootMotionFrameIndex) {
+                if (this.CullingMode != GPUSKinningCullingMode.CullCompletely) {
+                    this.rootMotionFrameIndex = frameIndex;
+                    this.DoRootMotion(frame_crossFade, 1 - blend_crossFade, false);
+                    this.DoRootMotion(frame, blend_crossFade, true);
+                }
+            }
+            this.UpdateEvents(playingClip, frameIndex, frame_crossFade == null ? null : lastPlayedClip, frameIndex_crossFade);
+        }
+        static BlendMatrix(l, r, t, o) {
+            for (var i = 0; i < 16; i++) {
+                o.elements[i] = l.elements[i] * (1 - t) + r.elements[i] * t;
+            }
+        }
+        UpdateJoints(frame, nextFrame, nextFrameFade) {
+            if (this.joints == null) {
+                return;
+            }
+            let res = this.res;
+            let joints = this.joints;
+            let playingClip = this.playingClip;
+            let matrices = frame.matrices;
+            let bones = res.anim.bones;
+            let numJoints = joints.length;
+            for (let i = 0; i < numJoints; ++i) {
+                let joint = joints[i];
+                let jointTransform = joint.Transform;
+                if (jointTransform != null) {
+                    var jointMatrix = this._tmp_jointMatrix;
+                    var frameM = frame.matrices[joint.index];
+                    var nextFrameM = nextFrame.matrices[joint.index];
+                    var blendFrameM = this._tmp_jointMatrixBlend;
+                    GPUSkinningPlayer.BlendMatrix(frameM, nextFrameM, nextFrameFade, blendFrameM);
+                    Matrix4x4$4.multiply(blendFrameM, bones[joint.index].BindposeInv, jointMatrix);
+                    if (playingClip.rootMotionEnabled && this.rootMotionEnabled) {
+                        let outM = new Matrix4x4$4();
+                        Matrix4x4$4.multiply(frame.RootMotionInv(res.anim.rootBoneIndex), jointMatrix, outM);
+                        jointMatrix = outM;
+                    }
+                    jointMatrix.decomposeTransRotScale(this._tmp_p, this._tmp_r, this._tmp_s);
+                    jointTransform.localPosition = this._tmp_p;
+                    jointTransform.localRotation = this._tmp_r;
+                }
+                else {
+                    joints.splice(i, 1);
+                    --i;
+                    --numJoints;
+                }
+            }
+        }
+        DoRootMotion(frame, blend, doRotate) {
+        }
+        UpdateEvents(playingClip, playingFrameIndex, corssFadeClip, crossFadeFrameIndex) {
+            this.UpdateClipEvent(playingClip, playingFrameIndex);
+            this.UpdateClipEvent(corssFadeClip, crossFadeFrameIndex);
+        }
+        UpdateClipEvent(clip, frameIndex) {
+            if (clip == null || clip.events == null || clip.events.length == 0) {
+                return;
+            }
+            let events = clip.events;
+            let numEvents = events.length;
+            for (let i = 0; i < numEvents; ++i) {
+                if (events[i].frameIndex == frameIndex) {
+                    this.sAnimEvent.dispatch(this, events[i].eventId);
+                    break;
+                }
+            }
+        }
+        static RecoverWeaponItem(item) {
+            var mono = item;
+            if (item instanceof Laya.Sprite3D) {
+                mono = item.getComponent(GPUSkinningPlayerMono);
+                if (mono == null) {
+                    console.error("~~~weapon 不是GPUSkinningPlayerMono" + item.name);
+                    item.removeSelf();
+                    return;
+                }
+            }
+            mono.owner.removeSelf();
+            var key = mono.skinName + "&" + mono.animName;
+            Laya.Pool.recover(key, mono);
+        }
+        static GetWeaponItem(skinName, animName, callback) {
+            var key = skinName + "&" + animName;
+            var item = Laya.Pool.getItem(key);
+            if (item) {
+                callback && callback(item);
+            }
+            else {
+                GPUSkining.CreateByName(skinName, animName, Laya.Handler.create(this, (item) => {
+                    callback && callback(item);
+                }));
+            }
+        }
+        SetWeapon(boneName, skinName, animName) {
+            var bone = this.FindJointGameObject(boneName);
+            if (bone == null) {
+                return;
+            }
+            GPUSkinningPlayer.GetWeaponItem(skinName, animName, (mono) => {
+                if (this.weaponMap.has(boneName)) {
+                    var preWeapon = this.weaponMap.get(boneName);
+                    GPUSkinningPlayer.RecoverWeaponItem(preWeapon);
+                    this.weaponMap.delete(boneName);
+                }
+                bone.addChild(mono.owner);
+                var sprite = mono.owner;
+                sprite.transform.localPosition = new Vector3$2(0, 0, 0);
+                sprite.transform.localRotationEuler = new Vector3$2(0, 0, 0);
+                this.weaponMap.set(boneName, mono);
+                var clipName = this.PlayingClipName;
+                if (!mono.Player.res.anim.clipMap.has(clipName)) {
+                    clipName = "standby";
+                }
+                mono.Player.Play(clipName, this.NormalizedTime);
+            });
+        }
+        SetWeapClip(clipName, nomrmalizeTime, timeDiff) {
+            this.weaponMap.forEach((v, k) => {
+                if (!v.Player.res.anim.clipMap.has(clipName)) {
+                    clipName = "standby";
+                }
+                v.Player.Play(clipName, nomrmalizeTime);
+                v.Player.timeDiff = timeDiff;
+            });
+        }
+        SetWeapSpeed(speed) {
+            this.weaponMap.forEach((v, k) => {
+                v.Player.speed = speed;
+            });
+        }
+    }
+    GPUSkinningPlayer._ShaderUID = 0;
+
+    class GPUSkinningPlayerMono extends Laya.Script3D {
+        constructor() {
+            super(...arguments);
+            this.isEnable = false;
+            this.defaultPlayingClipIndex = 0;
+            this.rootMotionEnabled = false;
+            this.lodEnabled = true;
+            this.cullingMode = GPUSKinningCullingMode.CullUpdateTransforms;
+        }
+        get Player() {
+            return this.player;
+        }
+        FindJointGameObject(boneName) {
+            if (this.player) {
+                return this.player.FindJointGameObject(boneName);
+            }
+            else {
+                return null;
+            }
+        }
+        _cloneTo(dest) {
+            dest.skinName = this.skinName;
+            dest.animName = this.animName;
+            dest.anim = this.anim;
+            dest.mesh = this.mesh;
+            dest.mtrl = this.mtrl;
+            dest.textureRawData = this.textureRawData;
+            dest.Init();
+            if (dest.player) {
+                if (dest.player.__mname) {
+                    console.warn(dest.player.__mname);
+                }
+                else {
+                    dest.player.__mname = dest.anim.name + " _cloneTo Set";
+                }
+            }
+        }
+        onAwake() {
+        }
+        onEnable() {
+            var preHasPlayer = this.player != null;
+            this.Init();
+            if (!preHasPlayer && this.player) {
+                if (this.player.__mname) {
+                    console.warn(this.player.__mname);
+                }
+                else {
+                    this.player.__mname = this.anim.name + " onEnable Set";
+                }
+            }
+            this.isEnable = true;
+        }
+        onStart() {
+        }
+        onUpdate() {
+            if (GPUSkining.IsPauseAll) {
+                return;
+            }
+            if (this.player != null) {
+                this.player.Update(Laya.timer.delta / 1000);
+            }
+        }
+        onDisable() {
+            this.isEnable = false;
+        }
+        onDestroy() {
+            GPUSkinningPlayerMono.playerManager.Unregister(this);
+            this.anim = null;
+            this.mesh = null;
+            this.mtrl = null;
+            this.textureRawData = null;
+            if (this.player) {
+                this.player.onDestroy();
+                this.player = null;
+            }
+        }
+        SetData(anim, mesh, mtrl, textureRawData) {
+            if (this.player != null) {
+                return;
+            }
+            this.anim = anim;
+            this.mesh = mesh;
+            this.mtrl = mtrl;
+            this.textureRawData = textureRawData;
+            this.Init();
+            if (this.player) {
+                if (this.player.__mname) {
+                    console.warn(this.player.__mname);
+                }
+                else {
+                    this.player.__mname = anim.name + " SetData Set";
+                }
+            }
+        }
+        Init() {
+            this.gameObject = this.owner;
+            if (this.player != null) {
+                return;
+            }
+            let anim = this.anim;
+            let mesh = this.mesh;
+            let mtrl = this.mtrl;
+            let textureRawData = this.textureRawData;
+            if (anim != null && mesh != null && mtrl != null && textureRawData != null) {
+                let res = GPUSkinningPlayerMono.playerManager.Register(anim, mesh, mtrl, textureRawData, this);
+                let player = new GPUSkinningPlayer(this.gameObject, res);
+                player.RootMotionEnabled = this.rootMotionEnabled;
+                player.LODEnabled = this.lodEnabled;
+                player.CullingMode = this.cullingMode;
+                this.player = player;
+                if (anim != null && anim.clips != null && anim.clips.length > 0) {
+                    var defaultClipName = anim.clips[Mathf.clamp(this.defaultPlayingClipIndex, 0, anim.clips.length)].name;
+                    for (var clip of anim.clips) {
+                        if (clip.name == "idle") {
+                            defaultClipName = clip.name;
+                            break;
+                        }
+                    }
+                    player.Play(defaultClipName);
+                }
+            }
+        }
+    }
+    GPUSkinningPlayerMono.playerManager = new GPUSkinningPlayerMonoManager();
 
     var Shader3D$2 = Laya.Shader3D;
     var Vector4$2 = Laya.Vector4;
@@ -2548,15 +3192,6 @@
     var Loader = Laya.Loader;
     var Event = Laya.Event;
     var Shader3D$6 = Laya.Shader3D;
-    var MaterialTextureType;
-    (function (MaterialTextureType) {
-        MaterialTextureType[MaterialTextureType["None"] = 0] = "None";
-        MaterialTextureType[MaterialTextureType["Shadow"] = 2] = "Shadow";
-        MaterialTextureType[MaterialTextureType["ShadowColor"] = 4] = "ShadowColor";
-        MaterialTextureType[MaterialTextureType["HeightRimLight"] = 8] = "HeightRimLight";
-        MaterialTextureType[MaterialTextureType["Mask"] = 16] = "Mask";
-        MaterialTextureType[MaterialTextureType["ShadowColor_And_HeightRimLight"] = 12] = "ShadowColor_And_HeightRimLight";
-    })(MaterialTextureType || (MaterialTextureType = {}));
     class GPUSkining {
         static async InitAsync() {
             window['GPUSkining'] = GPUSkining;
@@ -2719,8 +3354,12 @@
                             console.error("GPUSkinning.CreateByName资源加载失败", matrixTexturePath);
                             callback.runWith(null);
                         }
-                        var material;
-                        var createFun = () => {
+                        Laya.loader.create(materailPath, Laya.Handler.create(this, (material) => {
+                            if (material == null) {
+                                console.error("GPUSkinning.CreateByName资源加载失败", materailPath);
+                                callback.runWith(null);
+                                return;
+                            }
                             material.GPUSkinning_TextureMatrix = animTexture;
                             material.__mname = skinName + " prefab";
                             var sprite = new Laya.MeshSprite3D();
@@ -2731,13 +3370,6 @@
                             mono.SetData(anim, mesh, material, animTexture);
                             callback.runWith(mono);
                             window['sprite'] = sprite;
-                        };
-                        Laya.loader.create(materailPath, Laya.Handler.create(this, (m) => {
-                            if (m == null) {
-                                console.error("GPUSkinning.CreateByName资源加载失败", materailPath);
-                            }
-                            material = m;
-                            createFun();
                         }));
                     });
                 });
@@ -2749,793 +3381,6 @@
     GPUSkining.resRoot = "res3d/Conventional/";
     window['GPUSkining'] = GPUSkining;
     window['SceneMaterial'] = SceneMaterial;
-
-    var Vector3$3 = Laya.Vector3;
-    var Matrix4x4$4 = Laya.Matrix4x4;
-    var Quaternion$1 = Laya.Quaternion;
-    class GPUSkinningPlayer {
-        constructor(go, res) {
-            this.time = 0;
-            this.timeDiff = 0;
-            this.crossFadeTime = -1;
-            this.crossFadeProgress = 0;
-            this.lastPlayedTime = 0;
-            this.lastPlayedClip = null;
-            this.lastPlayingFrameIndex = -1;
-            this.lastPlayingClip = null;
-            this.playingClip = null;
-            this.nextFrameIndex = -1;
-            this.nextLerpProgress = 0;
-            this.res = null;
-            this.rootMotionFrameIndex = -1;
-            this._speed = 1;
-            this.sAnimEvent = new Typed2Signal();
-            this.rootMotionEnabled = false;
-            this.cullingMode = GPUSKinningCullingMode.CullUpdateTransforms;
-            this.visible = true;
-            this.lodEnabled = false;
-            this.isPlaying = false;
-            this.jointMap = new Map();
-            this.joints = null;
-            this.__frameIndex = 0;
-            this.isRandomPlayClip = false;
-            this.randomPlayClipI = 0;
-            this._tmp_p = new Vector3$3();
-            this._tmp_r = new Quaternion$1();
-            this._tmp_s = new Vector3$3();
-            this._tmp_jointMatrix = new Matrix4x4$4();
-            this._tmp_jointMatrixBlend = new Matrix4x4$4();
-            this.weaponMap = new Map();
-            this.go = go;
-            this.transform = go.transform;
-            this.res = res;
-            this.mr = go.meshRenderer;
-            this.mf = go.meshFilter;
-            this.spriteShaderData = go.meshRenderer._shaderValues;
-            go.meshRenderer['__id'] = this.spriteShaderData['__id'] = GPUSkinningPlayer._ShaderUID++;
-            let mtrl = this.GetCurrentMaterial();
-            this.mtrl = mtrl;
-            var mtrl2 = new GPUSkinningMaterial();
-            mtrl2.material = res.CloneMaterial(mtrl.material, res.anim.skinQuality);
-            mtrl = mtrl2;
-            this.mtrl = mtrl2;
-            this.mr.sharedMaterial = mtrl == null ? null : mtrl.material;
-            this.mf.sharedMesh = res.mesh;
-            var subMeshCount = this.mf.sharedMesh.subMeshCount;
-            if (subMeshCount > 1) {
-                var matrices = [mtrl.material];
-                for (var i = 1; i < subMeshCount; i++) {
-                    var m = mtrl.material.clone();
-                    matrices.push(m);
-                }
-                this.mr.sharedMaterials = matrices;
-            }
-            this.ConstructJoints();
-        }
-        get speed() {
-            return this._speed;
-        }
-        set speed(value) {
-            this._speed = value;
-            this.SetWeapSpeed(value);
-        }
-        get RootMotionEnabled() {
-            return this.rootMotionEnabled;
-        }
-        set RootMotionEnabled(value) {
-            this.rootMotionFrameIndex = -1;
-            this.rootMotionEnabled = value;
-        }
-        get CullingMode() {
-            return this.cullingMode;
-        }
-        set CullingMode(value) {
-            this.cullingMode = value;
-        }
-        get Visible() {
-            return this.visible;
-        }
-        set Visible(value) {
-            this.visible = value;
-        }
-        get LODEnabled() {
-            return this.lodEnabled;
-        }
-        set LODEnabled(value) {
-            this.lodEnabled = value;
-            this.res.LODSettingChanged(this);
-        }
-        get IsPlaying() {
-            return this.isPlaying;
-        }
-        get PlayingClipName() {
-            return this.playingClip == null ? null : this.playingClip.name;
-        }
-        get Position() {
-            return this.transform == null ? new Vector3$3() : this.transform.position;
-        }
-        get LocalPosition() {
-            return this.transform == null ? new Vector3$3() : this.transform.localPosition;
-        }
-        get Joints() {
-            return this.joints;
-        }
-        get WrapMode() {
-            return this.playingClip == null ? GPUSkinningWrapMode.Once : this.playingClip.wrapMode;
-        }
-        get ClipTimeLength() {
-            if (!this.playingClip) {
-                return 0;
-            }
-            return this.playingClip.length;
-        }
-        get IsTimeAtTheEndOfLoop() {
-            if (this.playingClip == null) {
-                return false;
-            }
-            else {
-                return this.GetFrameIndex() == (Math.floor(this.playingClip.length * this.playingClip.fps) - 1);
-            }
-        }
-        get NormalizedTime() {
-            if (this.playingClip == null) {
-                return 0;
-            }
-            else {
-                return this.GetFrameIndex() / (Math.floor(this.playingClip.length * this.playingClip.fps) - 1);
-            }
-        }
-        set NormalizedTime(value) {
-            if (this.playingClip != null) {
-                var v = Mathf.Clamp01(value);
-                if (this.WrapMode == GPUSkinningWrapMode.Once) {
-                    this.time = v * this.playingClip.length;
-                }
-                else if (this.WrapMode == GPUSkinningWrapMode.Loop) {
-                    this.time = v * this.playingClip.length;
-                }
-                else {
-                    console.error(`GPUSkinningPlayer.NormalizedTime 未知 播放模式 WrapMode=${this.WrapMode}`);
-                }
-            }
-        }
-        GetCurrentTime() {
-            let time = 0;
-            switch (this.WrapMode) {
-                case GPUSkinningWrapMode.Once:
-                    time = this.time;
-                    break;
-                case GPUSkinningWrapMode.Loop:
-                    time = this.time;
-                    break;
-                default:
-                    console.error(`GPUSkinningPlayer.GetCurrentTime 未知 播放模式 WrapMode=${this.WrapMode}`);
-                    break;
-            }
-            return time;
-        }
-        GetFrameIndex() {
-            let time = this.GetCurrentTime();
-            if (this.playingClip.length == time) {
-                return this.GetTheLastFrameIndex_WrapMode_Once(this.playingClip);
-            }
-            else {
-                return this.GetFrameIndex_WrapMode_Loop(this.playingClip, time);
-            }
-        }
-        GetNextFrameIndex(currentFrameIndex) {
-            var frameIndex = currentFrameIndex;
-            var frameEnd = Math.floor(this.playingClip.length * this.playingClip.fps) - 1;
-            if (frameIndex == frameEnd) {
-                switch (this.WrapMode) {
-                    case GPUSkinningWrapMode.Once:
-                        frameIndex = frameEnd;
-                        break;
-                    case GPUSkinningWrapMode.Loop:
-                        frameIndex = 0;
-                        break;
-                    default:
-                        console.error(`GPUSkinningPlayer.GetNextFrameIndex 未知 播放模式 WrapMode=${this.WrapMode}`);
-                        break;
-                }
-            }
-            else {
-                frameIndex++;
-            }
-            return frameIndex;
-        }
-        GetCrossFadeFrameIndex() {
-            if (this.lastPlayedClip == null) {
-                return 0;
-            }
-            switch (this.lastPlayedClip.wrapMode) {
-                case GPUSkinningWrapMode.Once:
-                    if (this.lastPlayedTime >= this.lastPlayedClip.length) {
-                        return this.GetTheLastFrameIndex_WrapMode_Once(this.lastPlayedClip);
-                    }
-                    else {
-                        return this.GetFrameIndex_WrapMode_Loop(this.lastPlayedClip, this.lastPlayedTime);
-                    }
-                    break;
-                case GPUSkinningWrapMode.Loop:
-                    return this.GetFrameIndex_WrapMode_Loop(this.lastPlayedClip, this.lastPlayedTime);
-                    break;
-                default:
-                    console.error(`GPUSkinningPlayer.GetCrossFadeFrameIndex 未知 播放模式 this.lastPlayedClip.wrapMode=${this.lastPlayedClip.wrapMode}`);
-                    break;
-            }
-        }
-        GetTheLastFrameIndex_WrapMode_Once(clip) {
-            return clip.frameLastIndex;
-        }
-        GetFrameIndex_WrapMode_Loop(clip, time) {
-            return Math.floor(time * clip.fps) % Math.floor(clip.length * clip.fps);
-        }
-        GetCurrentMaterial() {
-            if (this.res == null) {
-                return null;
-            }
-            if (this.playingClip == null) {
-                return this.res.GetMaterial(MaterialState.RootOff_BlendOff);
-            }
-            let res = this.res;
-            let playingClip = this.playingClip;
-            let lastPlayedClip = this.lastPlayedClip;
-            let rootMotionEnabled = this.rootMotionEnabled;
-            let crossFadeTime = this.crossFadeTime;
-            let crossFadeProgress = this.crossFadeProgress;
-            if (playingClip.rootMotionEnabled && rootMotionEnabled) {
-                if (res.IsCrossFadeBlending(lastPlayedClip, crossFadeTime, crossFadeProgress)) {
-                    if (lastPlayedClip.rootMotionEnabled) {
-                        return res.GetMaterial(MaterialState.RootOn_BlendOn_CrossFadeRootOn);
-                    }
-                    return res.GetMaterial(MaterialState.RootOn_BlendOn_CrossFadeRootOff);
-                }
-                return res.GetMaterial(MaterialState.RootOn_BlendOff);
-            }
-            if (res.IsCrossFadeBlending(lastPlayedClip, crossFadeTime, crossFadeProgress)) {
-                if (lastPlayedClip.rootMotionEnabled) {
-                    return res.GetMaterial(MaterialState.RootOff_BlendOn_CrossFadeRootOn);
-                }
-                return res.GetMaterial(MaterialState.RootOff_BlendOn_CrossFadeRootOff);
-            }
-            else {
-                return res.GetMaterial(MaterialState.RootOff_BlendOff);
-            }
-        }
-        SetLODMesh(mesh) {
-            if (!this.LODEnabled) {
-                mesh = this.res.mesh;
-            }
-            if (this.mf != null && this.mf.sharedMesh != mesh) {
-                this.mf.sharedMesh = mesh;
-            }
-        }
-        get material() {
-            return this.mtrl.material;
-        }
-        onDestroy() {
-            if (this.mtrl) {
-                this.mtrl.Destroy();
-                this.mtrl = null;
-            }
-        }
-        ConstructJoints() {
-            if (this.joints)
-                return;
-            this.jointMap.clear();
-            let existingJoints = this.go.getComponentsInChildren(GPUSkinningPlayerJoint);
-            let bones = this.res.anim.bones;
-            let numBones = bones == null ? 0 : bones.length;
-            for (let i = 0; i < numBones; i++) {
-                let bone = bones[i];
-                if (!bone.isExposed) {
-                    continue;
-                }
-                if (this.joints == null) {
-                    this.joints = [];
-                }
-                let joints = this.joints;
-                let inTheExistingJoints = false;
-                if (existingJoints != null) {
-                    for (let j = 0; j < existingJoints.length; j++) {
-                        let existingJoint = existingJoints[j];
-                        if (existingJoint) {
-                            for (var ii = existingJoint.owner.numChildren - 1; ii >= 0; ii--) {
-                                GPUSkinningPlayer.RecoverWeaponItem(existingJoint.owner.getChildAt(ii));
-                            }
-                        }
-                        if (existingJoint && existingJoint.BoneGUID == bone.guid) {
-                            if (existingJoint.index != i) {
-                                existingJoint.Init(bone, i, bone.boneIndex, bone.guid);
-                            }
-                            existingJoint.GameObject.name = bone.name;
-                            joints.push(existingJoint);
-                            this.jointMap.set(bone.name, existingJoint);
-                            existingJoints[j] = null;
-                            inTheExistingJoints = true;
-                            break;
-                        }
-                    }
-                }
-                if (!inTheExistingJoints) {
-                    let joinGO = new Laya.Sprite3D(bone.name);
-                    this.go.addChild(joinGO);
-                    joinGO.transform.localPosition = new Vector3$3();
-                    joinGO.transform.localScale = new Vector3$3(1, 1, 1);
-                    let join = joinGO.addComponent(GPUSkinningPlayerJoint);
-                    join.onAwake();
-                    joints.push(join);
-                    join.Init(bone, i, bone.boneIndex, bone.guid);
-                    this.jointMap.set(bone.name, join);
-                }
-            }
-            this.DeleteInvalidJoints(existingJoints);
-        }
-        DeleteInvalidJoints(joints) {
-            if (joints) {
-                for (let i = 0; i < joints.length; i++) {
-                    let join = joints[i];
-                    if (!join)
-                        continue;
-                    let joinGO = join.owner;
-                    for (let j = joinGO.numChildren - 1; j >= 0; j--) {
-                        let child = joinGO.getChildAt(j);
-                        this.go.addChild(child);
-                        child.transform.localPosition = new Vector3$3();
-                    }
-                    joinGO.removeSelf();
-                    joinGO.destroy();
-                    if (join.bone) {
-                        this.jointMap.delete(join.bone.name);
-                    }
-                }
-            }
-        }
-        FindJoint(boneName) {
-            if (this.jointMap.has(boneName)) {
-                return this.jointMap.get(boneName);
-            }
-            return null;
-        }
-        FindJointGameObject(boneName) {
-            var joint = this.FindJoint(boneName);
-            if (joint) {
-                return joint.GameObject;
-            }
-            else {
-                return null;
-            }
-        }
-        GotoAndStop(clipName, nomrmalizeTime = 0) {
-            this.Play(clipName, nomrmalizeTime);
-            this.Stop();
-        }
-        Play(clipName, nomrmalizeTime = 0) {
-            clipName = clipName.toLowerCase();
-            let clips = this.res.anim.clips;
-            let numClips = clips == null ? 0 : clips.length;
-            let playingClip = this.playingClip;
-            for (let i = 0; i < numClips; ++i) {
-                if (clips[i].name == clipName) {
-                    let item = clips[i];
-                    if (playingClip != item
-                        || (playingClip != null && playingClip.wrapMode == GPUSkinningWrapMode.Once && this.IsTimeAtTheEndOfLoop)
-                        || (playingClip != null && !this.isPlaying)) {
-                        this.SetNewPlayingClip(item, nomrmalizeTime);
-                    }
-                    this.time = nomrmalizeTime * item.length;
-                    return;
-                }
-            }
-        }
-        CrossFade(clipName, fadeLength, nomrmalizeTime = 0) {
-            this.Play(clipName, nomrmalizeTime);
-            return;
-            if (this.playingClip == null) {
-                this.Play(clipName, nomrmalizeTime);
-            }
-            else {
-                let playingClip = this.playingClip;
-                let clips = this.res.anim.clips;
-                let numClips = clips == null ? 0 : clips.length;
-                for (let i = 0; i < numClips; ++i) {
-                    if (clips[i].name == clipName) {
-                        let item = clips[i];
-                        if (playingClip != item) {
-                            this.crossFadeProgress = nomrmalizeTime;
-                            this.crossFadeTime = fadeLength;
-                            this.SetNewPlayingClip(item, nomrmalizeTime);
-                            return;
-                        }
-                        if ((playingClip != null && playingClip.wrapMode == GPUSkinningWrapMode.Once && this.IsTimeAtTheEndOfLoop)
-                            || (playingClip != null && !this.isPlaying)) {
-                            this.SetNewPlayingClip(item, nomrmalizeTime);
-                            return;
-                        }
-                    }
-                }
-            }
-        }
-        SetNewPlayingClip(clip, nomrmalizeTime = 0) {
-            this.lastPlayedClip = this.playingClip;
-            this.lastPlayedTime = this.GetCurrentTime();
-            this.isPlaying = true;
-            this.playingClip = clip;
-            this.rootMotionFrameIndex = -1;
-            this.time = nomrmalizeTime * clip.length;
-            this.timeDiff = Random.range(0, clip.length);
-            this.SetWeapClip(clip.name, nomrmalizeTime, this.timeDiff);
-        }
-        Stop() {
-            this.speed = 0;
-        }
-        Resume() {
-            if (this.playingClip != null) {
-                this.speed = 1;
-            }
-        }
-        Update(timeDelta) {
-            if (!this.isPlaying || this.playingClip == null) {
-                return;
-            }
-            timeDelta *= this.speed;
-            if (this.isRandomPlayClip) {
-                this.randomPlayClipI++;
-                if (this.randomPlayClipI >= Random.range(100, 500)) {
-                    this.randomPlayClipI = 0;
-                    var i = Random.range(0, this.res.anim.clips.length);
-                    i = Math.floor(i);
-                    this.Play(this.res.anim.clips[i].name);
-                }
-            }
-            let currMtrl = this.mtrl;
-            let playingClip = this.playingClip;
-            switch (playingClip.wrapMode) {
-                case GPUSkinningWrapMode.Loop:
-                    this.UpdateMaterial(timeDelta, currMtrl);
-                    this.time += timeDelta;
-                    break;
-                case GPUSkinningWrapMode.Once:
-                    if (this.time >= playingClip.length) {
-                        this.time = playingClip.length;
-                        this.UpdateMaterial(timeDelta, currMtrl);
-                    }
-                    else {
-                        this.UpdateMaterial(timeDelta, currMtrl);
-                        this.time += timeDelta;
-                        if (this.time > playingClip.length || this.__frameIndex == this.GetTheLastFrameIndex_WrapMode_Once(this.playingClip)) {
-                            this.time = playingClip.length;
-                        }
-                    }
-                    break;
-                default:
-                    console.error(`GPUSkinningPlayer.Update 未知 播放模式 playingClip.wrapMode=${playingClip.wrapMode}`);
-                    break;
-            }
-            this.crossFadeProgress += timeDelta;
-            this.lastPlayedTime += timeDelta;
-            this.lastPlayingClip = this.playingClip;
-            this.lastPlayingFrameIndex = this.__frameIndex;
-            this.nextFrameIndex = this.__frameIndex;
-            this.nextLerpProgress += timeDelta;
-        }
-        onRenderUpdate(context, transform, render) {
-            console.log(render['__id'], "onRenderUpdate");
-        }
-        UpdateMaterial(deltaTime, currMtrl) {
-            let res = this.res;
-            let frameIndex = this.GetFrameIndex();
-            this.__frameIndex = frameIndex;
-            {
-                this.nextFrameIndex = this.GetNextFrameIndex(frameIndex);
-            }
-            if (this.lastPlayingClip == this.playingClip && this.lastPlayingFrameIndex == frameIndex) ;
-            else {
-                this.nextLerpProgress = 0;
-            }
-            let lastPlayedClip = this.lastPlayingClip;
-            let playingClip = this.playingClip;
-            let blend_crossFade = 1;
-            let frameIndex_crossFade = -1;
-            let frame_crossFade = null;
-            if (res.IsCrossFadeBlending(lastPlayedClip, this.crossFadeTime, this.crossFadeProgress)) {
-                frameIndex_crossFade = this.GetCrossFadeFrameIndex();
-                frame_crossFade = lastPlayedClip.frames[frameIndex_crossFade];
-                blend_crossFade = res.CrossFadeBlendFactor(this.crossFadeProgress, this.crossFadeTime);
-            }
-            let nextFrameFade = res.CrossFadeBlendFactor(this.nextLerpProgress, playingClip.fps * 0.001);
-            var mpb = currMtrl.material._shaderValues;
-            let frame = playingClip.frames[frameIndex];
-            let nextFrame = playingClip.frames[this.nextFrameIndex];
-            if (this.Visible ||
-                this.CullingMode == GPUSKinningCullingMode.AlwaysAnimate) {
-                res.Update(deltaTime, currMtrl);
-                res.UpdatePlayingData(mpb, this.spriteShaderData, playingClip, frameIndex, this.nextFrameIndex, nextFrameFade, frame, playingClip.rootMotionEnabled && this.rootMotionEnabled, lastPlayedClip, this.GetCrossFadeFrameIndex(), this.crossFadeTime, this.crossFadeProgress);
-                this.UpdateJoints(frame, nextFrame, nextFrameFade);
-            }
-            if (playingClip.rootMotionEnabled && this.rootMotionEnabled && frameIndex != this.rootMotionFrameIndex) {
-                if (this.CullingMode != GPUSKinningCullingMode.CullCompletely) {
-                    this.rootMotionFrameIndex = frameIndex;
-                    this.DoRootMotion(frame_crossFade, 1 - blend_crossFade, false);
-                    this.DoRootMotion(frame, blend_crossFade, true);
-                }
-            }
-            this.UpdateEvents(playingClip, frameIndex, frame_crossFade == null ? null : lastPlayedClip, frameIndex_crossFade);
-        }
-        static BlendMatrix(l, r, t, o) {
-            for (var i = 0; i < 16; i++) {
-                o.elements[i] = l.elements[i] * (1 - t) + r.elements[i] * t;
-            }
-        }
-        UpdateJoints(frame, nextFrame, nextFrameFade) {
-            if (window['DONT_UPDATE_JOIN'])
-                return;
-            if (this.joints == null) {
-                return;
-            }
-            let res = this.res;
-            let joints = this.joints;
-            let playingClip = this.playingClip;
-            let matrices = frame.matrices;
-            let bones = res.anim.bones;
-            let numJoints = joints.length;
-            for (let i = 0; i < numJoints; ++i) {
-                let joint = joints[i];
-                let jointTransform = joint.Transform;
-                if (jointTransform != null) {
-                    var jointMatrix = this._tmp_jointMatrix;
-                    var frameM = frame.matrices[joint.index];
-                    var nextFrameM = nextFrame.matrices[joint.index];
-                    var blendFrameM = this._tmp_jointMatrixBlend;
-                    GPUSkinningPlayer.BlendMatrix(frameM, nextFrameM, nextFrameFade, blendFrameM);
-                    Matrix4x4$4.multiply(blendFrameM, bones[joint.index].BindposeInv, jointMatrix);
-                    if (playingClip.rootMotionEnabled && this.rootMotionEnabled) {
-                        let outM = new Matrix4x4$4();
-                        Matrix4x4$4.multiply(frame.RootMotionInv(res.anim.rootBoneIndex), jointMatrix, outM);
-                        jointMatrix = outM;
-                    }
-                    jointMatrix.decomposeTransRotScale(this._tmp_p, this._tmp_r, this._tmp_s);
-                    jointTransform.localPosition = this._tmp_p;
-                    jointTransform.localRotation = this._tmp_r;
-                }
-                else {
-                    joints.splice(i, 1);
-                    --i;
-                    --numJoints;
-                }
-            }
-        }
-        DoRootMotion(frame, blend, doRotate) {
-        }
-        UpdateEvents(playingClip, playingFrameIndex, corssFadeClip, crossFadeFrameIndex) {
-            this.UpdateClipEvent(playingClip, playingFrameIndex);
-            this.UpdateClipEvent(corssFadeClip, crossFadeFrameIndex);
-        }
-        UpdateClipEvent(clip, frameIndex) {
-            if (clip == null || clip.events == null || clip.events.length == 0) {
-                return;
-            }
-            let events = clip.events;
-            let numEvents = events.length;
-            for (let i = 0; i < numEvents; ++i) {
-                if (events[i].frameIndex == frameIndex) {
-                    this.sAnimEvent.dispatch(this, events[i].eventId);
-                    break;
-                }
-            }
-        }
-        static RecoverWeaponItem(item) {
-            var mono = item;
-            if (item instanceof Laya.Sprite3D) {
-                mono = item.getComponent(GPUSkinningPlayerMono);
-                if (mono == null) {
-                    console.error("~~~weapon 不是GPUSkinningPlayerMono" + item.name);
-                    item.removeSelf();
-                    return;
-                }
-            }
-            mono.owner.removeSelf();
-            var key = mono.skinName + "&" + mono.animName;
-            Laya.Pool.recover(key, mono);
-        }
-        static GetWeaponItem(skinName, animName, callback) {
-            var key = skinName + "&" + animName;
-            var item = Laya.Pool.getItem(key);
-            if (item) {
-                callback && callback(item);
-            }
-            else {
-                GPUSkining.CreateByName(skinName, animName, Laya.Handler.create(this, (item) => {
-                    callback && callback(item);
-                }));
-            }
-        }
-        SetWeapon(boneName, skinName, animName) {
-            var bone = this.FindJointGameObject(boneName);
-            if (bone == null) {
-                return;
-            }
-            GPUSkinningPlayer.GetWeaponItem(skinName, animName, (mono) => {
-                if (this.weaponMap.has(boneName)) {
-                    var preWeapon = this.weaponMap.get(boneName);
-                    GPUSkinningPlayer.RecoverWeaponItem(preWeapon);
-                    this.weaponMap.delete(boneName);
-                }
-                bone.addChild(mono.owner);
-                var sprite = mono.owner;
-                sprite.transform.localPosition = new Vector3$3(0, 0, 0);
-                sprite.transform.localRotationEuler = new Vector3$3(0, 0, 0);
-                this.weaponMap.set(boneName, mono);
-                var clipName = this.PlayingClipName;
-                if (!mono.Player.res.anim.clipMap.has(clipName)) {
-                    clipName = "standby";
-                }
-                mono.Player.Play(clipName, this.NormalizedTime);
-            });
-        }
-        SetWeapClip(clipName, nomrmalizeTime, timeDiff) {
-            this.weaponMap.forEach((v, k) => {
-                if (!v.Player.res.anim.clipMap.has(clipName)) {
-                    clipName = "standby";
-                }
-                v.Player.Play(clipName, nomrmalizeTime);
-                v.Player.timeDiff = timeDiff;
-            });
-        }
-        SetWeapSpeed(speed) {
-            this.weaponMap.forEach((v, k) => {
-                v.Player.speed = speed;
-            });
-        }
-    }
-    GPUSkinningPlayer._ShaderUID = 0;
-
-    class GPUSkinningPlayerMono extends Laya.Script3D {
-        constructor() {
-            super(...arguments);
-            this.isEnable = false;
-            this.defaultPlayingClipIndex = 0;
-            this.rootMotionEnabled = false;
-            this.lodEnabled = true;
-            this.cullingMode = GPUSKinningCullingMode.CullUpdateTransforms;
-        }
-        get Player() {
-            return this.player;
-        }
-        FindJointGameObject(boneName) {
-            if (this.player) {
-                return this.player.FindJointGameObject(boneName);
-            }
-            else {
-                return null;
-            }
-        }
-        _cloneTo(dest) {
-            dest.skinName = this.skinName;
-            dest.animName = this.animName;
-            dest.anim = this.anim;
-            dest.mesh = this.mesh;
-            dest.mtrl = this.mtrl;
-            dest.textureRawData = this.textureRawData;
-            dest.Init();
-            if (dest.player) {
-                if (dest.player.__mname) {
-                    console.warn(dest.player.__mname);
-                }
-                else {
-                    dest.player.__mname = dest.anim.name + " _cloneTo Set";
-                }
-            }
-        }
-        onAwake() {
-        }
-        onEnable() {
-            var preHasPlayer = this.player != null;
-            this.Init();
-            if (!preHasPlayer && this.player) {
-                if (this.player.__mname) {
-                    console.warn(this.player.__mname);
-                }
-                else {
-                    this.player.__mname = this.anim.name + " onEnable Set";
-                }
-            }
-            this.isEnable = true;
-        }
-        onStart() {
-        }
-        onUpdate() {
-            if (GPUSkining.IsPauseAll) {
-                return;
-            }
-            if (this.player != null) {
-                this.player.Update(Laya.timer.delta / 1000);
-            }
-        }
-        onPreRender() {
-        }
-        onDisable() {
-            this.isEnable = false;
-        }
-        onDestroy() {
-            GPUSkinningPlayerMono.playerManager.Unregister(this);
-            this.anim = null;
-            this.mesh = null;
-            this.mtrl = null;
-            this.textureRawData = null;
-            if (this.player) {
-                this.player.onDestroy();
-                this.player = null;
-            }
-        }
-        SetData(anim, mesh, mtrl, textureRawData) {
-            if (this.player != null) {
-                return;
-            }
-            this.anim = anim;
-            this.mesh = mesh;
-            this.mtrl = mtrl;
-            this.textureRawData = textureRawData;
-            this.Init();
-            if (this.player) {
-                if (this.player.__mname) {
-                    console.warn(this.player.__mname);
-                }
-                else {
-                    this.player.__mname = anim.name + " SetData Set";
-                }
-            }
-        }
-        Init() {
-            this.gameObject = this.owner;
-            if (this.player != null) {
-                return;
-            }
-            let anim = this.anim;
-            let mesh = this.mesh;
-            let mtrl = this.mtrl;
-            let textureRawData = this.textureRawData;
-            if (anim != null && mesh != null && mtrl != null && textureRawData != null) {
-                let res = GPUSkinningPlayerMono.playerManager.Register(anim, mesh, mtrl, textureRawData, this);
-                let player = new GPUSkinningPlayer(this.gameObject, res);
-                player.RootMotionEnabled = this.rootMotionEnabled;
-                player.LODEnabled = this.lodEnabled;
-                player.CullingMode = this.cullingMode;
-                this.player = player;
-                if (anim != null && anim.clips != null && anim.clips.length > 0) {
-                    var defaultClipName = anim.clips[Mathf.clamp(this.defaultPlayingClipIndex, 0, anim.clips.length)].name;
-                    for (var clip of anim.clips) {
-                        if (clip.name == "idle") {
-                            defaultClipName = clip.name;
-                            break;
-                        }
-                    }
-                    player.Play(defaultClipName);
-                }
-            }
-        }
-        initRender(renderer) {
-            var r = renderer;
-            if (!r._renderUpdate__MeshRenderer__Source) {
-                r._renderUpdate__MeshRenderer__Source = r._renderUpdate;
-            }
-            r._renderUpdate = this._renderUpdate;
-            r.onRenderUpdate = this.onRenderUpdate.bind(this);
-        }
-        onRenderUpdate(context, transform, render) {
-            if (this.player != null) {
-                this.player.onRenderUpdate(context, transform, render);
-            }
-        }
-        _renderUpdate(context, transform) {
-            this.onRenderUpdate(context, transform, this);
-            this._renderUpdate__MeshRenderer__Source(context, transform);
-        }
-        _renderUpdate__MeshRenderer__Source(context, transform) {
-        }
-    }
-    GPUSkinningPlayerMono.playerManager = new GPUSkinningPlayerMonoManager();
 
     class TestShader {
         constructor() {
@@ -3554,7 +3399,6 @@
                 var node = mono.owner;
                 node.transform.localRotationEulerY = 90;
                 window['mono'] = mono;
-                mono.Player.Play("attack_01");
                 for (var i = 0; i < mono.anim.clips.length; i++) {
                     mono.anim.clips[i].wrapMode = GPUSkinningWrapMode.Loop;
                     mono.anim.clips[i].individualDifferenceEnabled = true;
@@ -3563,18 +3407,6 @@
                 b.addChild(mono.owner);
                 this.scene.addChild(b);
                 mono.Player.SetWeapon("D_R_weapon", "w_1010_r_000", "w_1010_r_000");
-                setTimeout(() => {
-                    var b = new Laya.Sprite3D();
-                    var node2 = node.clone();
-                    var mono2 = node2.getComponent(GPUSkinningPlayerMono);
-                    window['mono2'] = mono2;
-                    node2.transform.localRotationEulerY = 90;
-                    b.addChild(node2);
-                    b.transform.localPositionX += 1.5;
-                    b.transform.localScaleX = -1;
-                    this.scene.addChild(b);
-                    mono2.Player.SetWeapon("D_R_weapon", "w_1010_r_000", "w_1010_r_000");
-                }, 1000);
                 break;
             }
         }

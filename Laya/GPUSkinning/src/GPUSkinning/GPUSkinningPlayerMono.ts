@@ -145,14 +145,6 @@ export default class GPUSkinningPlayerMono extends Laya.Script3D
         }
     }
 
-    /**
-	 * 渲染之前执行
-	 * 此方法为虚方法，使用时重写覆盖即可
-	 */
-    onPreRender(): void 
-    {
-
-	}
 
 	/**
 	 * 禁用时执行
@@ -218,7 +210,6 @@ export default class GPUSkinningPlayerMono extends Laya.Script3D
         {
             return;
         }
-        // this.initRender(this.gameObject.meshRenderer);
 
         
         let anim = this.anim;
@@ -257,37 +248,6 @@ export default class GPUSkinningPlayerMono extends Laya.Script3D
         }
     }
 
-    private initRender(renderer:Laya.MeshRenderer)
-    {
-        var r:any = renderer;
-        if(!r._renderUpdate__MeshRenderer__Source)
-        {
-            r._renderUpdate__MeshRenderer__Source = r._renderUpdate;
-        }
 
-        r._renderUpdate = this._renderUpdate;
-        r.onRenderUpdate = this.onRenderUpdate.bind(this);
-
-    }
-
-    onRenderUpdate(context: Laya.RenderContext3D, transform: Laya.Transform3D, render:Laya.MeshRenderer)
-    {
-        if(this.player != null)
-        {
-            this.player.onRenderUpdate(context, transform, render);
-        }
-    }
-
-    _renderUpdate(context: Laya.RenderContext3D, transform: Laya.Transform3D): void 
-    {
-        this.onRenderUpdate(context, transform, <any>this);
-        this._renderUpdate__MeshRenderer__Source(context, transform);
-        
-    }
-    
-    _renderUpdate__MeshRenderer__Source(context: Laya.RenderContext3D, transform: Laya.Transform3D): void 
-    {
-        
-    }
 
 }

@@ -4,7 +4,6 @@ import LoaderManager = Laya.LoaderManager;
 import Loader = Laya.Loader;
 import Event = Laya.Event;
 import Shader3D = Laya.Shader3D;
-import HalfFloatUtils = Laya.HalfFloatUtils;
 import GPUSkinningAnimation from "./Datas/GPUSkinningAnimation";
 import GPUSkinningPlayerMono from "./GPUSkinningPlayerMono";
 import { GPUSkinningBaseMaterial } from "./Material/GPUSkinningBaseMaterial";
@@ -20,30 +19,6 @@ import { GPUSkinningCartoon2TextureMaterial } from "./Material/GPUSkinningCartoo
 import SceneMaterial from "./Material/SceneMaterial";
 import { GPUSkinningToonV2Material } from "./Material/GPUSkinningToonV2";
 import { GPUSkinningToonWeaponV2Material } from "./Material/GPUSkinningToonWeaponV2";
-// import LayaExtends_Laya3D from "../LayaExtends/LayaExtends_Laya3D";
-// import LayaExtends_Texture2D from "../LayaExtends/LayaExtends_Texture2D";
-
-export enum MaterialTextureType
-{
-  /** 无 */
-  None = 0,
-
-  /** 褶皱阴影贴图 */
-  Shadow = 2,
-
-  /** 阴影颜色贴图 */
-  ShadowColor = 4,
-
-  /** 高光和边缘光贴图 */
-  HeightRimLight = 8,
-
-  /** 遮罩 */
-  Mask = 16,
-
-  
-  /** 阴影颜色贴图 和 高光和边缘光贴图 */
-  ShadowColor_And_HeightRimLight = 4 | 8,
-}
 
 export default class GPUSkining
 {
@@ -128,61 +103,46 @@ export default class GPUSkining
     static resRoot = "res3d/Conventional/";
     static GetAnimName(name: string): string
     {
-      // name = name.replace("_Skin1", "");
-      // return `GPUSKinning_${name}_Anim.bin`;
       return name + ".info.bin";
     }
 
     static GetMeshName(name: string): string
     {
-      // name = name.replace("_Skin1", "");
-      // return `GPUSKinning_${name}_Mesh.bin`;
       return name + ".mesh.bin";
     }
     
     static GetMatrixTextureName(name: string): string
     {
-      // name = name.replace("_Skin1", "");
-      // return `GPUSKinning_${name}_MatrixTexture.bin`;
       return name + ".matrix.bin";
     }
     
     static GetMainTextureName(name: string): string
     {
-      // name = name.replace("_Skin1", "");
-      // return `GPUSKinning_${name}_MainTexture.png`;
-      
       return `${name}_main.png`;
     }
     
     static GetShadowTextureName(name: string): string
     {
-      // name = name.replace("_Skin1", "");
       return `GPUSKinning_${name}_ShadowTexture.png`;
     }
     
     static GetShadowColorTextureName(name: string): string
     {
-      // name = name.replace("_Skin1", "");
       return `GPUSKinning_${name}_ShadowColorTexture.png`;
     }
 
     static GetMaskTextureName(name: string): string
     {
-      // name = name.replace("_Skin1", "");
-      // return `GPUSKinning_${name}_MaskTexture.png`;
       return `${name}_mask.png`;
     }
     
     static GetHeightRimLightTextureName(name: string): string
     {
-      // name = name.replace("_Skin1", "");
       return `GPUSKinning_${name}_HeightRimLightTexture.png`;
     }
     
     static GetMaterailName(name: string): string
     {
-      // name = name.replace("_Skin1", "");
       return `${name}.materail.lmat`;
     }
 
@@ -324,17 +284,6 @@ export default class GPUSkining
                 {url: matrixTexturePath, type: Laya.Loader.BUFFER},
                 {url: mainTexturePath, type: Laya.Loader.TEXTURE2D},
              );
-      // if(hasShadowTexture)
-      // {
-      //     var shadowTexturePath = this.GetPath(this.GetShadowTextureName(name));
-      //     list.push({url: shadowTexturePath, type: Laya.Loader.TEXTURE2D});
-      // }
-      
-      // if (name.indexOf("1") == 0) 
-			// {
-	    //         var maskTexturePath = this.GetPath(this.GetMaskTextureName(name));
-	    //         list.push({ url: maskTexturePath, type: Laya.Loader.TEXTURE2D });
-      // }
       
       var maskTexturePath = this.GetPath(this.GetMaskTextureName(name));
       list.push({ url: maskTexturePath, type: Laya.Loader.TEXTURE2D });
@@ -389,10 +338,15 @@ export default class GPUSkining
                       
 
 
-                      var material:GPUSkinningToonV2Material;
-
-                      var createFun = ()=>
+                      Laya.loader.create(materailPath, Laya.Handler.create(this, (material:GPUSkinningToonV2Material)=>
                       {
+                        if(material == null)
+                        {
+                          console.error("GPUSkinning.CreateByName资源加载失败", materailPath);
+                          callback.runWith(null);
+                          return;
+                        }
+
                         material.GPUSkinning_TextureMatrix = animTexture;
                         material.__mname = skinName + " prefab";
 
@@ -405,20 +359,8 @@ export default class GPUSkining
                         mono.SetData(anim, mesh, material, animTexture);
                         callback.runWith(mono);
                         window['sprite'] = sprite;
-                        
-                      }
 
-
-
-                    Laya.loader.create(materailPath, Laya.Handler.create(this, (m:GPUSkinningToonV2Material)=>
-                    {
-                      if(m == null)
-                      {
-                        console.error("GPUSkinning.CreateByName资源加载失败", materailPath);
-                      }
-                      material = m;
-                      createFun();
-                    }));
+                      }));
 
                           
                           

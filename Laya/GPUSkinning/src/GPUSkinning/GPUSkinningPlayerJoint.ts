@@ -1,5 +1,6 @@
 import GPUSkinningBone from "./Datas/GPUSkinningBone";
 
+/** 骨骼挂点 */
 export default class GPUSkinningPlayerJoint extends Laya.Script3D
 {
 

@@ -64,7 +64,6 @@ export default class GPUSkinningPlayerMonoManager
         if (item.players.indexOf(player) == -1)
         {
             item.players.push(player);
-            item.AddCullingBounds();
             player.isEnable = true;
         }
 
@@ -87,7 +86,6 @@ export default class GPUSkinningPlayerMonoManager
             if(playerIndex != -1)
             {
                 items[i].players.splice(playerIndex, 1);
-                items[i].RemoveCullingBounds(playerIndex);
                 player.isEnable = false;
                 if(items[i].players.length == 0)
                 {

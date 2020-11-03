@@ -4,7 +4,6 @@ import { GPUSKinningCullingMode } from "./GPUSKinningCullingMode";
 import GPUSkinningPlayerJoint from "./GPUSkinningPlayerJoint";
 import { GPUSkinningWrapMode } from "./Datas/GPUSkinningWrapMode";
 import GPUSkinningMaterial from "./GPUSkinningMaterial";
-import LayaUtil from "../LayaExtends/LayaUtil";
 import GPUSkinningBone from "./Datas/GPUSkinningBone";
 import { MaterialState } from "./MaterialState";
 import GPUSkinningFrame from "./Datas/GPUSkinningFrame";
@@ -894,7 +893,6 @@ export default class GPUSkinningPlayer
     /** 刷新骨骼节点位置 */
     private UpdateJoints(frame: GPUSkinningFrame,nextFrame: GPUSkinningFrame,  nextFrameFade: float)
     {
-        if(window['DONT_UPDATE_JOIN']) return
         if(this.joints == null)
         {
             return;
@@ -930,32 +928,12 @@ export default class GPUSkinningPlayer
                     jointMatrix = outM;
                 }
 
-                // var p = new Vector3();
-                // var r = new Quaternion();
-                // var s = new Vector3();
                 
                 jointMatrix.decomposeTransRotScale(this._tmp_p, this._tmp_r, this._tmp_s);
 
                 // jointTransform.localMatrix = jointMatrix;
-                // jointTransform.localScale = new Vector3(1, 1, 1);
                 jointTransform.localPosition = this._tmp_p;
                 jointTransform.localRotation = this._tmp_r;
-                // jointTransform['_onWorldScaleTransform']();
-
-
-                // var vec3 = new Vector3();
-                // jointMatrix.getTranslationVector(vec3);
-                // jointTransform.localPosition = vec3;
-
-                // vec3 = new Vector3();
-
-                // jointMatrix.getForward(vec3);
-
-                // var vec3_2 = new Vector3();
-                // Quaternion.angleTo(new Vector3(0, 0, 0), vec3, vec3_2);
-
-                // jointTransform.localRotationEuler = vec3_2;
-                // console.log("localPosition=", jointTransform.localPosition, " localRotationEuler=", jointTransform.localRotationEuler);
             }
             else
             {

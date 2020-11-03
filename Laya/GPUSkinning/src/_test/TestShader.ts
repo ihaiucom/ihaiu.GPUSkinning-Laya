@@ -5,12 +5,9 @@ import GPUSkinningAnimation from "../GPUSkinning/Datas/GPUSkinningAnimation";
 import Mesh = Laya.Mesh;
 import Material = Laya.Material;
 import Texture2D = Laya.Texture2D;
-import GPUSkining, { MaterialTextureType } from "../GPUSkinning/GPUSkining";
-import { GPUSkinningUnlitMaterial } from "../GPUSkinning/Material/GPUSkinningUnlitMaterial";
+import GPUSkining from "../GPUSkinning/GPUSkining";
 import { GPUSkinningWrapMode } from "../GPUSkinning/Datas/GPUSkinningWrapMode";
 import { TestRotation } from "./TestRotation";
-import { GPUSkinningCartoon2TextureMaterial } from "../GPUSkinning/Material/GPUSkinningCartoon2TextureMaterial";
-import { GPUSkinningToonV2Material } from "../GPUSkinning/Material/GPUSkinningToonV2";
 
 
 export default class TestShader
@@ -53,7 +50,7 @@ export default class TestShader
             node.transform.localRotationEulerY = 90;
             // node.addComponent(TestRotation);
             window['mono'] = mono;
-            mono.Player.Play("attack_01");
+            // mono.Player.Play("attack_01");
             for(var i = 0; i < mono.anim.clips.length; i ++)
             {
                 mono.anim.clips[i].wrapMode = GPUSkinningWrapMode.Loop;
@@ -69,20 +66,20 @@ export default class TestShader
 
             // b.transform.setWorldLossyScale(new Laya.Vector3(-1, 1, 1));
 
-            setTimeout(() => {
+            // setTimeout(() => {
                 
-            var b = new Laya.Sprite3D();
-            var node2 = <Laya.Sprite3D> node.clone();
-            var mono2:GPUSkinningPlayerMono = node2.getComponent(GPUSkinningPlayerMono);
-            window['mono2'] = mono2;
-            // mono2.Player.material.IsSeparation = true;
-            node2.transform.localRotationEulerY = 90;
-            b.addChild(node2);
-            b.transform.localPositionX += 1.5;
-            b.transform.localScaleX = -1;
-            this.scene.addChild(b);
-            mono2.Player.SetWeapon("D_R_weapon", "w_1010_r_000", "w_1010_r_000");
-            }, 1000);
+            // var b = new Laya.Sprite3D();
+            // var node2 = <Laya.Sprite3D> node.clone();
+            // var mono2:GPUSkinningPlayerMono = node2.getComponent(GPUSkinningPlayerMono);
+            // window['mono2'] = mono2;
+            // // mono2.Player.material.IsSeparation = true;
+            // node2.transform.localRotationEulerY = 90;
+            // b.addChild(node2);
+            // b.transform.localPositionX += 1.5;
+            // b.transform.localScaleX = -1;
+            // this.scene.addChild(b);
+            // mono2.Player.SetWeapon("D_R_weapon", "w_1010_r_000", "w_1010_r_000");
+            // }, 1000);
 
             break;
         }

@@ -1,17 +1,13 @@
 
 import GPUSkinningAnimation from "./Datas/GPUSkinningAnimation";
 import GPUSkinningPlayerMono from "./GPUSkinningPlayerMono";
-import GPUSkinningBetterList from "./GPUSkinningBetterList";
 import GPUSkinningMaterial from "./GPUSkinningMaterial";
 import GPUSkinningExecuteOncePerFrame from "./GPUSkinningExecuteOncePerFrame";
 import GPUSkinningPlayer from "./GPUSkinningPlayer";
 
-import Material = Laya.Material;
 import Mesh = Laya.Mesh;
 import Texture2D = Laya.Texture2D;
-import BoundSphere = Laya.BoundSphere;
 import Vector4 = Laya.Vector4;
-import Vector3 = Laya.Vector3;
 import Matrix4x4 = Laya.Matrix4x4;
 import ShaderDefine = Laya.ShaderDefine;
 import Shader3D = Laya.Shader3D;
@@ -40,11 +36,6 @@ export default class GPUSkinningPlayerResources
     /** 动画播放控制器列表 */
     public players: GPUSkinningPlayerMono[] = [];
 
-    /** 裁剪组 */
-    private cullingGroup:any = null;
-
-    /** 裁剪列表 <球形包围盒> */
-    private cullingBounds: GPUSkinningBetterList<BoundSphere> = new GPUSkinningBetterList<BoundSphere>(100);
 
     /** 材质球列表 */
     private mtrls: GPUSkinningMaterial[]  = null;
@@ -167,18 +158,7 @@ export default class GPUSkinningPlayerResources
 
     }
 
-    /** 添加包围盒 */
-    public AddCullingBounds()
-    {
-        this.cullingBounds.Add(new BoundSphere(new Vector3(0, 0, 0), 0));
-    }
 
-    /** 移除包围盒 */
-    public RemoveCullingBounds(index: int )
-    {
-        this.cullingBounds.RemoveAt(index);
-
-    }
 
     /** 动画播放控制器LOD改变 */
     public LODSettingChanged(player: GPUSkinningPlayer )
@@ -223,30 +203,6 @@ export default class GPUSkinningPlayerResources
     }
 
 
-    /** 更新裁剪 包围盒 */
-    private UpdateCullingBounds()
-    {
-        let numPlayers = this.players.length;
-        for (let i = 0; i < numPlayers; ++i)
-        {
-            let player: GPUSkinningPlayerMono  = this.players[i];
-            if(!player.isEnable)
-            {
-                // console.log(player.anim.name, player.isEnable);
-                continue;
-            }
-            
-            if(!player.Player || !player.Player.Position)
-            {
-                console.error("player.Player =null");
-                return;
-            }
-            let bounds: BoundSphere  = this.cullingBounds.Get(i);
-            bounds.center = player.Player.Position;
-            bounds.radius = this.anim.sphereRadius;
-            this.cullingBounds[i] = bounds;
-        }
-    }
 
     /** 帧更新 */
     public Update(deltaTime: float , mtrl: GPUSkinningMaterial )
@@ -255,7 +211,6 @@ export default class GPUSkinningPlayerResources
         {
             this.executeOncePerFrame.MarkAsExecuted();
             this.time += deltaTime;
-            // this.UpdateCullingBounds();
         }
 
         if (mtrl.executeOncePerFrame.CanBeExecute())
