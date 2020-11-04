@@ -1815,7 +1815,7 @@
         }
         TweenSpeedTest() {
             this.Play("behit_02", 0);
-            this.TweenSpeed(1, 2, 2, this.playingClip.frameCount, 1);
+            this.TweenSpeed(0.1, 2, 2, this.playingClip.frameCount);
         }
         TweenSpeed(speedHalt, frameHalt, frameTween, frameTotal, speedEnd) {
             var t = this.tweenSpeedStruct;
@@ -1848,7 +1848,6 @@
             switch (t.step) {
                 case TweenSpeedStep.HALT:
                     this.speed = t.speedHalt;
-                    console.log("停顿速度", this.speed, " frameStepIndex=", t.frameStepIndex, " frameIndex=", frameIndex);
                     if (t.frameStepIndex >= t.frameHalt) {
                         t.step = TweenSpeedStep.TWEEN;
                         t.frameStepIndex = 0;
@@ -1861,18 +1860,15 @@
                         break;
                     }
                     this.speed = Laya.MathUtil.lerp(t.speedHalt, t.speedEnd, t.frameStepIndex / t.frameTween);
-                    console.log("缓动速度", this.speed, " frameStepIndex=", t.frameStepIndex, " frameIndex=", frameIndex);
                     if (t.frameStepIndex >= t.frameTween) {
-                        t.step = TweenSpeedStep.SMOOTH;
+                        this.TweenSpeedStop();
                         t.frameStepIndex = 0;
                     }
                     break;
                 case TweenSpeedStep.SMOOTH:
-                    console.log("平缓阶段", this.speed, " frameStepIndex=", t.frameStepIndex, " frameIndex=", frameIndex, " t.frameIndex=", t.frameIndex);
                     if (t.frameIndex >= (t.frameTotal - 1)) {
                         this.speed = 1;
                         this.TweenSpeedStop();
-                        console.log(Laya.timer.currFrame - t.layaFrameBegin, t.frameTotal);
                         this.Play("idle");
                     }
                     break;

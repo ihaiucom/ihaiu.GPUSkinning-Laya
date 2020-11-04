@@ -1095,7 +1095,7 @@ export default class GPUSkinningPlayer
     public TweenSpeedTest()
     {
         this.Play("behit_02", 0);
-        this.TweenSpeed(1, 2, 2, this.playingClip.frameCount);
+        this.TweenSpeed(0.1, 2, 2, this.playingClip.frameCount);
     }
 
     
