@@ -705,6 +705,7 @@ export default class GPUSkinningPlayer
         }
     }
 
+
     isRandomPlayClip: boolean = false;
     randomPlayClipI = 0;
 
@@ -715,6 +716,7 @@ export default class GPUSkinningPlayer
         {
             return;
         }
+        this.TweenSpeedUpdate();
         timeDelta *= this.speed;
 
         if(this.isRandomPlayClip)
@@ -1088,6 +1090,112 @@ export default class GPUSkinningPlayer
         })
     }
 
+    tweenSpeedStruct = new TweenSpeedStruct();
+    /** 缓动速度,开始 */
+    public TweenSpeedTest()
+    {
+        this.Play("behit_02", 0);
+        this.TweenSpeed(1, 2, 2, this.playingClip.frameCount);
+    }
+
+    
+    /**
+     * 缓动速度,开始
+     * @param speedHalt  v1, 停顿速度
+     * @param frameHalt  t1, 停顿帧数
+     * @param frameTween t2, 缓动帧数
+     * @param frameTotal t3, 总帧数
+     * @param speedEnd   v2, 缓动结束速度, 如果不传内部回自己计算
+     */
+    public TweenSpeed(speedHalt: number, frameHalt: number, frameTween: number, frameTotal: number, speedEnd?: number)
+    {
+        var t = this.tweenSpeedStruct;
+        t.speedHalt = speedHalt;
+        t.frameHalt = frameHalt;
+        t.frameTween = frameTween;
+        t.frameTotal = frameTotal;
+
+        if(speedEnd === void 0)
+        {
+            t.calculationSpeedEnd();
+        }
+        else
+        {
+            t.speedEnd = speedEnd;
+        }
+
+        t.step = TweenSpeedStep.HALT;
+        t.frameStepIndex = 0;
+        t.frameIndex = 0;
+        t.layaFrameBegin = Laya.timer.currFrame;
+        t.clipFrameIndex = this.GetFrameIndex();
+        
+    }
+
+    /** 缓动速度,更新 */
+    private TweenSpeedUpdate()
+    {
+        if(this.tweenSpeedStruct.step == TweenSpeedStep.END)
+        {
+            return;
+        }
+        var t = this.tweenSpeedStruct;
+        let frameIndex = this.GetFrameIndex();
+        let subFrame = Math.max(frameIndex - t.clipFrameIndex, 0) ;
+        
+        t.clipFrameIndex = frameIndex;
+        t.frameIndex += subFrame;
+        t.frameStepIndex += subFrame;
+        switch(t.step)
+        {
+            // 停顿阶段
+            case TweenSpeedStep.HALT:
+                this.speed = t.speedHalt;
+                // console.log("停顿速度", this.speed, " frameStepIndex=", t.frameStepIndex, " frameIndex=", frameIndex);
+                if(t.frameStepIndex >= t.frameHalt)
+                {
+                    t.step = TweenSpeedStep.TWEEN;
+                    t.frameStepIndex = 0;
+                }
+                break;
+            // 缓动帧
+            case TweenSpeedStep.TWEEN:
+                if(t.frameTween <= 0)
+                {
+                    this.speed = t.speedEnd;
+                    t.step = TweenSpeedStep.SMOOTH;
+                    break;
+                }
+                this.speed = Laya.MathUtil.lerp(t.speedHalt, t.speedEnd, t.frameStepIndex / t.frameTween);
+                // console.log("缓动速度", this.speed, " frameStepIndex=", t.frameStepIndex, " frameIndex=", frameIndex);
+                if(t.frameStepIndex >= t.frameTween)
+                {
+                    // t.step = TweenSpeedStep.SMOOTH;
+                    this.TweenSpeedStop();
+                    t.frameStepIndex = 0;
+                }
+                break;
+            // 平缓阶段
+            case TweenSpeedStep.SMOOTH:
+                // console.log("平缓阶段", this.speed, " frameStepIndex=", t.frameStepIndex, " frameIndex=", frameIndex, " t.frameIndex=", t.frameIndex);
+                if(t.frameIndex >= (t.frameTotal - 1))
+                {
+                    this.speed = 1;
+                    this.TweenSpeedStop();
+                    // console.log(Laya.timer.currFrame - t.layaFrameBegin, t.frameTotal);
+                    // t.step = TweenSpeedStep.END;
+                    this.Play("idle");
+                } 
+                break;
+        }
+    }
+
+
+
+    TweenSpeedStop()
+    {
+        this.tweenSpeedStruct.step = TweenSpeedStep.END;
+    }
 
 
 
@@ -1095,4 +1203,92 @@ export default class GPUSkinningPlayer
 
 
 
+}
+
+
+/** 缓动帧参数 */
+class TweenSpeedStruct
+{
+    /** 运行阶段 */
+    step: TweenSpeedStep = TweenSpeedStep.END;
+    /** 当前帧 */
+    frameStepIndex: number = 0;
+    /** 当前帧 */
+    frameIndex: number = 0;
+    /** 缓动结束速度 */
+    speedEnd: number = 1;
+    clipFrameIndex = 0;
+    layaFrameBegin = 0;
+
+    /** 停顿帧 速度 */
+    speedHalt: number;
+    /** 停顿帧 时长 */
+    frameHalt: number; 
+    /** 缓动帧 时长 */
+    frameTween: number; 
+    /** 平缓帧 剩余需要播放的时长  */
+    frameTotal: number;
+
+    calculationSpeedEnd()
+    {
+        this.speedEnd = TweenSpeedStruct.CalculationSpeed(this.speedHalt, this.frameHalt, this.frameTween, this.frameTotal);
+    }
+
+    /** 计算缓动结尾速度 */
+    static CalculationSpeed(v1: number, t1: number, t2: number, t3: number)
+    {
+        // 梯形面积 = (上地 + 下底) * 高 / 2
+
+        // 总面积 = frameTotal
+        // 总面积 = 停顿矩形面积 + 缓动梯形面积 + 平缓矩形面积
+        // 停顿矩形面积 = speedHalt * frameHalt
+        // 平缓矩形面积 = x * frameTotal
+        // 缓动梯形面积 = (speedHalt + x) * frameTween / 2
+
+        // frameTotal =  (speedHalt * frameHalt)
+        //            +  (x * frameTotal)
+        //            +  (speedHalt + x) * frameTween / 2
+
+
+        
+        // frameTotal =  (speedHalt * frameHalt)
+        //            +  (x * frameTotal)
+        //            +  (speedHalt + x) * frameTween / 2
+
+        
+        // frameTotal =  (speedHalt * frameHalt)
+        //            +  (x * frameTotal)
+        //            +  (speedHalt  * frameTween / 2 + x  * frameTween / 2) 
+
+        
+        // frameTotal =  (speedHalt * frameHalt)
+        //            +  speedHalt  * frameTween / 2 
+        //            +  (x * frameTotal) + x  * frameTween / 2
+        
+        // frameTotal =  (speedHalt * frameHalt)
+        //            +  speedHalt  * frameTween / 2 
+        //            +  x * (frameTotal + frameTween / 2)
+
+        
+        // frameTotal -  (speedHalt * frameHalt) - (speedHalt  * frameTween / 2)  =  x * (frameTotal + frameTween / 2)
+        // (frameTotal -  (speedHalt * frameHalt) - (speedHalt  * frameTween / 2))  /   (frameTotal + frameTween / 2) =  x
+        // x = (t3 -   v1 * t1   -   v1 * t2 / 2)   /    (t3 + t2 / 2)
+
+        return  (t3 -   v1 * t1   -   v1 * t2 / 2)   /    (t3 + t2 / 2);
+    }
+
+
+}
+
+/** 缓动帧阶段类型 */
+enum TweenSpeedStep
+{
+    /** 停顿阶段 */
+    HALT = 0,
+    /** 缓动阶段 */
+    TWEEN = 1,
+    /** 平缓阶段 */
+    SMOOTH = 2,
+    /** 结束 */
+    END = 3,
 }

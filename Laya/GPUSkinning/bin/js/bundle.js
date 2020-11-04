@@ -1211,6 +1211,7 @@
             this._tmp_jointMatrix = new Matrix4x4$4();
             this._tmp_jointMatrixBlend = new Matrix4x4$4();
             this.weaponMap = new Map();
+            this.tweenSpeedStruct = new TweenSpeedStruct();
             this.go = go;
             this.transform = go.transform;
             this.res = res;
@@ -1604,6 +1605,7 @@
             if (!this.isPlaying || this.playingClip == null) {
                 return;
             }
+            this.TweenSpeedUpdate();
             timeDelta *= this.speed;
             if (this.isRandomPlayClip) {
                 this.randomPlayClipI++;
@@ -1811,8 +1813,99 @@
                 v.Player.speed = speed;
             });
         }
+        TweenSpeedTest() {
+            this.Play("behit_02", 0);
+            this.TweenSpeed(1, 2, 2, this.playingClip.frameCount, 1);
+        }
+        TweenSpeed(speedHalt, frameHalt, frameTween, frameTotal, speedEnd) {
+            var t = this.tweenSpeedStruct;
+            t.speedHalt = speedHalt;
+            t.frameHalt = frameHalt;
+            t.frameTween = frameTween;
+            t.frameTotal = frameTotal;
+            if (speedEnd === void 0) {
+                t.calculationSpeedEnd();
+            }
+            else {
+                t.speedEnd = speedEnd;
+            }
+            t.step = TweenSpeedStep.HALT;
+            t.frameStepIndex = 0;
+            t.frameIndex = 0;
+            t.layaFrameBegin = Laya.timer.currFrame;
+            t.clipFrameIndex = this.GetFrameIndex();
+        }
+        TweenSpeedUpdate() {
+            if (this.tweenSpeedStruct.step == TweenSpeedStep.END) {
+                return;
+            }
+            var t = this.tweenSpeedStruct;
+            let frameIndex = this.GetFrameIndex();
+            let subFrame = Math.max(frameIndex - t.clipFrameIndex, 0);
+            t.clipFrameIndex = frameIndex;
+            t.frameIndex += subFrame;
+            t.frameStepIndex += subFrame;
+            switch (t.step) {
+                case TweenSpeedStep.HALT:
+                    this.speed = t.speedHalt;
+                    console.log("停顿速度", this.speed, " frameStepIndex=", t.frameStepIndex, " frameIndex=", frameIndex);
+                    if (t.frameStepIndex >= t.frameHalt) {
+                        t.step = TweenSpeedStep.TWEEN;
+                        t.frameStepIndex = 0;
+                    }
+                    break;
+                case TweenSpeedStep.TWEEN:
+                    if (t.frameTween <= 0) {
+                        this.speed = t.speedEnd;
+                        t.step = TweenSpeedStep.SMOOTH;
+                        break;
+                    }
+                    this.speed = Laya.MathUtil.lerp(t.speedHalt, t.speedEnd, t.frameStepIndex / t.frameTween);
+                    console.log("缓动速度", this.speed, " frameStepIndex=", t.frameStepIndex, " frameIndex=", frameIndex);
+                    if (t.frameStepIndex >= t.frameTween) {
+                        t.step = TweenSpeedStep.SMOOTH;
+                        t.frameStepIndex = 0;
+                    }
+                    break;
+                case TweenSpeedStep.SMOOTH:
+                    console.log("平缓阶段", this.speed, " frameStepIndex=", t.frameStepIndex, " frameIndex=", frameIndex, " t.frameIndex=", t.frameIndex);
+                    if (t.frameIndex >= (t.frameTotal - 1)) {
+                        this.speed = 1;
+                        this.TweenSpeedStop();
+                        console.log(Laya.timer.currFrame - t.layaFrameBegin, t.frameTotal);
+                        this.Play("idle");
+                    }
+                    break;
+            }
+        }
+        TweenSpeedStop() {
+            this.tweenSpeedStruct.step = TweenSpeedStep.END;
+        }
     }
     GPUSkinningPlayer._ShaderUID = 0;
+    class TweenSpeedStruct {
+        constructor() {
+            this.step = TweenSpeedStep.END;
+            this.frameStepIndex = 0;
+            this.frameIndex = 0;
+            this.speedEnd = 1;
+            this.clipFrameIndex = 0;
+            this.layaFrameBegin = 0;
+        }
+        calculationSpeedEnd() {
+            this.speedEnd = TweenSpeedStruct.CalculationSpeed(this.speedHalt, this.frameHalt, this.frameTween, this.frameTotal);
+        }
+        static CalculationSpeed(v1, t1, t2, t3) {
+            return (t3 - v1 * t1 - v1 * t2 / 2) / (t3 + t2 / 2);
+        }
+    }
+    var TweenSpeedStep;
+    (function (TweenSpeedStep) {
+        TweenSpeedStep[TweenSpeedStep["HALT"] = 0] = "HALT";
+        TweenSpeedStep[TweenSpeedStep["TWEEN"] = 1] = "TWEEN";
+        TweenSpeedStep[TweenSpeedStep["SMOOTH"] = 2] = "SMOOTH";
+        TweenSpeedStep[TweenSpeedStep["END"] = 3] = "END";
+    })(TweenSpeedStep || (TweenSpeedStep = {}));
 
     class GPUSkinningPlayerMono extends Laya.Script3D {
         constructor() {
@@ -3392,17 +3485,13 @@
             GPUSkining.resRoot = "res3d/GPUSKinning-30/";
             await GPUSkining.InitAsync();
             var nameList = [
-                ["1011_000", "1011_000"],
+                ["1010_000", "1010_000"],
             ];
             for (var j = 0; j < nameList.length; j++) {
                 var mono = await GPUSkining.CreateByNameAsync(nameList[j][0], nameList[j][1]);
                 var node = mono.owner;
                 node.transform.localRotationEulerY = 90;
                 window['mono'] = mono;
-                for (var i = 0; i < mono.anim.clips.length; i++) {
-                    mono.anim.clips[i].wrapMode = GPUSkinningWrapMode.Loop;
-                    mono.anim.clips[i].individualDifferenceEnabled = true;
-                }
                 var b = new Laya.Sprite3D();
                 b.addChild(mono.owner);
                 this.scene.addChild(b);

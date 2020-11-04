@@ -30,7 +30,7 @@ export default class TestShader
 
 
         var nameList = [
-            ["1011_000", "1011_000"],
+            ["1010_000", "1010_000"],
             // "3001",
             // "Hero_1004_Dongzhuo_Skin1",
             // "Monster_4003_Kuileishi_Skin1",
@@ -51,11 +51,11 @@ export default class TestShader
             // node.addComponent(TestRotation);
             window['mono'] = mono;
             // mono.Player.Play("attack_01");
-            for(var i = 0; i < mono.anim.clips.length; i ++)
-            {
-                mono.anim.clips[i].wrapMode = GPUSkinningWrapMode.Loop;
-                mono.anim.clips[i].individualDifferenceEnabled =true;
-            }
+            // for(var i = 0; i < mono.anim.clips.length; i ++)
+            // {
+            //     mono.anim.clips[i].wrapMode = GPUSkinningWrapMode.Loop;
+            //     mono.anim.clips[i].individualDifferenceEnabled =true;
+            // }
             // mono.Player.isRandomPlayClip = true;
 
             var b = new Laya.Sprite3D();
