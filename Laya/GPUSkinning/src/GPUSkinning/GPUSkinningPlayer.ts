@@ -1129,6 +1129,7 @@ export default class GPUSkinningPlayer
         t.frameIndex = 0;
         t.layaFrameBegin = Laya.timer.currFrame;
         t.clipFrameIndex = this.GetFrameIndex();
+        t.time = 0;
         
     }
 
@@ -1140,7 +1141,10 @@ export default class GPUSkinningPlayer
             return;
         }
         var t = this.tweenSpeedStruct;
-        let frameIndex = this.GetFrameIndex();
+        t.time += Laya.timer.delta;
+        var frameIndexFloat = t.time / 33;
+        var frameIndex = Math.floor(frameIndexFloat);
+        frameIndexFloat = frameIndexFloat - frameIndex;
         let subFrame = Math.max(frameIndex - t.clipFrameIndex, 0) ;
         
         t.clipFrameIndex = frameIndex;
@@ -1166,7 +1170,7 @@ export default class GPUSkinningPlayer
                     t.step = TweenSpeedStep.SMOOTH;
                     break;
                 }
-                this.speed = Laya.MathUtil.lerp(t.speedHalt, t.speedEnd, t.frameStepIndex / t.frameTween);
+                this.speed = Laya.MathUtil.lerp(t.speedHalt, t.speedEnd, (t.frameStepIndex + frameIndexFloat) / t.frameTween);
                 // console.log("缓动速度", this.speed, " frameStepIndex=", t.frameStepIndex, " frameIndex=", frameIndex);
                 if(t.frameStepIndex >= t.frameTween)
                 {
@@ -1178,7 +1182,7 @@ export default class GPUSkinningPlayer
             // 平缓阶段
             case TweenSpeedStep.SMOOTH:
                 // console.log("平缓阶段", this.speed, " frameStepIndex=", t.frameStepIndex, " frameIndex=", frameIndex, " t.frameIndex=", t.frameIndex);
-                if(t.frameIndex >= (t.frameTotal - 1))
+                if(this.__frameIndex >= (t.frameTotal - 1))
                 {
                     this.speed = 1;
                     this.TweenSpeedStop();
@@ -1219,6 +1223,8 @@ class TweenSpeedStruct
     speedEnd: number = 1;
     clipFrameIndex = 0;
     layaFrameBegin = 0;
+    /** 逻辑帧时间 */
+    time = 0;
 
     /** 停顿帧 速度 */
     speedHalt: number;

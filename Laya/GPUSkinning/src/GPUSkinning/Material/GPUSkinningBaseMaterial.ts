@@ -73,6 +73,7 @@ export class GPUSkinningBaseMaterial extends Laya.Material
     static SHADERDEFINE_IS_SPEARATION: ShaderDefine;
     static SHADERDEFINE_IS_SUPERARMOR: ShaderDefine;
     static SHADERDEFINE_IS_INVINCIBLE: ShaderDefine;
+    static SHADERDEFINE_IS_DIE: ShaderDefine;
     
 
     static __initDefine__(): void {
@@ -80,6 +81,7 @@ export class GPUSkinningBaseMaterial extends Laya.Material
 		this.SHADERDEFINE_IS_SPEARATION = Shader3D.getDefineByName("IS_SPEARATION");
 		this.SHADERDEFINE_IS_SUPERARMOR = Shader3D.getDefineByName("IS_SUPERARMOR");
 		this.SHADERDEFINE_IS_INVINCIBLE = Shader3D.getDefineByName("IS_INVINCIBLE");
+		this.SHADERDEFINE_IS_DIE = Shader3D.getDefineByName("IS_DIE");
 	}
     
 	/**
@@ -161,6 +163,27 @@ export class GPUSkinningBaseMaterial extends Laya.Material
             this._shaderValues.addDefine(GPUSkinningBaseMaterial.SHADERDEFINE_IS_SUPERARMOR);
         else
             this._shaderValues.removeDefine(GPUSkinningBaseMaterial.SHADERDEFINE_IS_SUPERARMOR);
+    }
+
+    
+	private _IsDie: boolean = false;
+    /**
+     * 是否是尸体
+     */
+    
+    get IsDie()
+    {
+        return this._IsDie;
+    }
+
+    set IsDie(value: boolean)
+    {
+        this._IsDie = value;
+        
+		if (value)
+            this._shaderValues.addDefine(GPUSkinningBaseMaterial.SHADERDEFINE_IS_DIE);
+        else
+            this._shaderValues.removeDefine(GPUSkinningBaseMaterial.SHADERDEFINE_IS_DIE);
     }
 
     /** DotRim颜色强度 */

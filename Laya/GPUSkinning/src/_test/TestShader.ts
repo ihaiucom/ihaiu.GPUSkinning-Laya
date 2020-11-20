@@ -31,6 +31,7 @@ export default class TestShader
 
         var nameList = [
             ["1010_000", "1010_000"],
+            // ["3001", "3001"],
             // "3001",
             // "Hero_1004_Dongzhuo_Skin1",
             // "Monster_4003_Kuileishi_Skin1",
@@ -42,6 +43,7 @@ export default class TestShader
             var resId = nameList[j];
             var hasShadowTexture = false;
             var mono = await GPUSkining.CreateByNameAsync(nameList[j][0], nameList[j][1]);
+            mono.Player.Play("die");
             // mono.Player.material.IsSeparation = true;
             // mono.Player.material.IsSuperarmor = true;
             // var mono = await GPUSkining.CreateByNameAsync(nameList[j], MaterialTextureType.ShadowColor_And_HeightRimLight);

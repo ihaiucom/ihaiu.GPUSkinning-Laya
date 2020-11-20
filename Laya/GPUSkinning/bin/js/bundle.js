@@ -1834,13 +1834,17 @@
             t.frameIndex = 0;
             t.layaFrameBegin = Laya.timer.currFrame;
             t.clipFrameIndex = this.GetFrameIndex();
+            t.time = 0;
         }
         TweenSpeedUpdate() {
             if (this.tweenSpeedStruct.step == TweenSpeedStep.END) {
                 return;
             }
             var t = this.tweenSpeedStruct;
-            let frameIndex = this.GetFrameIndex();
+            t.time += Laya.timer.delta;
+            var frameIndexFloat = t.time / 33;
+            var frameIndex = Math.floor(frameIndexFloat);
+            frameIndexFloat = frameIndexFloat - frameIndex;
             let subFrame = Math.max(frameIndex - t.clipFrameIndex, 0);
             t.clipFrameIndex = frameIndex;
             t.frameIndex += subFrame;
@@ -1859,14 +1863,14 @@
                         t.step = TweenSpeedStep.SMOOTH;
                         break;
                     }
-                    this.speed = Laya.MathUtil.lerp(t.speedHalt, t.speedEnd, t.frameStepIndex / t.frameTween);
+                    this.speed = Laya.MathUtil.lerp(t.speedHalt, t.speedEnd, (t.frameStepIndex + frameIndexFloat) / t.frameTween);
                     if (t.frameStepIndex >= t.frameTween) {
                         this.TweenSpeedStop();
                         t.frameStepIndex = 0;
                     }
                     break;
                 case TweenSpeedStep.SMOOTH:
-                    if (t.frameIndex >= (t.frameTotal - 1)) {
+                    if (this.__frameIndex >= (t.frameTotal - 1)) {
                         this.speed = 1;
                         this.TweenSpeedStop();
                         this.Play("idle");
@@ -1887,6 +1891,7 @@
             this.speedEnd = 1;
             this.clipFrameIndex = 0;
             this.layaFrameBegin = 0;
+            this.time = 0;
         }
         calculationSpeedEnd() {
             this.speedEnd = TweenSpeedStruct.CalculationSpeed(this.speedHalt, this.frameHalt, this.frameTween, this.frameTotal);
@@ -2036,6 +2041,7 @@
             this._IsSeparation = false;
             this._IsInvincible = false;
             this._IsSuperarmor = false;
+            this._IsDie = false;
             this._DotRimIntensity = 0.0;
             this._DotRimColor = new Vector4$2(1.0, 0.0, 0.0, 0.0);
             this._HitTime = 0;
@@ -2074,6 +2080,7 @@
             this.SHADERDEFINE_IS_SPEARATION = Shader3D$2.getDefineByName("IS_SPEARATION");
             this.SHADERDEFINE_IS_SUPERARMOR = Shader3D$2.getDefineByName("IS_SUPERARMOR");
             this.SHADERDEFINE_IS_INVINCIBLE = Shader3D$2.getDefineByName("IS_INVINCIBLE");
+            this.SHADERDEFINE_IS_DIE = Shader3D$2.getDefineByName("IS_DIE");
         }
         get GPUSkinning_TextureMatrix() {
             return this._shaderValues.getTexture(GPUSkinningBaseMaterial.GPUSKINING_MATRIX_TEXTURE);
@@ -2114,6 +2121,16 @@
                 this._shaderValues.addDefine(GPUSkinningBaseMaterial.SHADERDEFINE_IS_SUPERARMOR);
             else
                 this._shaderValues.removeDefine(GPUSkinningBaseMaterial.SHADERDEFINE_IS_SUPERARMOR);
+        }
+        get IsDie() {
+            return this._IsDie;
+        }
+        set IsDie(value) {
+            this._IsDie = value;
+            if (value)
+                this._shaderValues.addDefine(GPUSkinningBaseMaterial.SHADERDEFINE_IS_DIE);
+            else
+                this._shaderValues.removeDefine(GPUSkinningBaseMaterial.SHADERDEFINE_IS_DIE);
         }
         get DotRimIntensity() {
             return this._DotRimIntensity;
@@ -3485,6 +3502,7 @@
             ];
             for (var j = 0; j < nameList.length; j++) {
                 var mono = await GPUSkining.CreateByNameAsync(nameList[j][0], nameList[j][1]);
+                mono.Player.Play("die");
                 var node = mono.owner;
                 node.transform.localRotationEulerY = 90;
                 window['mono'] = mono;

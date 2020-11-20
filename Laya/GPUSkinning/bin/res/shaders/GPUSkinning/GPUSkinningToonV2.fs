@@ -280,6 +280,11 @@ void main()
 	#endif
 	
 
+	// 尸体
+	#ifdef IS_DIE
+		finalColor.rgb = vec3(finalColor.r * 0.2, finalColor.g * 0.3, finalColor.b * 0.5);
+	#endif
+
 	gl_FragColor = finalColor;
 
 	
