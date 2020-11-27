@@ -589,7 +589,15 @@ export default class GPUSkinningPlayer
         }
         else
         {
-            return null;
+            var joinGameObject:Laya.Sprite3D;
+            this.weaponMap.forEach((v, k)=>{
+                joinGameObject = v.Player.FindJointGameObject(boneName);
+                if(joinGameObject)
+                {
+                    return joinGameObject;
+                }
+            })
+            return joinGameObject;
         }
     }
 

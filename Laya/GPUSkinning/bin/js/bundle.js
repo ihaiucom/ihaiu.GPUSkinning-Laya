@@ -1530,7 +1530,14 @@
                 return joint.GameObject;
             }
             else {
-                return null;
+                var joinGameObject;
+                this.weaponMap.forEach((v, k) => {
+                    joinGameObject = v.Player.FindJointGameObject(boneName);
+                    if (joinGameObject) {
+                        return joinGameObject;
+                    }
+                });
+                return joinGameObject;
             }
         }
         GotoAndStop(clipName, nomrmalizeTime = 0) {
@@ -3294,6 +3301,15 @@
     GPUSkinningToonWeaponV2Material.DEPTH_TEST = Shader3D$5.propertyNameToID("s_DepthTest");
     GPUSkinningToonWeaponV2Material.DEPTH_WRITE = Shader3D$5.propertyNameToID("s_DepthWrite");
 
+    var JoinNames;
+    (function (JoinNames) {
+        JoinNames["D_R_weapon"] = "D_R_weapon";
+        JoinNames["D_L_weapon"] = "D_L_weapon";
+        JoinNames["Bip001_Spine1"] = "Bip001 Spine1";
+        JoinNames["D_weapon_grab"] = "D_weapon_grab";
+        JoinNames["D_ride"] = "D_ride";
+    })(JoinNames || (JoinNames = {}));
+
     var LoaderManager = Laya.LoaderManager;
     var Loader = Laya.Loader;
     var Event = Laya.Event;
@@ -3487,6 +3503,7 @@
     GPUSkining.resRoot = "res3d/Conventional/";
     window['GPUSkining'] = GPUSkining;
     window['SceneMaterial'] = SceneMaterial;
+    window['JoinNames'] = JoinNames;
 
     class TestShader {
         constructor() {
@@ -3502,7 +3519,6 @@
             ];
             for (var j = 0; j < nameList.length; j++) {
                 var mono = await GPUSkining.CreateByNameAsync(nameList[j][0], nameList[j][1]);
-                mono.Player.Play("die");
                 var node = mono.owner;
                 node.transform.localRotationEulerY = 90;
                 window['mono'] = mono;
