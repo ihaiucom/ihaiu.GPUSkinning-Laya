@@ -21,7 +21,7 @@ export class GPUSkinningToonV2Material extends GPUSkinningBaseMaterial
     public static shaderName = "GPUSkinningToonV2";
     public static outlinePass = "GPUSkinningToonV2Outline";
 
-	private static _isInstalled: boolean = false;
+	protected static _isInstalled: boolean = false;
     public static async install()
     {
 		if(this._isInstalled)
@@ -36,7 +36,7 @@ export class GPUSkinningToonV2Material extends GPUSkinningBaseMaterial
         GPUSkinningToonV2Material.defaultMaterial.lock = true;
     }
 
-    private static async initShader()
+    protected static async initShader()
     {
 		
         var outlineVS: string = await this.loadShaderVSAsync(GPUSkinningToonV2Material.outlinePass);
@@ -234,7 +234,7 @@ export class GPUSkinningToonV2Material extends GPUSkinningBaseMaterial
 	}
 
 	
-	private _rimColorA0: Vector4 = new Vector4(1.0, 0.02116402, 0.0);
+	protected _rimColorA0: Vector4 = new Vector4(1.0, 0.02116402, 0.0);
 	get rimColorA0(): Vector4 {
 		return this._rimColorA0;
 	}
@@ -252,7 +252,7 @@ export class GPUSkinningToonV2Material extends GPUSkinningBaseMaterial
 	}
 
 	
-	private _rimColorA1: Vector4 = new Vector4(1.0, 0.9290133, 0.759434);
+	protected _rimColorA1: Vector4 = new Vector4(1.0, 0.9290133, 0.759434);
 	get rimColorA1(): Vector4 {
 		return this._rimColorA1;
 	}
@@ -266,7 +266,7 @@ export class GPUSkinningToonV2Material extends GPUSkinningBaseMaterial
 	}
 
 	
-	private _rimColorB: Vector4 = new Vector4(1.0, 0.501811, 0.0);
+	protected _rimColorB: Vector4 = new Vector4(1.0, 0.501811, 0.0);
 	get rimColorB(): Vector4 {
 		return this._rimColorB;
 	}
@@ -287,7 +287,7 @@ export class GPUSkinningToonV2Material extends GPUSkinningBaseMaterial
 	}
 
 	
-	private __outlineColor: Vector4 = new Vector4(0.0, 0, 0.0);
+	protected __outlineColor: Vector4 = new Vector4(0.0, 0, 0.0);
 	get outlineColor(): Vector4 {
 		return this.__outlineColor;
 	}
@@ -302,7 +302,7 @@ export class GPUSkinningToonV2Material extends GPUSkinningBaseMaterial
 	}
 
 	
-	private _rimViewDirA0: Vector4 = new Vector4(25, -5, 10, 0.55);
+	protected _rimViewDirA0: Vector4 = new Vector4(25, -5, 10, 0.55);
 	get rimViewDirA0(): Vector4 {
 		return this._rimViewDirA0;
 	}
@@ -325,7 +325,7 @@ export class GPUSkinningToonV2Material extends GPUSkinningBaseMaterial
 	
 	
 	
-	private _rimViewDirB: Vector4 = new Vector4(-30, -5, 20, 0.6);
+	protected _rimViewDirB: Vector4 = new Vector4(-30, -5, 20, 0.6);
 	get rimViewDirB(): Vector4 {
 		return this._rimViewDirB;
 	}
@@ -348,7 +348,7 @@ export class GPUSkinningToonV2Material extends GPUSkinningBaseMaterial
 
 
 
-	private _albedoColor: Vector4 = new Vector4(1.0, 1.0, 1.0, 1.0);
+	protected _albedoColor: Vector4 = new Vector4(1.0, 1.0, 1.0, 1.0);
 	
 
 
@@ -588,9 +588,11 @@ export class GPUSkinningToonV2Material extends GPUSkinningBaseMaterial
 	}
 
 
-	constructor() {
+	constructor(shaderName?:string) {
 		super();
-		this.setShaderName(GPUSkinningToonV2Material.shaderName);
+		if(!shaderName) shaderName = GPUSkinningToonV2Material.shaderName;
+
+		this.setShaderName(shaderName);
 		this._shaderValues.setVector(GPUSkinningToonV2Material.ALBEDOCOLOR, new Vector4(1.0, 1.0, 1.0, 1.0));
 		this._shaderValues.setVector(GPUSkinningToonV2Material.TILINGOFFSET, new Vector4(1.0, 1.0, 0.0, 0.0));
 		this._shaderValues.setVector(GPUSkinningToonV2Material.RIMCOLORA0, this._rimColorA0);

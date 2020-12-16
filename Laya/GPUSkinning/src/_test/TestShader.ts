@@ -12,12 +12,20 @@ import { TestRotation } from "./TestRotation";
 
 export default class TestShader
 {
+    mono:GPUSkinningPlayerMono;
     scene: TestScene;
     constructor()
     {
         this.scene = TestScene.create();
         Laya.stage.addChild(this.scene);
         this.InitAsync();
+        Laya.stage.on(Laya.Event.KEY_DOWN, this, this.OnKeyDown)
+    }
+
+    OnKeyDown()
+    {
+        var mono = this.mono;
+        mono.Player.Play("skill_18")
     }
 
     async InitAsync()
@@ -30,7 +38,7 @@ export default class TestShader
 
 
         var nameList = [
-            ["1010_000", "1010_000"],
+            ["1012_000", "1012_000"],
             // ["3001", "3001"],
             // "3001",
             // "Hero_1004_Dongzhuo_Skin1",
@@ -43,7 +51,8 @@ export default class TestShader
             var resId = nameList[j];
             var hasShadowTexture = false;
             var mono = await GPUSkining.CreateByNameAsync(nameList[j][0], nameList[j][1]);
-            // mono.Player.Play("die");
+            this.mono = mono;
+            mono.Player.Play("run");
             // mono.Player.material.IsSeparation = true;
             // mono.Player.material.IsSuperarmor = true;
             // var mono = await GPUSkining.CreateByNameAsync(nameList[j], MaterialTextureType.ShadowColor_And_HeightRimLight);

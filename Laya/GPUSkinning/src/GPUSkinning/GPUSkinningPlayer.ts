@@ -843,12 +843,13 @@ export default class GPUSkinningPlayer
             frame_crossFade = lastPlayedClip.frames[frameIndex_crossFade];
             blend_crossFade = res.CrossFadeBlendFactor(this.crossFadeProgress, this.crossFadeTime);
         }
+        let nextFrameFade = 0;
 
-        let nextFrameFade = res.CrossFadeBlendFactor(this.nextLerpProgress, playingClip.fps * 0.001);
-        // if(nextFrameFade != 0)
-        // {
-        //     nextFrameFade = 0.5;
-        // }
+        
+        if(playingClip.wrapMode == GPUSkinningWrapMode.Loop)
+        {
+            nextFrameFade = res.CrossFadeBlendFactor(this.nextLerpProgress, playingClip.fps * 0.001);
+        }
 
         var mpb = currMtrl.material._shaderValues;
 
