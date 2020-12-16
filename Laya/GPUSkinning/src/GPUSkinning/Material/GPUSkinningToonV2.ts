@@ -154,6 +154,9 @@ export class GPUSkinningToonV2Material extends GPUSkinningBaseMaterial
 		
         var outlinePass = subShader.addShaderPass(outlineVS, outlinePS);
 		outlinePass.renderState.cull = Laya.RenderState.CULL_FRONT;
+		// outlinePass.renderState.blend = RenderState.BLEND_ENABLE_ALL;
+		// outlinePass.renderState.srcBlend = RenderState.BLENDPARAM_SRC_ALPHA;
+		// outlinePass.renderState.dstBlend = RenderState.BLENDPARAM_ONE_MINUS_SRC_ALPHA;
 		// outlinePass.renderState.depthWrite = false;
 
         
@@ -165,14 +168,6 @@ export class GPUSkinningToonV2Material extends GPUSkinningBaseMaterial
     }
 
 	
-	/**渲染状态_不透明。*/
-	static RENDERMODE_OPAQUE: number = 0;
-	/**渲染状态_阿尔法测试。*/
-	static RENDERMODE_CUTOUT: number = 1;
-	/**渲染状态__透明混合。*/
-	static RENDERMODE_TRANSPARENT: number = 2;
-	/**渲染状态__加色法混合。*/
-	static RENDERMODE_ADDTIVE: number = 3;
 
 	/** 宏定义--主贴图 */
 	static SHADERDEFINE_ALBEDOTEXTURE: ShaderDefine;
@@ -210,12 +205,6 @@ export class GPUSkinningToonV2Material extends GPUSkinningBaseMaterial
 	static RIMVIEWDIRB: number = Shader3D.propertyNameToID("u_rimViewDirB");
 	static OUTLINECOLOR: number = Shader3D.propertyNameToID("u_outlineColor");
 	static TILINGOFFSET: number = Shader3D.propertyNameToID("u_TilingOffset");
-	static CULL: number = Shader3D.propertyNameToID("s_Cull");
-	static BLEND: number = Shader3D.propertyNameToID("s_Blend");
-	static BLEND_SRC: number = Shader3D.propertyNameToID("s_BlendSrc");
-	static BLEND_DST: number = Shader3D.propertyNameToID("s_BlendDst");
-	static DEPTH_TEST: number = Shader3D.propertyNameToID("s_DepthTest");
-	static DEPTH_WRITE: number = Shader3D.propertyNameToID("s_DepthWrite");
 
 	/** 默认材质，禁止修改*/
 	static defaultMaterial: GPUSkinningToonV2Material;
@@ -460,116 +449,8 @@ export class GPUSkinningToonV2Material extends GPUSkinningBaseMaterial
 	}
 
 
-	/**
-	 * 渲染模式。
-	 */
-	set renderMode(value: number) {
-		switch (value) {
-			case GPUSkinningToonV2Material.RENDERMODE_OPAQUE:
-				this.alphaTest = false;
-				this.renderQueue = Material.RENDERQUEUE_OPAQUE;
-				this.depthWrite = true;
-				this.cull = RenderState.CULL_BACK;
-				this.blend = RenderState.BLEND_DISABLE;
-				this.depthTest = RenderState.DEPTHTEST_LESS;
-				break;
-			case GPUSkinningToonV2Material.RENDERMODE_CUTOUT:
-				this.renderQueue = Material.RENDERQUEUE_ALPHATEST;
-				this.alphaTest = true;
-				this.depthWrite = true;
-				this.cull = RenderState.CULL_BACK;
-				this.blend = RenderState.BLEND_DISABLE;
-				this.depthTest = RenderState.DEPTHTEST_LESS;
-				break;
-			case GPUSkinningToonV2Material.RENDERMODE_TRANSPARENT:
-				this.renderQueue = Material.RENDERQUEUE_TRANSPARENT;
-				this.alphaTest = false;
-				this.depthWrite = false;
-				this.cull = RenderState.CULL_BACK;
-				this.blend = RenderState.BLEND_ENABLE_ALL;
-				this.blendSrc = RenderState.BLENDPARAM_SRC_ALPHA;
-				this.blendDst = RenderState.BLENDPARAM_ONE_MINUS_SRC_ALPHA;
-				this.depthTest = RenderState.DEPTHTEST_LESS;
-				break;
-			default:
-				throw new Error("GPUSkinningToonV2Material : renderMode value error.");
-		}
-	}
 
 
-
-	/**
-	 * 是否写入深度。
-	 */
-	get depthWrite(): boolean {
-		return this._shaderValues.getBool(GPUSkinningToonV2Material.DEPTH_WRITE);
-	}
-
-	set depthWrite(value: boolean) {
-		this._shaderValues.setBool(GPUSkinningToonV2Material.DEPTH_WRITE, value);
-	}
-
-
-
-	/**
-	 * 剔除方式。
-	 */
-	get cull(): number {
-		return this._shaderValues.getInt(GPUSkinningToonV2Material.CULL);
-	}
-
-	set cull(value: number) {
-		this._shaderValues.setInt(GPUSkinningToonV2Material.CULL, value);
-	}
-
-
-	/**
-	 * 混合方式。
-	 */
-	get blend(): number {
-		return this._shaderValues.getInt(GPUSkinningToonV2Material.BLEND);
-	}
-
-	set blend(value: number) {
-		this._shaderValues.setInt(GPUSkinningToonV2Material.BLEND, value);
-	}
-
-
-	/**
-	 * 混合源。
-	 */
-	get blendSrc(): number {
-		return this._shaderValues.getInt(GPUSkinningToonV2Material.BLEND_SRC);
-	}
-
-	set blendSrc(value: number) {
-		this._shaderValues.setInt(GPUSkinningToonV2Material.BLEND_SRC, value);
-	}
-
-
-
-	/**
-	 * 混合目标。
-	 */
-	get blendDst(): number {
-		return this._shaderValues.getInt(GPUSkinningToonV2Material.BLEND_DST);
-	}
-
-	set blendDst(value: number) {
-		this._shaderValues.setInt(GPUSkinningToonV2Material.BLEND_DST, value);
-	}
-
-
-	/**
-	 * 深度测试方式。
-	 */
-	get depthTest(): number {
-		return this._shaderValues.getInt(GPUSkinningToonV2Material.DEPTH_TEST);
-	}
-
-	set depthTest(value: number) {
-		this._shaderValues.setInt(GPUSkinningToonV2Material.DEPTH_TEST, value);
-	}
 
 	
 
@@ -606,7 +487,7 @@ export class GPUSkinningToonV2Material extends GPUSkinningBaseMaterial
 
         this._shaderValues.setNumber(Material.ALPHATESTVALUE, 0.5);
 
-		this.renderMode = GPUSkinningToonV2Material.RENDERMODE_OPAQUE;
+		this.renderMode = GPUSkinningBaseMaterial.RENDERMODE_OPAQUE;
 
 		// this._shaderValues.addDefine(Shader3D.getDefineByName("SKIN_4"));
 		

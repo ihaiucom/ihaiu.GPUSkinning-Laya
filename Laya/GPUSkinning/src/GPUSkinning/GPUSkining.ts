@@ -19,7 +19,7 @@ import { GPUSkinningCartoon2TextureMaterial } from "./Material/GPUSkinningCartoo
 import SceneMaterial from "./Material/SceneMaterial";
 import { GPUSkinningToonV2Material } from "./Material/GPUSkinningToonV2";
 import { GPUSkinningToonWeaponV2Material } from "./Material/GPUSkinningToonWeaponV2";
-import { JoinNames } from "./JoinNames";
+import { JointNames } from "./JointNames";
 
 export default class GPUSkining
 {
@@ -384,4 +384,4 @@ export default class GPUSkining
 }
 window['GPUSkining'] = GPUSkining;
 window['SceneMaterial'] = SceneMaterial;
-window['JoinNames'] = JoinNames;
+window['JointNames'] = JointNames;

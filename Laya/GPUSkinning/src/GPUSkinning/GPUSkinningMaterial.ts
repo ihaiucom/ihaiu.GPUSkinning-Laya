@@ -1,10 +1,11 @@
 import GPUSkinningExecuteOncePerFrame from "./GPUSkinningExecuteOncePerFrame";
+import { GPUSkinningBaseMaterial } from "./Material/GPUSkinningBaseMaterial";
 
 /** GPU骨骼动画--材质球 */
 export default class GPUSkinningMaterial
 {
     /** 材质 */
-    material: Laya.Material;
+    material: GPUSkinningBaseMaterial;
 
     /** 一帧只执行一次标记 */
     executeOncePerFrame: GPUSkinningExecuteOncePerFrame = new GPUSkinningExecuteOncePerFrame();

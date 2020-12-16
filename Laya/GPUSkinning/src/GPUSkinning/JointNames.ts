@@ -1,5 +1,5 @@
 /** 骨骼挂点名称 */
-export enum JoinNames
+export enum JointNames
 {
     // 右手武器--挂点
     D_R_weapon = "D_R_weapon",

@@ -2,6 +2,9 @@ import Shader3D = Laya.Shader3D;
 import BaseTexture = Laya.BaseTexture;
 import ShaderDefine = Laya.ShaderDefine;
 import Vector4 = Laya.Vector4;
+import Material = Laya.Material;
+import RenderState = Laya.RenderState;
+import GPUSkinningPlayer from "../GPUSkinningPlayer";
 
 
 export class GPUSkinningBaseMaterial extends Laya.Material
@@ -82,7 +85,139 @@ export class GPUSkinningBaseMaterial extends Laya.Material
 		this.SHADERDEFINE_IS_SUPERARMOR = Shader3D.getDefineByName("IS_SUPERARMOR");
 		this.SHADERDEFINE_IS_INVINCIBLE = Shader3D.getDefineByName("IS_INVINCIBLE");
 		this.SHADERDEFINE_IS_DIE = Shader3D.getDefineByName("IS_DIE");
+    }
+
+    
+	/**渲染状态_不透明。*/
+	static RENDERMODE_OPAQUE: number = 0;
+	/**渲染状态_阿尔法测试。*/
+	static RENDERMODE_CUTOUT: number = 1;
+	/**渲染状态__透明混合。*/
+	static RENDERMODE_TRANSPARENT: number = 2;
+	/**渲染状态__加色法混合。*/
+    static RENDERMODE_ADDTIVE: number = 3;
+    
+    
+	static CULL: number = Shader3D.propertyNameToID("s_Cull");
+	static BLEND: number = Shader3D.propertyNameToID("s_Blend");
+	static BLEND_SRC: number = Shader3D.propertyNameToID("s_BlendSrc");
+	static BLEND_DST: number = Shader3D.propertyNameToID("s_BlendDst");
+	static DEPTH_TEST: number = Shader3D.propertyNameToID("s_DepthTest");
+	static DEPTH_WRITE: number = Shader3D.propertyNameToID("s_DepthWrite");
+    
+	/**
+	 * 渲染模式。
+	 */
+	set renderMode(value: number) {
+		switch (value) {
+			case GPUSkinningBaseMaterial.RENDERMODE_OPAQUE:
+				this.alphaTest = false;
+				this.renderQueue = Material.RENDERQUEUE_OPAQUE;
+				this.depthWrite = true;
+				this.cull = RenderState.CULL_BACK;
+				this.blend = RenderState.BLEND_DISABLE;
+				this.depthTest = RenderState.DEPTHTEST_LESS;
+				break;
+			case GPUSkinningBaseMaterial.RENDERMODE_CUTOUT:
+				this.renderQueue = Material.RENDERQUEUE_ALPHATEST;
+				this.alphaTest = true;
+				this.depthWrite = true;
+				this.cull = RenderState.CULL_BACK;
+				this.blend = RenderState.BLEND_DISABLE;
+				this.depthTest = RenderState.DEPTHTEST_LESS;
+				break;
+			case GPUSkinningBaseMaterial.RENDERMODE_TRANSPARENT:
+				this.renderQueue = Material.RENDERQUEUE_TRANSPARENT;
+				this.alphaTest = false;
+				this.depthWrite = false;
+				// this.depthWrite = true;
+				this.cull = RenderState.CULL_BACK;
+				this.blend = RenderState.BLEND_ENABLE_ALL;
+				this.blendSrc = RenderState.BLENDPARAM_SRC_ALPHA;
+				this.blendDst = RenderState.BLENDPARAM_ONE_MINUS_SRC_ALPHA;
+				this.depthTest = RenderState.DEPTHTEST_LESS;
+				break;
+			default:
+				throw new Error("GPUSkinningBaseMaterial : renderMode value error.");
+		}
+    }
+    
+	/**
+	 * 是否写入深度。
+	 */
+	get depthWrite(): boolean {
+		return this._shaderValues.getBool(GPUSkinningBaseMaterial.DEPTH_WRITE);
 	}
+
+	set depthWrite(value: boolean) {
+		this._shaderValues.setBool(GPUSkinningBaseMaterial.DEPTH_WRITE, value);
+	}
+
+
+
+	/**
+	 * 剔除方式。
+	 */
+	get cull(): number {
+		return this._shaderValues.getInt(GPUSkinningBaseMaterial.CULL);
+	}
+
+	set cull(value: number) {
+		this._shaderValues.setInt(GPUSkinningBaseMaterial.CULL, value);
+	}
+
+
+	/**
+	 * 混合方式。
+	 */
+	get blend(): number {
+		return this._shaderValues.getInt(GPUSkinningBaseMaterial.BLEND);
+	}
+
+	set blend(value: number) {
+		this._shaderValues.setInt(GPUSkinningBaseMaterial.BLEND, value);
+	}
+
+
+	/**
+	 * 混合源。
+	 */
+	get blendSrc(): number {
+		return this._shaderValues.getInt(GPUSkinningBaseMaterial.BLEND_SRC);
+	}
+
+	set blendSrc(value: number) {
+		this._shaderValues.setInt(GPUSkinningBaseMaterial.BLEND_SRC, value);
+	}
+
+
+
+	/**
+	 * 混合目标。
+	 */
+	get blendDst(): number {
+		return this._shaderValues.getInt(GPUSkinningBaseMaterial.BLEND_DST);
+	}
+
+	set blendDst(value: number) {
+		this._shaderValues.setInt(GPUSkinningBaseMaterial.BLEND_DST, value);
+	}
+
+
+	/**
+	 * 深度测试方式。
+	 */
+	get depthTest(): number {
+		return this._shaderValues.getInt(GPUSkinningBaseMaterial.DEPTH_TEST);
+	}
+
+	set depthTest(value: number) {
+		this._shaderValues.setInt(GPUSkinningBaseMaterial.DEPTH_TEST, value);
+	}
+
+    
+    player: GPUSkinningPlayer;
+
     
 	/**
 	 * 骨骼动画贴图。
@@ -117,17 +252,22 @@ export class GPUSkinningBaseMaterial extends Laya.Material
     {
         this._IsSeparation = value;
         
-		if (value)
+        if (value)
+        {
             this._shaderValues.addDefine(GPUSkinningBaseMaterial.SHADERDEFINE_IS_SPEARATION);
+            // this.renderMode = GPUSkinningBaseMaterial.RENDERMODE_TRANSPARENT;
+        }
         else
+        {
             this._shaderValues.removeDefine(GPUSkinningBaseMaterial.SHADERDEFINE_IS_SPEARATION);
+            // this.renderMode = GPUSkinningBaseMaterial.RENDERMODE_OPAQUE;
+        }
     }
 
     private _IsInvincible: boolean = false;
     /**
      * 是否是无敌
      */
-    
     get IsInvincible()
     {
         return this._IsInvincible;

@@ -1116,6 +1116,10 @@ var laya = (function () {
 	        this._tmp_jointMatrixBlend = new Matrix4x4$4();
 	        this.weaponMap = new Map();
 	        this.tweenSpeedStruct = new TweenSpeedStruct();
+	        this._IsSeparation = false;
+	        this._IsInvincible = false;
+	        this._IsSuperarmor = false;
+	        this._IsDie = false;
 	        this.go = go;
 	        this.transform = go.transform;
 	        this.res = res;
@@ -1129,6 +1133,7 @@ var laya = (function () {
 	        mtrl2.material = res.CloneMaterial(mtrl.material, res.anim.skinQuality);
 	        mtrl = mtrl2;
 	        this.mtrl = mtrl2;
+	        this.mtrl.material.player = this;
 	        this.mr.sharedMaterial = mtrl == null ? null : mtrl.material;
 	        this.mf.sharedMesh = res.mesh;
 	        var subMeshCount = this.mf.sharedMesh.subMeshCount;
@@ -1389,15 +1394,15 @@ var laya = (function () {
 	                }
 	            }
 	            if (!inTheExistingJoints) {
-	                let joinGO = new Laya.Sprite3D(bone.name);
-	                this.go.addChild(joinGO);
-	                joinGO.transform.localPosition = new Vector3$1();
-	                joinGO.transform.localScale = new Vector3$1(1, 1, 1);
-	                let join = joinGO.addComponent(GPUSkinningPlayerJoint);
-	                join.onAwake();
-	                joints.push(join);
-	                join.Init(bone, i, bone.boneIndex, bone.guid);
-	                this.jointMap.set(bone.name, join);
+	                let jointGO = new Laya.Sprite3D(bone.name);
+	                this.go.addChild(jointGO);
+	                jointGO.transform.localPosition = new Vector3$1();
+	                jointGO.transform.localScale = new Vector3$1(1, 1, 1);
+	                let joint = jointGO.addComponent(GPUSkinningPlayerJoint);
+	                joint.onAwake();
+	                joints.push(joint);
+	                joint.Init(bone, i, bone.boneIndex, bone.guid);
+	                this.jointMap.set(bone.name, joint);
 	            }
 	        }
 	        this.DeleteInvalidJoints(existingJoints);
@@ -1795,6 +1800,78 @@ var laya = (function () {
 	    TweenSpeedStop() {
 	        this.tweenSpeedStruct.step = TweenSpeedStep.END;
 	    }
+	    get IsSeparation() {
+	        return this._IsSeparation;
+	    }
+	    set IsSeparation(value) {
+	        if (this.IsInvincible)
+	            this.IsInvincible = false;
+	        if (this.IsSuperarmor)
+	            this.IsSuperarmor = false;
+	        if (this.IsDie)
+	            this.IsDie = false;
+	        this._IsSeparation = value;
+	        if (this.material) {
+	            this.material.IsSeparation = value;
+	        }
+	        this.weaponMap.forEach((v, k) => {
+	            v.Player.IsSeparation = value;
+	        });
+	    }
+	    get IsInvincible() {
+	        return this._IsInvincible;
+	    }
+	    set IsInvincible(value) {
+	        if (this.IsSeparation)
+	            this.IsSeparation = false;
+	        if (this.IsSuperarmor)
+	            this.IsSuperarmor = false;
+	        if (this.IsDie)
+	            this.IsDie = false;
+	        this._IsInvincible = value;
+	        if (this.material) {
+	            this.material.IsInvincible = value;
+	        }
+	        this.weaponMap.forEach((v, k) => {
+	            v.Player.IsInvincible = value;
+	        });
+	    }
+	    get IsSuperarmor() {
+	        return this._IsSuperarmor;
+	    }
+	    set IsSuperarmor(value) {
+	        if (this.IsSeparation)
+	            this.IsSeparation = false;
+	        if (this.IsInvincible)
+	            this.IsInvincible = false;
+	        if (this.IsDie)
+	            this.IsDie = false;
+	        this._IsSuperarmor = value;
+	        if (this.material) {
+	            this.material.IsSuperarmor = value;
+	        }
+	        this.weaponMap.forEach((v, k) => {
+	            v.Player.IsSuperarmor = value;
+	        });
+	    }
+	    get IsDie() {
+	        return this._IsDie;
+	    }
+	    set IsDie(value) {
+	        if (this.IsSeparation)
+	            this.IsSeparation = false;
+	        if (this.IsInvincible)
+	            this.IsInvincible = false;
+	        if (this.IsSuperarmor)
+	            this.IsSuperarmor = false;
+	        this._IsDie = value;
+	        if (this.material) {
+	            this.material.IsDie = value;
+	        }
+	        this.weaponMap.forEach((v, k) => {
+	            v.Player.IsDie = value;
+	        });
+	    }
 	}
 	GPUSkinningPlayer._ShaderUID = 0;
 	class TweenSpeedStruct {
@@ -1949,6 +2026,8 @@ var laya = (function () {
 
 	var Shader3D$1 = Laya.Shader3D;
 	var Vector4$1 = Laya.Vector4;
+	var Material = Laya.Material;
+	var RenderState = Laya.RenderState;
 	class GPUSkinningBaseMaterial extends Laya.Material {
 	    constructor() {
 	        super(...arguments);
@@ -1996,6 +2075,74 @@ var laya = (function () {
 	        this.SHADERDEFINE_IS_INVINCIBLE = Shader3D$1.getDefineByName("IS_INVINCIBLE");
 	        this.SHADERDEFINE_IS_DIE = Shader3D$1.getDefineByName("IS_DIE");
 	    }
+	    set renderMode(value) {
+	        switch (value) {
+	            case GPUSkinningBaseMaterial.RENDERMODE_OPAQUE:
+	                this.alphaTest = false;
+	                this.renderQueue = Material.RENDERQUEUE_OPAQUE;
+	                this.depthWrite = true;
+	                this.cull = RenderState.CULL_BACK;
+	                this.blend = RenderState.BLEND_DISABLE;
+	                this.depthTest = RenderState.DEPTHTEST_LESS;
+	                break;
+	            case GPUSkinningBaseMaterial.RENDERMODE_CUTOUT:
+	                this.renderQueue = Material.RENDERQUEUE_ALPHATEST;
+	                this.alphaTest = true;
+	                this.depthWrite = true;
+	                this.cull = RenderState.CULL_BACK;
+	                this.blend = RenderState.BLEND_DISABLE;
+	                this.depthTest = RenderState.DEPTHTEST_LESS;
+	                break;
+	            case GPUSkinningBaseMaterial.RENDERMODE_TRANSPARENT:
+	                this.renderQueue = Material.RENDERQUEUE_TRANSPARENT;
+	                this.alphaTest = false;
+	                this.depthWrite = false;
+	                this.cull = RenderState.CULL_BACK;
+	                this.blend = RenderState.BLEND_ENABLE_ALL;
+	                this.blendSrc = RenderState.BLENDPARAM_SRC_ALPHA;
+	                this.blendDst = RenderState.BLENDPARAM_ONE_MINUS_SRC_ALPHA;
+	                this.depthTest = RenderState.DEPTHTEST_LESS;
+	                break;
+	            default:
+	                throw new Error("GPUSkinningBaseMaterial : renderMode value error.");
+	        }
+	    }
+	    get depthWrite() {
+	        return this._shaderValues.getBool(GPUSkinningBaseMaterial.DEPTH_WRITE);
+	    }
+	    set depthWrite(value) {
+	        this._shaderValues.setBool(GPUSkinningBaseMaterial.DEPTH_WRITE, value);
+	    }
+	    get cull() {
+	        return this._shaderValues.getInt(GPUSkinningBaseMaterial.CULL);
+	    }
+	    set cull(value) {
+	        this._shaderValues.setInt(GPUSkinningBaseMaterial.CULL, value);
+	    }
+	    get blend() {
+	        return this._shaderValues.getInt(GPUSkinningBaseMaterial.BLEND);
+	    }
+	    set blend(value) {
+	        this._shaderValues.setInt(GPUSkinningBaseMaterial.BLEND, value);
+	    }
+	    get blendSrc() {
+	        return this._shaderValues.getInt(GPUSkinningBaseMaterial.BLEND_SRC);
+	    }
+	    set blendSrc(value) {
+	        this._shaderValues.setInt(GPUSkinningBaseMaterial.BLEND_SRC, value);
+	    }
+	    get blendDst() {
+	        return this._shaderValues.getInt(GPUSkinningBaseMaterial.BLEND_DST);
+	    }
+	    set blendDst(value) {
+	        this._shaderValues.setInt(GPUSkinningBaseMaterial.BLEND_DST, value);
+	    }
+	    get depthTest() {
+	        return this._shaderValues.getInt(GPUSkinningBaseMaterial.DEPTH_TEST);
+	    }
+	    set depthTest(value) {
+	        this._shaderValues.setInt(GPUSkinningBaseMaterial.DEPTH_TEST, value);
+	    }
 	    get GPUSkinning_TextureMatrix() {
 	        return this._shaderValues.getTexture(GPUSkinningBaseMaterial.GPUSKINING_MATRIX_TEXTURE);
 	    }
@@ -2011,10 +2158,12 @@ var laya = (function () {
 	    }
 	    set IsSeparation(value) {
 	        this._IsSeparation = value;
-	        if (value)
+	        if (value) {
 	            this._shaderValues.addDefine(GPUSkinningBaseMaterial.SHADERDEFINE_IS_SPEARATION);
-	        else
+	        }
+	        else {
 	            this._shaderValues.removeDefine(GPUSkinningBaseMaterial.SHADERDEFINE_IS_SPEARATION);
+	        }
 	    }
 	    get IsInvincible() {
 	        return this._IsInvincible;
@@ -2084,6 +2233,16 @@ var laya = (function () {
 	GPUSkinningBaseMaterial.SHADER_PATH_ROOT = "res/shaders/GPUSkinning/";
 	GPUSkinningBaseMaterial.DOTRIMCOLOR = Shader3D$1.propertyNameToID("u_DotRimColor");
 	GPUSkinningBaseMaterial.GPUSKINING_MATRIX_TEXTURE = Shader3D$1.propertyNameToID("u_GPUSkinning_TextureMatrix");
+	GPUSkinningBaseMaterial.RENDERMODE_OPAQUE = 0;
+	GPUSkinningBaseMaterial.RENDERMODE_CUTOUT = 1;
+	GPUSkinningBaseMaterial.RENDERMODE_TRANSPARENT = 2;
+	GPUSkinningBaseMaterial.RENDERMODE_ADDTIVE = 3;
+	GPUSkinningBaseMaterial.CULL = Shader3D$1.propertyNameToID("s_Cull");
+	GPUSkinningBaseMaterial.BLEND = Shader3D$1.propertyNameToID("s_Blend");
+	GPUSkinningBaseMaterial.BLEND_SRC = Shader3D$1.propertyNameToID("s_BlendSrc");
+	GPUSkinningBaseMaterial.BLEND_DST = Shader3D$1.propertyNameToID("s_BlendDst");
+	GPUSkinningBaseMaterial.DEPTH_TEST = Shader3D$1.propertyNameToID("s_DepthTest");
+	GPUSkinningBaseMaterial.DEPTH_WRITE = Shader3D$1.propertyNameToID("s_DepthWrite");
 
 	class LayaUtil {
 	    static GetComponentsInChildren(go, componentType, outComponents) {
@@ -2129,9 +2288,9 @@ var laya = (function () {
 	var SubShader = Laya.SubShader;
 	var VertexMesh$1 = Laya.VertexMesh;
 	var Vector4$2 = Laya.Vector4;
-	var RenderState = Laya.RenderState;
+	var RenderState$1 = Laya.RenderState;
 	var Scene3DShaderDeclaration = Laya.Scene3DShaderDeclaration;
-	var Material = Laya.Material;
+	var Material$1 = Laya.Material;
 	class GPUSkinningCartoon2TextureMaterial extends GPUSkinningBaseMaterial {
 	    constructor() {
 	        super();
@@ -2143,7 +2302,7 @@ var laya = (function () {
 	        this.CartoonColorRange = 0.08;
 	        this.CartoonColorDeep = 88.4;
 	        this.CartoonOutlineWidth = 0.004;
-	        this._shaderValues.setNumber(Material.ALPHATESTVALUE, 0.5);
+	        this._shaderValues.setNumber(Material$1.ALPHATESTVALUE, 0.5);
 	        this._enableLighting = true;
 	        this.renderMode = GPUSkinningCartoon2TextureMaterial.RENDERMODE_OPAQUE;
 	    }
@@ -2300,29 +2459,29 @@ var laya = (function () {
 	        switch (value) {
 	            case GPUSkinningCartoon2TextureMaterial.RENDERMODE_OPAQUE:
 	                this.alphaTest = false;
-	                this.renderQueue = Material.RENDERQUEUE_OPAQUE;
+	                this.renderQueue = Material$1.RENDERQUEUE_OPAQUE;
 	                this.depthWrite = true;
-	                this.cull = RenderState.CULL_BACK;
-	                this.blend = RenderState.BLEND_DISABLE;
-	                this.depthTest = RenderState.DEPTHTEST_LESS;
+	                this.cull = RenderState$1.CULL_BACK;
+	                this.blend = RenderState$1.BLEND_DISABLE;
+	                this.depthTest = RenderState$1.DEPTHTEST_LESS;
 	                break;
 	            case GPUSkinningCartoon2TextureMaterial.RENDERMODE_CUTOUT:
-	                this.renderQueue = Material.RENDERQUEUE_ALPHATEST;
+	                this.renderQueue = Material$1.RENDERQUEUE_ALPHATEST;
 	                this.alphaTest = true;
 	                this.depthWrite = true;
-	                this.cull = RenderState.CULL_BACK;
-	                this.blend = RenderState.BLEND_DISABLE;
-	                this.depthTest = RenderState.DEPTHTEST_LESS;
+	                this.cull = RenderState$1.CULL_BACK;
+	                this.blend = RenderState$1.BLEND_DISABLE;
+	                this.depthTest = RenderState$1.DEPTHTEST_LESS;
 	                break;
 	            case GPUSkinningCartoon2TextureMaterial.RENDERMODE_TRANSPARENT:
-	                this.renderQueue = Material.RENDERQUEUE_TRANSPARENT;
+	                this.renderQueue = Material$1.RENDERQUEUE_TRANSPARENT;
 	                this.alphaTest = false;
 	                this.depthWrite = false;
-	                this.cull = RenderState.CULL_BACK;
-	                this.blend = RenderState.BLEND_ENABLE_ALL;
-	                this.blendSrc = RenderState.BLENDPARAM_SRC_ALPHA;
-	                this.blendDst = RenderState.BLENDPARAM_ONE_MINUS_SRC_ALPHA;
-	                this.depthTest = RenderState.DEPTHTEST_LESS;
+	                this.cull = RenderState$1.CULL_BACK;
+	                this.blend = RenderState$1.BLEND_ENABLE_ALL;
+	                this.blendSrc = RenderState$1.BLENDPARAM_SRC_ALPHA;
+	                this.blendDst = RenderState$1.BLENDPARAM_ONE_MINUS_SRC_ALPHA;
+	                this.depthTest = RenderState$1.DEPTHTEST_LESS;
 	                break;
 	            default:
 	                throw new Error("GPUSkinningCartoon2TextureMaterial : renderMode value error.");
@@ -2486,8 +2645,7 @@ var laya = (function () {
 	var SubShader$1 = Laya.SubShader;
 	var VertexMesh$2 = Laya.VertexMesh;
 	var Vector4$4 = Laya.Vector4;
-	var RenderState$1 = Laya.RenderState;
-	var Material$1 = Laya.Material;
+	var Material$2 = Laya.Material;
 	class GPUSkinningToonV2Material extends GPUSkinningBaseMaterial {
 	    constructor(shaderName) {
 	        super();
@@ -2507,8 +2665,8 @@ var laya = (function () {
 	        this._shaderValues.setVector(GPUSkinningToonV2Material.RIMCOLORA1, this._rimColorA1);
 	        this._shaderValues.setVector(GPUSkinningToonV2Material.RIMCOLORB, this._rimColorB);
 	        this.CartoonOutlineWidth = 0.004;
-	        this._shaderValues.setNumber(Material$1.ALPHATESTVALUE, 0.5);
-	        this.renderMode = GPUSkinningToonV2Material.RENDERMODE_OPAQUE;
+	        this._shaderValues.setNumber(Material$2.ALPHATESTVALUE, 0.5);
+	        this.renderMode = GPUSkinningBaseMaterial.RENDERMODE_OPAQUE;
 	    }
 	    static async install() {
 	        if (this._isInstalled) {
@@ -2752,74 +2910,6 @@ var laya = (function () {
 	            this._shaderValues.removeDefine(GPUSkinningToonV2Material.SHADERDEFINE_SCENELIGHTINGTEXTURE);
 	        this._shaderValues.setTexture(GPUSkinningToonV2Material.SCENELIGHTINGTEXTURE, value);
 	    }
-	    set renderMode(value) {
-	        switch (value) {
-	            case GPUSkinningToonV2Material.RENDERMODE_OPAQUE:
-	                this.alphaTest = false;
-	                this.renderQueue = Material$1.RENDERQUEUE_OPAQUE;
-	                this.depthWrite = true;
-	                this.cull = RenderState$1.CULL_BACK;
-	                this.blend = RenderState$1.BLEND_DISABLE;
-	                this.depthTest = RenderState$1.DEPTHTEST_LESS;
-	                break;
-	            case GPUSkinningToonV2Material.RENDERMODE_CUTOUT:
-	                this.renderQueue = Material$1.RENDERQUEUE_ALPHATEST;
-	                this.alphaTest = true;
-	                this.depthWrite = true;
-	                this.cull = RenderState$1.CULL_BACK;
-	                this.blend = RenderState$1.BLEND_DISABLE;
-	                this.depthTest = RenderState$1.DEPTHTEST_LESS;
-	                break;
-	            case GPUSkinningToonV2Material.RENDERMODE_TRANSPARENT:
-	                this.renderQueue = Material$1.RENDERQUEUE_TRANSPARENT;
-	                this.alphaTest = false;
-	                this.depthWrite = false;
-	                this.cull = RenderState$1.CULL_BACK;
-	                this.blend = RenderState$1.BLEND_ENABLE_ALL;
-	                this.blendSrc = RenderState$1.BLENDPARAM_SRC_ALPHA;
-	                this.blendDst = RenderState$1.BLENDPARAM_ONE_MINUS_SRC_ALPHA;
-	                this.depthTest = RenderState$1.DEPTHTEST_LESS;
-	                break;
-	            default:
-	                throw new Error("GPUSkinningToonV2Material : renderMode value error.");
-	        }
-	    }
-	    get depthWrite() {
-	        return this._shaderValues.getBool(GPUSkinningToonV2Material.DEPTH_WRITE);
-	    }
-	    set depthWrite(value) {
-	        this._shaderValues.setBool(GPUSkinningToonV2Material.DEPTH_WRITE, value);
-	    }
-	    get cull() {
-	        return this._shaderValues.getInt(GPUSkinningToonV2Material.CULL);
-	    }
-	    set cull(value) {
-	        this._shaderValues.setInt(GPUSkinningToonV2Material.CULL, value);
-	    }
-	    get blend() {
-	        return this._shaderValues.getInt(GPUSkinningToonV2Material.BLEND);
-	    }
-	    set blend(value) {
-	        this._shaderValues.setInt(GPUSkinningToonV2Material.BLEND, value);
-	    }
-	    get blendSrc() {
-	        return this._shaderValues.getInt(GPUSkinningToonV2Material.BLEND_SRC);
-	    }
-	    set blendSrc(value) {
-	        this._shaderValues.setInt(GPUSkinningToonV2Material.BLEND_SRC, value);
-	    }
-	    get blendDst() {
-	        return this._shaderValues.getInt(GPUSkinningToonV2Material.BLEND_DST);
-	    }
-	    set blendDst(value) {
-	        this._shaderValues.setInt(GPUSkinningToonV2Material.BLEND_DST, value);
-	    }
-	    get depthTest() {
-	        return this._shaderValues.getInt(GPUSkinningToonV2Material.DEPTH_TEST);
-	    }
-	    set depthTest(value) {
-	        this._shaderValues.setInt(GPUSkinningToonV2Material.DEPTH_TEST, value);
-	    }
 	    get CartoonOutlineWidth() {
 	        return this._shaderValues.getNumber(GPUSkinningToonV2Material.CARTOON_OUTLINEWIDTH);
 	    }
@@ -2844,10 +2934,6 @@ var laya = (function () {
 	GPUSkinningToonV2Material.shaderName = "GPUSkinningToonV2";
 	GPUSkinningToonV2Material.outlinePass = "GPUSkinningToonV2Outline";
 	GPUSkinningToonV2Material._isInstalled = false;
-	GPUSkinningToonV2Material.RENDERMODE_OPAQUE = 0;
-	GPUSkinningToonV2Material.RENDERMODE_CUTOUT = 1;
-	GPUSkinningToonV2Material.RENDERMODE_TRANSPARENT = 2;
-	GPUSkinningToonV2Material.RENDERMODE_ADDTIVE = 3;
 	GPUSkinningToonV2Material.CARTOON_OUTLINEWIDTH = Shader3D$4.propertyNameToID("u_CartoonOutlineWidth");
 	GPUSkinningToonV2Material.SCENELIGHTINGTEXTURE = Shader3D$4.propertyNameToID("u_SceneLightingTexture");
 	GPUSkinningToonV2Material.HEIGHTRIMLIGHTTEXTURE = Shader3D$4.propertyNameToID("u_HeightRimLightTexture");
@@ -2862,12 +2948,6 @@ var laya = (function () {
 	GPUSkinningToonV2Material.RIMVIEWDIRB = Shader3D$4.propertyNameToID("u_rimViewDirB");
 	GPUSkinningToonV2Material.OUTLINECOLOR = Shader3D$4.propertyNameToID("u_outlineColor");
 	GPUSkinningToonV2Material.TILINGOFFSET = Shader3D$4.propertyNameToID("u_TilingOffset");
-	GPUSkinningToonV2Material.CULL = Shader3D$4.propertyNameToID("s_Cull");
-	GPUSkinningToonV2Material.BLEND = Shader3D$4.propertyNameToID("s_Blend");
-	GPUSkinningToonV2Material.BLEND_SRC = Shader3D$4.propertyNameToID("s_BlendSrc");
-	GPUSkinningToonV2Material.BLEND_DST = Shader3D$4.propertyNameToID("s_BlendDst");
-	GPUSkinningToonV2Material.DEPTH_TEST = Shader3D$4.propertyNameToID("s_DepthTest");
-	GPUSkinningToonV2Material.DEPTH_WRITE = Shader3D$4.propertyNameToID("s_DepthWrite");
 
 	var Shader3D$5 = Laya.Shader3D;
 	var SubShader$2 = Laya.SubShader;
@@ -2977,14 +3057,14 @@ var laya = (function () {
 	GPUSkinningToonWeaponV2Material.shaderName = "GPUSkinningToonWeaponV2";
 	GPUSkinningToonWeaponV2Material.outlinePass = "GPUSkinningToonV2Outline";
 
-	var JoinNames;
-	(function (JoinNames) {
-	    JoinNames["D_R_weapon"] = "D_R_weapon";
-	    JoinNames["D_L_weapon"] = "D_L_weapon";
-	    JoinNames["Bip001_Spine1"] = "Bip001 Spine1";
-	    JoinNames["D_weapon_grab"] = "D_weapon_grab";
-	    JoinNames["D_ride"] = "D_ride";
-	})(JoinNames || (JoinNames = {}));
+	var JointNames;
+	(function (JointNames) {
+	    JointNames["D_R_weapon"] = "D_R_weapon";
+	    JointNames["D_L_weapon"] = "D_L_weapon";
+	    JointNames["Bip001_Spine1"] = "Bip001 Spine1";
+	    JointNames["D_weapon_grab"] = "D_weapon_grab";
+	    JointNames["D_ride"] = "D_ride";
+	})(JointNames || (JointNames = {}));
 
 	var LoaderManager = Laya.LoaderManager;
 	var Loader = Laya.Loader;
@@ -3179,7 +3259,7 @@ var laya = (function () {
 	GPUSkining.resRoot = "res3d/Conventional/";
 	window['GPUSkining'] = GPUSkining;
 	window['SceneMaterial'] = SceneMaterial;
-	window['JoinNames'] = JoinNames;
+	window['JointNames'] = JointNames;
 
 	class GPUSKiningLib {
 	}

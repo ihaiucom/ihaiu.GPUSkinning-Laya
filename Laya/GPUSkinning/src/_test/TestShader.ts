@@ -52,7 +52,8 @@ export default class TestShader
             var hasShadowTexture = false;
             var mono = await GPUSkining.CreateByNameAsync(nameList[j][0], nameList[j][1]);
             this.mono = mono;
-            mono.Player.Play("run");
+            
+            // mono.Player.Play("run");
             // mono.Player.material.IsSeparation = true;
             // mono.Player.material.IsSuperarmor = true;
             // var mono = await GPUSkining.CreateByNameAsync(nameList[j], MaterialTextureType.ShadowColor_And_HeightRimLight);

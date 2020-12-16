@@ -162,16 +162,7 @@ export class GPUSkinningToonMaterial extends GPUSkinningBaseMaterial
         
         
     }
-
 	
-	/**渲染状态_不透明。*/
-	static RENDERMODE_OPAQUE: number = 0;
-	/**渲染状态_阿尔法测试。*/
-	static RENDERMODE_CUTOUT: number = 1;
-	/**渲染状态__透明混合。*/
-	static RENDERMODE_TRANSPARENT: number = 2;
-	/**渲染状态__加色法混合。*/
-	static RENDERMODE_ADDTIVE: number = 3;
 
 	/** 宏定义--主贴图 */
 	static SHADERDEFINE_ALBEDOTEXTURE: ShaderDefine;
@@ -209,12 +200,6 @@ export class GPUSkinningToonMaterial extends GPUSkinningBaseMaterial
 	static ALBEDOTEXTURE: number = Shader3D.propertyNameToID("u_AlbedoTexture");
 	static ALBEDOCOLOR: number = Shader3D.propertyNameToID("u_AlbedoColor");
 	static TILINGOFFSET: number = Shader3D.propertyNameToID("u_TilingOffset");
-	static CULL: number = Shader3D.propertyNameToID("s_Cull");
-	static BLEND: number = Shader3D.propertyNameToID("s_Blend");
-	static BLEND_SRC: number = Shader3D.propertyNameToID("s_BlendSrc");
-	static BLEND_DST: number = Shader3D.propertyNameToID("s_BlendDst");
-	static DEPTH_TEST: number = Shader3D.propertyNameToID("s_DepthTest");
-	static DEPTH_WRITE: number = Shader3D.propertyNameToID("s_DepthWrite");
 
 	/** 默认材质，禁止修改*/
 	static defaultMaterial: GPUSkinningToonMaterial;
@@ -589,117 +574,6 @@ export class GPUSkinningToonMaterial extends GPUSkinningBaseMaterial
 			this._shaderValues.removeDefine(GPUSkinningToonMaterial.SHADERDEFINE_ENABLEVERTEXCOLOR);
 	}
 
-	/**
-	 * 渲染模式。
-	 */
-	set renderMode(value: number) {
-		switch (value) {
-			case GPUSkinningToonMaterial.RENDERMODE_OPAQUE:
-				this.alphaTest = false;
-				this.renderQueue = Material.RENDERQUEUE_OPAQUE;
-				this.depthWrite = true;
-				this.cull = RenderState.CULL_BACK;
-				this.blend = RenderState.BLEND_DISABLE;
-				this.depthTest = RenderState.DEPTHTEST_LESS;
-				break;
-			case GPUSkinningToonMaterial.RENDERMODE_CUTOUT:
-				this.renderQueue = Material.RENDERQUEUE_ALPHATEST;
-				this.alphaTest = true;
-				this.depthWrite = true;
-				this.cull = RenderState.CULL_BACK;
-				this.blend = RenderState.BLEND_DISABLE;
-				this.depthTest = RenderState.DEPTHTEST_LESS;
-				break;
-			case GPUSkinningToonMaterial.RENDERMODE_TRANSPARENT:
-				this.renderQueue = Material.RENDERQUEUE_TRANSPARENT;
-				this.alphaTest = false;
-				this.depthWrite = false;
-				this.cull = RenderState.CULL_BACK;
-				this.blend = RenderState.BLEND_ENABLE_ALL;
-				this.blendSrc = RenderState.BLENDPARAM_SRC_ALPHA;
-				this.blendDst = RenderState.BLENDPARAM_ONE_MINUS_SRC_ALPHA;
-				this.depthTest = RenderState.DEPTHTEST_LESS;
-				break;
-			default:
-				throw new Error("GPUSkinningToonMaterial : renderMode value error.");
-		}
-	}
-
-
-
-	/**
-	 * 是否写入深度。
-	 */
-	get depthWrite(): boolean {
-		return this._shaderValues.getBool(GPUSkinningToonMaterial.DEPTH_WRITE);
-	}
-
-	set depthWrite(value: boolean) {
-		this._shaderValues.setBool(GPUSkinningToonMaterial.DEPTH_WRITE, value);
-	}
-
-
-
-	/**
-	 * 剔除方式。
-	 */
-	get cull(): number {
-		return this._shaderValues.getInt(GPUSkinningToonMaterial.CULL);
-	}
-
-	set cull(value: number) {
-		this._shaderValues.setInt(GPUSkinningToonMaterial.CULL, value);
-	}
-
-
-	/**
-	 * 混合方式。
-	 */
-	get blend(): number {
-		return this._shaderValues.getInt(GPUSkinningToonMaterial.BLEND);
-	}
-
-	set blend(value: number) {
-		this._shaderValues.setInt(GPUSkinningToonMaterial.BLEND, value);
-	}
-
-
-	/**
-	 * 混合源。
-	 */
-	get blendSrc(): number {
-		return this._shaderValues.getInt(GPUSkinningToonMaterial.BLEND_SRC);
-	}
-
-	set blendSrc(value: number) {
-		this._shaderValues.setInt(GPUSkinningToonMaterial.BLEND_SRC, value);
-	}
-
-
-
-	/**
-	 * 混合目标。
-	 */
-	get blendDst(): number {
-		return this._shaderValues.getInt(GPUSkinningToonMaterial.BLEND_DST);
-	}
-
-	set blendDst(value: number) {
-		this._shaderValues.setInt(GPUSkinningToonMaterial.BLEND_DST, value);
-	}
-
-
-	/**
-	 * 深度测试方式。
-	 */
-	get depthTest(): number {
-		return this._shaderValues.getInt(GPUSkinningToonMaterial.DEPTH_TEST);
-	}
-
-	set depthTest(value: number) {
-		this._shaderValues.setInt(GPUSkinningToonMaterial.DEPTH_TEST, value);
-	}
-
 	
 	private _enableLighting: boolean;
 	/**
@@ -787,7 +661,7 @@ export class GPUSkinningToonMaterial extends GPUSkinningBaseMaterial
         this._shaderValues.setNumber(Material.ALPHATESTVALUE, 0.5);
 
 		this._enableLighting = true;
-		this.renderMode = GPUSkinningToonMaterial.RENDERMODE_OPAQUE;
+		this.renderMode = GPUSkinningBaseMaterial.RENDERMODE_OPAQUE;
 
 		// this._shaderValues.addDefine(Shader3D.getDefineByName("SKIN_4"));
 		

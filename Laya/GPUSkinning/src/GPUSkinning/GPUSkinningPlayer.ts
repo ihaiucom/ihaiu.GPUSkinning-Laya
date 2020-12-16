@@ -426,6 +426,7 @@ export default class GPUSkinningPlayer
         mtrl2.material =  res.CloneMaterial(<any>mtrl.material, res.anim.skinQuality)
         mtrl = mtrl2;
         this.mtrl = mtrl2;
+        this.mtrl.material.player = this;
         this.mr.sharedMaterial = mtrl == null ? null : mtrl.material;
         this.mf.sharedMesh = res.mesh;
         var subMeshCount = this.mf.sharedMesh.subMeshCount;
@@ -519,17 +520,17 @@ export default class GPUSkinningPlayer
 
             if(!inTheExistingJoints)
             {
-                let joinGO = new Laya.Sprite3D(bone.name);
-                this.go.addChild(joinGO);
-                joinGO.transform.localPosition = new Vector3();
-                joinGO.transform.localScale = new Vector3(1, 1, 1);
+                let jointGO = new Laya.Sprite3D(bone.name);
+                this.go.addChild(jointGO);
+                jointGO.transform.localPosition = new Vector3();
+                jointGO.transform.localScale = new Vector3(1, 1, 1);
 
-                let join:GPUSkinningPlayerJoint = joinGO.addComponent(GPUSkinningPlayerJoint);
-                join.onAwake();
-                joints.push(join);
-                join.Init(bone, i, bone.boneIndex, bone.guid);
+                let joint:GPUSkinningPlayerJoint = jointGO.addComponent(GPUSkinningPlayerJoint);
+                joint.onAwake();
+                joints.push(joint);
+                joint.Init(bone, i, bone.boneIndex, bone.guid);
                 
-                this.jointMap.set(bone.name, join);
+                this.jointMap.set(bone.name, joint);
             }
         }
 
@@ -1040,6 +1041,10 @@ export default class GPUSkinningPlayer
         }
     }
 
+    
+    //==================================
+    // 设置武器
+    //----------------------------------
     /** 当前武器字典 */
     weaponMap = new Map<string, GPUSkinningPlayerMono>();
 
@@ -1099,6 +1104,9 @@ export default class GPUSkinningPlayer
         })
     }
 
+    //==================================
+    // 缓动速度
+    //----------------------------------
     tweenSpeedStruct = new TweenSpeedStruct();
     /** 缓动速度,开始 */
     public TweenSpeedTest()
@@ -1211,6 +1219,128 @@ export default class GPUSkinningPlayer
     }
 
 
+
+    //==================================
+    // 材质球状态
+    //----------------------------------
+    
+	private _IsSeparation: boolean = false;
+    /**
+     * 是否是分身
+     */
+    get IsSeparation()
+    {
+        return this._IsSeparation;
+    }
+
+    /**
+     * 是否是分身
+     */
+    set IsSeparation(value: boolean)
+    {
+        if(this.IsInvincible) this.IsInvincible = false;
+        if(this.IsSuperarmor) this.IsSuperarmor = false;
+        if(this.IsDie) this.IsDie = false;
+        
+        this._IsSeparation = value;
+        if(this.material)
+        {
+            this.material.IsSeparation = value;
+        }
+
+        
+        this.weaponMap.forEach((v, k)=>{
+            v.Player.IsSeparation = value;
+        })
+    }
+
+    private _IsInvincible: boolean = false;
+    /**
+     * 是否是无敌
+     */
+    get IsInvincible()
+    {
+        return this._IsInvincible;
+    }
+
+    set IsInvincible(value: boolean)
+    {
+        if(this.IsSeparation) this.IsSeparation = false;
+        if(this.IsSuperarmor) this.IsSuperarmor = false;
+        if(this.IsDie) this.IsDie = false;
+
+        this._IsInvincible = value;
+        
+        if(this.material)
+        {
+            this.material.IsInvincible = value;
+        }
+        
+        this.weaponMap.forEach((v, k)=>{
+            v.Player.IsInvincible = value;
+        })
+    }
+
+
+
+	private _IsSuperarmor: boolean = false;
+    /**
+     * 是否是霸体
+     */
+    
+    get IsSuperarmor()
+    {
+        return this._IsSuperarmor;
+    }
+
+    set IsSuperarmor(value: boolean)
+    {
+        if(this.IsSeparation) this.IsSeparation = false;
+        if(this.IsInvincible) this.IsInvincible = false;
+        if(this.IsDie) this.IsDie = false;
+
+        this._IsSuperarmor = value;
+        
+        
+        if(this.material)
+        {
+            this.material.IsSuperarmor = value;
+        }
+        
+        this.weaponMap.forEach((v, k)=>{
+            v.Player.IsSuperarmor = value;
+        })
+    }
+
+    
+	private _IsDie: boolean = false;
+    /**
+     * 是否是尸体
+     */
+    
+    get IsDie()
+    {
+        return this._IsDie;
+    }
+
+    set IsDie(value: boolean)
+    {
+        if(this.IsSeparation) this.IsSeparation = false;
+        if(this.IsInvincible) this.IsInvincible = false;
+        if(this.IsSuperarmor) this.IsSuperarmor = false;
+
+        this._IsDie = value;
+        
+        
+        if(this.material)
+        {
+            this.material.IsDie = value;
+        }
+        
+        this.weaponMap.forEach((v, k)=>{
+            v.Player.IsDie = value;
+        })
+    }
 
 
 

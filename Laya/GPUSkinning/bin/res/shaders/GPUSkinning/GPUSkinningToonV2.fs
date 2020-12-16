@@ -273,10 +273,11 @@ void main()
 
 	// 分身
 	#ifdef IS_SPEARATION
-		float dotSuperarmor = dot(worldNormal, worldViewDir);
-		dotSuperarmor = max(0.0, dotSuperarmor);
+		// float dotSuperarmor = dot(worldNormal, worldViewDir);
+		// dotSuperarmor = max(0.0, dotSuperarmor);
 		vec3 superarmorColorA = vec3(1.0, 1.0, 1.0);
-		finalColor.rgb =  superarmorColorA * (1.0 - dotSuperarmor) * 0.5  ;
+		// finalColor.rgb =  superarmorColorA * (1.0 - dotSuperarmor) * 0.5  ;
+		finalColor.rgb = mainTexture.rgb * 0.5 + superarmorColorA * 0.5;
 	#endif
 	
 
