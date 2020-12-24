@@ -348,6 +348,12 @@ var laya = (function () {
 	            boundsMax.x = readData.readFloat32();
 	            boundsMax.y = readData.readFloat32();
 	            boundsMax.z = readData.readFloat32();
+	            boundsMin.x = -5;
+	            boundsMin.y = -5;
+	            boundsMin.z = -5;
+	            boundsMax.x = 5;
+	            boundsMax.y = 5;
+	            boundsMax.z = 5;
 	        }
 	        switch (version) {
 	            case "LAYAMODEL:GPUSkining_05":
@@ -360,7 +366,7 @@ var laya = (function () {
 	        if (version == "LAYAMODEL:GPUSkining_06") {
 	            mesh._needUpdateBounds = false;
 	            mesh.bounds.setMin(boundsMin);
-	            mesh.bounds.setMin(boundsMax);
+	            mesh.bounds.setMax(boundsMax);
 	        }
 	        mesh._setSubMeshes(subMeshes);
 	    }
