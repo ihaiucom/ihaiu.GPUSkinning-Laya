@@ -61,6 +61,11 @@ export default class GPUSkinningPlayer
 
     public set speed(value: float)
     {
+        if(value < 0 || isNaN(value))
+        {
+            console.error(this.res.anim.name, this.PlayingClipName, ", speed=", this.speed);
+            // value = 0;
+        }
         this._speed = value;
         this.SetWeapSpeed(value);
     }
@@ -252,6 +257,18 @@ export default class GPUSkinningPlayer
     private GetFrameIndex(): int
     {
         let time = this.GetCurrentTime();
+        if(time < 0)
+        {
+            if(this.playingClip.length == 0)
+            {
+                time = 0;
+            }
+            else
+            {
+                time = this.playingClip.length - time % this.playingClip.length;
+            }
+        }
+
         if(this.playingClip.length == time)
         {
             return this.GetTheLastFrameIndex_WrapMode_Once(this.playingClip);
@@ -267,7 +284,7 @@ export default class GPUSkinningPlayer
     {
         var frameIndex = currentFrameIndex;
         var frameEnd = Math.floor(this.playingClip.length * this.playingClip.fps) - 1;
-        if(frameIndex == frameEnd)
+        if(frameIndex >= frameEnd)
         {
             switch(this.WrapMode)
             {
@@ -621,6 +638,11 @@ export default class GPUSkinningPlayer
     /** 播放 */
     public Play(clipName:string, nomrmalizeTime : number = 0)
     {
+        if(nomrmalizeTime < 0 || isNaN(nomrmalizeTime))
+        {
+            console.error(this.res.anim.name, ", clipName=", clipName, ", nomrmalizeTime=",nomrmalizeTime);
+            nomrmalizeTime = 0;
+        } 
         clipName = clipName.toLowerCase();
         let clips: GPUSkinningClip[] = this.res.anim.clips;
         let numClips = clips == null ? 0 : clips.length;
@@ -915,6 +937,12 @@ export default class GPUSkinningPlayer
     /** 刷新骨骼节点位置 */
     private UpdateJoints(frame: GPUSkinningFrame,nextFrame: GPUSkinningFrame,  nextFrameFade: float)
     {
+        if(frame == null ||  frame.matrices == null || nextFrame == null )
+        {
+            console.error(this.res.anim.name, " ,clipname=", this.PlayingClipName, ", frameIndex=", this.__frameIndex, ", frame=", frame, ", nextFrame=", nextFrame)
+            return;
+        }
+
         if(this.joints == null)
         {
             return;
@@ -924,7 +952,6 @@ export default class GPUSkinningPlayer
         let joints = this.joints;
         let playingClip = this.playingClip;
 
-        let matrices: Matrix4x4[]  = frame.matrices;
         let bones: GPUSkinningBone[]  = res.anim.bones;
         let numJoints:int  = joints.length;
         for(let i = 0; i < numJoints; ++i)
@@ -1134,13 +1161,14 @@ export default class GPUSkinningPlayer
      * @param frameTotal t3, 总帧数
      * @param speedEnd   v2, 缓动结束速度, 如果不传内部回自己计算
      */
-    public TweenSpeed(speedHalt: number, frameHalt: number, frameTween: number, frameTotal: number, speedEnd?: number)
+    public TweenSpeed(speedHalt: number, frameHalt: number, frameTween: number, frameTotal: number, speedEnd?: number, endCallback?:Laya.Handler)
     {
         var t = this.tweenSpeedStruct;
         t.speedHalt = speedHalt;
         t.frameHalt = frameHalt;
         t.frameTween = frameTween;
         t.frameTotal = frameTotal;
+        t.endCallback = endCallback;
 
         if(speedEnd === void 0)
         {
@@ -1204,6 +1232,11 @@ export default class GPUSkinningPlayer
                     // t.step = TweenSpeedStep.SMOOTH;
                     this.TweenSpeedStop();
                     t.frameStepIndex = 0;
+                    if(t.endCallback)
+                    {
+                        t.endCallback.run();
+                        t.endCallback = null;
+                    }
                 }
                 break;
             // 平缓阶段
@@ -1362,6 +1395,7 @@ export default class GPUSkinningPlayer
 /** 缓动帧参数 */
 class TweenSpeedStruct
 {
+    endCallback: Laya.Handler;
     /** 运行阶段 */
     step: TweenSpeedStep = TweenSpeedStep.END;
     /** 当前帧 */
