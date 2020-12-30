@@ -602,6 +602,16 @@ export default class GPUSkinningPlayer
         }
     }
 
+    /** 获取动作信息 */
+    public GetClip(clipName:string):GPUSkinningClip
+    {
+        if(this.res && this.res.anim && this.res.anim.clipMap.has(clipName))
+        {
+            return this.res.anim.clipMap.get(clipName);
+        }
+        return null;
+    }
+
     public GotoAndStop(clipName:string, nomrmalizeTime : number = 0)
     {
         this.Play(clipName, nomrmalizeTime);
