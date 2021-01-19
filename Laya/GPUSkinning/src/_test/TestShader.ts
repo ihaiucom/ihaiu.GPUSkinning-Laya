@@ -50,15 +50,15 @@ export default class TestShader
         {
             var resId = nameList[j];
             var hasShadowTexture = false;
-            var mono = await GPUSkining.CreateByNameAsync(nameList[j][0], nameList[j][1]);
-            this.mono = mono;
+            var url = GPUSkining.ToSkinLHUrl(nameList[j][0], nameList[j][1]);
+            var node = await this.LoadAsync(url);
+
+            // var node = await GPUSkining.CreateByNameAsync(nameList[j][0], nameList[j][1]);
+            var mono = node.getComponent(GPUSkinningPlayerMono);
             
             // mono.Player.Play("run");
             // mono.Player.material.IsSeparation = true;
             // mono.Player.material.IsSuperarmor = true;
-            // var mono = await GPUSkining.CreateByNameAsync(nameList[j], MaterialTextureType.ShadowColor_And_HeightRimLight);
-            // var mono = await GPUSkining.CreateByNameAsync(nameList[j], MaterialTextureType.Shadow, GPUSkinningCartoon2TextureMaterial);
-            var node = <Laya.Sprite3D> mono.owner;
             node.transform.localRotationEulerY = 90;
             // node.addComponent(TestRotation);
             window['mono'] = mono;
@@ -96,6 +96,15 @@ export default class TestShader
             break;
         }
        
+    }
+
+    LoadAsync(url: string): Promise<Laya.MeshSprite3D>
+    {
+        return new Promise<Laya.MeshSprite3D>((resolve)=>{
+            Laya.loader.load(url, Laya.Handler.create(null, (res)=>{
+                resolve(res)
+            }))
+        })
     }
 
 

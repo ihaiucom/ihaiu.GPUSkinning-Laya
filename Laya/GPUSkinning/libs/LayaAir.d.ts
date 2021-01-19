@@ -45523,9 +45523,14 @@ declare module laya.webgl {
 	 * <code>Laya3D</code> 类用于初始化3D设置。
 	 */
 	declare class Laya3D  {
+		
+		/**
+		 * GpuSkin Hierarchy资源。
+		 */
+		static SKING_HIERARCHY:string;
 
 		/**
-		 * Mesh资源。
+		 * GpuSkin Mesh资源。
 		 */
 		static SKING_MESH:string;
 

@@ -1058,21 +1058,22 @@ export default class GPUSkinningPlayer
         }
 
         mono.owner.removeSelf();
-        var key = mono.skinName + "&" + mono.animName;
-        Laya.Pool.recover(key, mono);
+        var url = GPUSkining.ToSkinLHUrl(mono.skinName, mono.animName);
+        Laya.Pool.recover(url, mono.owner);
     }
 
-    public static GetWeaponItem(skinName: string, animName: string, callback:(mono: GPUSkinningPlayerMono)=>void)
+    public static GetWeaponItem(skinName: string, animName: string, callback:(mono: Laya.MeshSprite3D)=>void)
     {
-        var key = skinName + "&" + animName;
-        var item = Laya.Pool.getItem(key);
+        var url = GPUSkining.ToSkinLHUrl(skinName, animName);
+        var item = Laya.Pool.getItem(url);
         if(item)
         {
             callback && callback(item);
         }
         else
         {
-            GPUSkining.CreateByName(skinName, animName, Laya.Handler.create(this, (item: GPUSkinningPlayerMono)=>{
+            var url = GPUSkining.ToSkinLHUrl(skinName, animName);
+            Laya.loader.load(url, Laya.Handler.create(this, (item: Laya.MeshSprite3D)=>{
                 callback && callback(item);
             }));
         }
@@ -1094,7 +1095,7 @@ export default class GPUSkinningPlayer
             return;
         }
 
-        GPUSkinningPlayer.GetWeaponItem(skinName, animName, (mono: GPUSkinningPlayerMono)=>{
+        GPUSkinningPlayer.GetWeaponItem(skinName, animName, (sprite: Laya.MeshSprite3D)=>{
             if(this.weaponMap.has(boneName))
             {
                 var preWeapon = this.weaponMap.get(boneName);
@@ -1102,8 +1103,9 @@ export default class GPUSkinningPlayer
                 this.weaponMap.delete(boneName);
             }
 
-            bone.addChild(mono.owner);
-            var sprite = <Laya.Sprite3D> mono.owner;
+            var mono:GPUSkinningPlayerMono = sprite.getComponent(GPUSkinningPlayerMono);
+
+            bone.addChild(sprite);
             sprite.transform.localPosition = new Vector3(0, 0, 0);
             sprite.transform.localRotationEuler = new Vector3(0, 0, 0);
             // sprite.transform.setWorldLossyScale(this.transform.getWorldLossyScale());

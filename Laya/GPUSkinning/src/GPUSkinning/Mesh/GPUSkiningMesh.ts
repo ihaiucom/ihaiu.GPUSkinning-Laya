@@ -27,6 +27,7 @@ export default class GPUSkiningMesh extends Laya.Mesh
 			if(data instanceof ArrayBuffer)
 			{
 				var mesh = GPUSkiningMesh._parse(data);
+				mesh._setCreateURL(path);
 				mesh._url = Laya.URL.formatURL(path);
 
 								
@@ -49,7 +50,7 @@ export default class GPUSkiningMesh extends Laya.Mesh
 	 * 销毁资源,销毁后资源不能恢复。
 	 */
 	destroy(): void {
-		// console.log("destroy GPUSkiningMesh", this._url);
+		console.log("destroy GPUSkiningMesh", this._url);
 		super.destroy();
 	}
 }

@@ -21,6 +21,12 @@ import { GPUSkinningToonV2Material } from "./Material/GPUSkinningToonV2";
 import { GPUSkinningToonWeaponV2Material } from "./Material/GPUSkinningToonWeaponV2";
 import { JointNames } from "./JointNames";
 
+interface IGpuSkinLHUrlInfo
+{
+  skinName: string;
+  animName:string;
+}
+
 export default class GPUSkining
 {
     static IsPauseAll: boolean = false;
@@ -71,6 +77,7 @@ export default class GPUSkining
       // LayaExtends_Laya3D.Init();
 
       Laya3D.SKING_MESH = "SKING_MESH";
+      Laya3D.SKING_HIERARCHY = "SKING_HIERARCHY";
 
 
 
@@ -79,11 +86,42 @@ export default class GPUSkining
 
       var createMap: any = LoaderManager.createMap;
       createMap["skinlm"] = [Laya3D.SKING_MESH, GPUSkiningMesh._parse];
+      createMap["skinlh"] = [Laya3D.SKING_HIERARCHY, this._parseHierarchy];
 
+      Laya.Loader.typeMap["skinlh"] = Laya3D.SKING_HIERARCHY;
       
       var parserMap: any = Loader.parserMap;
-      parserMap[Laya3D.SKING_MESH] = this._loadMesh;
+      parserMap[Laya3D.SKING_MESH] = this._loadMesh.bind(this);
+
+      parserMap[Laya3D.SKING_HIERARCHY] = this._loadHierarchy.bind(this);
+
         
+    }
+
+    public static ToSkinLHUrl(skinName: string, animName:string)
+    {
+      return skinName + '&' + animName + ".skinlh";
+    }
+
+    
+    public static ParseSkinLHUrl(url:string):IGpuSkinLHUrlInfo
+    {
+      url = url.replace(".skinlh", "");
+      var arr = url.split('&');
+      return {skinName:arr[0], animName:arr[1]};
+    }
+
+    private static _parseHierarchy(data: any): void {
+      console.error("_parseHierarchy", data)
+    }
+    
+    private static _loadHierarchy(loader: Loader): void {
+      loader._cache = true;
+      var urlInfo: IGpuSkinLHUrlInfo = this.ParseSkinLHUrl(loader.url);
+      this.CreateByName(urlInfo.skinName, urlInfo.animName, Laya.Handler.create(null, (res:Laya.MeshSprite3D)=>{
+        res._setCreateURL(loader.url)
+        Laya3D._endLoad(loader, res);
+      }));
     }
 
     private static _loadMesh(loader: Loader): void 
@@ -204,7 +242,8 @@ export default class GPUSkining
               texture.anisoLevel = 0;
               texture.lock = true;
               texture.setPixels(pixelDataArrays,0);
-              texture._url =  Laya.URL.formatURL(path);
+              texture._setCreateURL(path);
+              // texture._url =  Laya.URL.formatURL(path);
 
               
 
@@ -292,12 +331,12 @@ export default class GPUSkining
       return list;
     }
 
-    static async CreateByNameAsync(skinName: string, animName:string): Promise<GPUSkinningPlayerMono>
+    static async CreateByNameAsync(skinName: string, animName:string): Promise<Laya.MeshSprite3D>
     {
-      return new Promise<GPUSkinningPlayerMono>((resolve)=>
+      return new Promise<Laya.MeshSprite3D>((resolve)=>
       {
-            this.CreateByName(skinName, animName, Laya.Handler.create(this, (mono: GPUSkinningPlayerMono)=>{
-              resolve(mono);
+            this.CreateByName(skinName, animName, Laya.Handler.create(this, (res: Laya.MeshSprite3D)=>{
+              resolve(res);
             }));
       })
     }
@@ -358,7 +397,7 @@ export default class GPUSkining
                         mono.skinName = skinName;
                         mono.animName = animName;
                         mono.SetData(anim, mesh, material, animTexture);
-                        callback.runWith(mono);
+                        callback.runWith(sprite);
                         window['sprite'] = sprite;
 
                       }));
