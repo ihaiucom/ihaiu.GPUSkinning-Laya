@@ -1149,7 +1149,8 @@ export default class GPUSkinningPlayer
     public TweenSpeedTest()
     {
         this.Play("behit_02", 0);
-        this.TweenSpeed(0.1, 2, 2, this.playingClip.frameCount);
+        this.TweenSpeed(0.1, 2, 2);
+        
     }
 
     
@@ -1158,26 +1159,16 @@ export default class GPUSkinningPlayer
      * @param speedHalt  v1, 停顿速度
      * @param frameHalt  t1, 停顿帧数
      * @param frameTween t2, 缓动帧数
-     * @param frameTotal t3, 总帧数
-     * @param speedEnd   v2, 缓动结束速度, 如果不传内部回自己计算
      */
-    public TweenSpeed(speedHalt: number, frameHalt: number, frameTween: number, frameTotal: number, speedEnd?: number, endCallback?:Laya.Handler)
+    public TweenSpeed(speedHalt: number, frameHalt: number, frameTween: number)
     {
         var t = this.tweenSpeedStruct;
         t.speedHalt = speedHalt;
         t.frameHalt = frameHalt;
         t.frameTween = frameTween;
-        t.frameTotal = frameTotal;
-        t.endCallback = endCallback;
+        t.frameTotal = this.playingClip.frameCount;
+        t.speedEnd = 1;
 
-        if(speedEnd === void 0)
-        {
-            t.calculationSpeedEnd();
-        }
-        else
-        {
-            t.speedEnd = speedEnd;
-        }
 
         t.step = TweenSpeedStep.HALT;
         t.frameStepIndex = 0;
@@ -1223,6 +1214,12 @@ export default class GPUSkinningPlayer
                 {
                     this.speed = t.speedEnd;
                     t.step = TweenSpeedStep.SMOOTH;
+                    
+                    if(t.endCallback)
+                    {
+                        t.endCallback.run();
+                        t.endCallback = null;
+                    }
                     break;
                 }
                 this.speed = Laya.MathUtil.lerp(t.speedHalt, t.speedEnd, (t.frameStepIndex + frameIndexFloat) / t.frameTween);
@@ -1230,6 +1227,7 @@ export default class GPUSkinningPlayer
                 if(t.frameStepIndex >= t.frameTween)
                 {
                     // t.step = TweenSpeedStep.SMOOTH;
+                    this.speed = 1;
                     this.TweenSpeedStop();
                     t.frameStepIndex = 0;
                     if(t.endCallback)
@@ -1248,7 +1246,7 @@ export default class GPUSkinningPlayer
                     this.TweenSpeedStop();
                     // console.log(Laya.timer.currFrame - t.layaFrameBegin, t.frameTotal);
                     // t.step = TweenSpeedStep.END;
-                    this.Play("idle");
+                    // this.Play("idle");
                 } 
                 break;
         }
