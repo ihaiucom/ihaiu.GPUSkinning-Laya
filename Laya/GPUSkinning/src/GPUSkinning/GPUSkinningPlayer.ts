@@ -3,7 +3,6 @@ import GPUSkinningClip from "./Datas/GPUSkinningClip";
 import { GPUSKinningCullingMode } from "./GPUSKinningCullingMode";
 import GPUSkinningPlayerJoint from "./GPUSkinningPlayerJoint";
 import { GPUSkinningWrapMode } from "./Datas/GPUSkinningWrapMode";
-import GPUSkinningMaterial from "./GPUSkinningMaterial";
 import GPUSkinningBone from "./Datas/GPUSkinningBone";
 import { MaterialState } from "./MaterialState";
 import GPUSkinningFrame from "./Datas/GPUSkinningFrame";
@@ -111,17 +110,17 @@ export default class GPUSkinningPlayer
     }
 
     /** LOD 模式是否开启 */
-    private lodEnabled: boolean = false;
-    public get LODEnabled()
-    {
-        return this.lodEnabled;
-    }
+    // private lodEnabled: boolean = false;
+    // public get LODEnabled()
+    // {
+    //     return this.lodEnabled;
+    // }
 
-    public set LODEnabled(value: boolean)
-    {
-        this.lodEnabled = value;
-        this.res.LODSettingChanged(this);
-    }
+    // public set LODEnabled(value: boolean)
+    // {
+    //     this.lodEnabled = value;
+    //     this.res.LODSettingChanged(this);
+    // }
 
     /** 是否播放 */
     private isPlaying: boolean = false;
@@ -354,7 +353,7 @@ export default class GPUSkinningPlayer
     }
 
     /** 获取当前材质 */
-    private GetCurrentMaterial():GPUSkinningMaterial
+    private GetCurrentMaterial():GPUSkinningBaseMaterial
     {
         if(this.res == null)
         {
@@ -402,25 +401,11 @@ export default class GPUSkinningPlayer
     }
 
 
-    /** 设置LOD网格 */
-    public SetLODMesh(mesh: Mesh )
-    {
-        if(!this.LODEnabled)
-        {
-            mesh = this.res.mesh;
-        }
-
-        if(this.mf != null && this.mf.sharedMesh != mesh)
-        {
-            this.mf.sharedMesh = mesh;
-        }
-    }
-
-    private mtrl: GPUSkinningMaterial;
+    private mtrl: GPUSkinningBaseMaterial;
 
     get material(): GPUSkinningBaseMaterial
     {
-        return <any>this.mtrl.material;
+        return <GPUSkinningBaseMaterial>this.mtrl;
     }
 
 
@@ -437,23 +422,19 @@ export default class GPUSkinningPlayer
         this.spriteShaderData = go.meshRenderer._shaderValues;
         go.meshRenderer['__id']  = this.spriteShaderData['__id'] = GPUSkinningPlayer._ShaderUID ++;
 
-        let mtrl: GPUSkinningMaterial = this.GetCurrentMaterial();
+        let mtrlSrc: GPUSkinningBaseMaterial = this.GetCurrentMaterial();
+        let mtrl = res.CloneMaterial(mtrlSrc, res.anim.skinQuality)
         this.mtrl = mtrl;
-        var mtrl2 = new GPUSkinningMaterial();
-        mtrl2.material =  res.CloneMaterial(<any>mtrl.material, res.anim.skinQuality)
-        mtrl = mtrl2;
-        this.mtrl = mtrl2;
-        this.mtrl.material.player = this;
-        this.mr.sharedMaterial = mtrl == null ? null : mtrl.material;
+        this.mtrl.player = this;
+        this.mr.sharedMaterial = mtrl;
         this.mf.sharedMesh = res.mesh;
         var subMeshCount = this.mf.sharedMesh.subMeshCount;
         if(subMeshCount > 1)
         {
-            var matrices = [mtrl.material];
+            var matrices = [mtrl];
             for(var i = 1; i < subMeshCount; i ++)
             {
-                var m:GPUSkinningToonV2Material = mtrl.material.clone();
-                // m.albedoColor = new Laya.Vector4(1, 0, 0, 1);
+                var m:GPUSkinningToonV2Material = mtrl.clone();
                 matrices.push(m);
             }
             this.mr.sharedMaterials =  matrices;
@@ -469,9 +450,15 @@ export default class GPUSkinningPlayer
     {
         if( this.mtrl)
         {
-            this.mtrl.Destroy();
+            this.mtrl.destroy();
             this.mtrl = null;
         }
+
+        
+        this.weaponMap.forEach((v, k)=>{
+            GPUSkinningPlayer.RecoverWeaponItem(v);
+        })
+        this.weaponMap.clear();
     }
 
     /** 构建骨骼节点 */
@@ -838,7 +825,7 @@ export default class GPUSkinningPlayer
 
 
 
-    private UpdateMaterial(deltaTime: float , currMtrl: GPUSkinningMaterial )
+    private UpdateMaterial(deltaTime: float , currMtrl: GPUSkinningBaseMaterial )
     {
         let res = this.res;
         let frameIndex = this.GetFrameIndex();
@@ -884,14 +871,14 @@ export default class GPUSkinningPlayer
             nextFrameFade = res.CrossFadeBlendFactor(this.nextLerpProgress, playingClip.fps * 0.001);
         }
 
-        var mpb = currMtrl.material._shaderValues;
+        var mpb = currMtrl._shaderValues;
 
         let frame: GPUSkinningFrame = playingClip.frames[frameIndex];
         let nextFrame: GPUSkinningFrame = playingClip.frames[this.nextFrameIndex];
         if (this.Visible || 
             this.CullingMode == GPUSKinningCullingMode.AlwaysAnimate)
         {
-            res.Update(deltaTime, currMtrl);
+            // res.Update(deltaTime, currMtrl);
             res.UpdatePlayingData(
                 mpb, this.spriteShaderData, 
                 playingClip, frameIndex, 
@@ -1073,7 +1060,8 @@ export default class GPUSkinningPlayer
         else
         {
             var url = GPUSkining.ToSkinLHUrl(skinName, animName);
-            Laya.loader.load(url, Laya.Handler.create(this, (item: Laya.MeshSprite3D)=>{
+            Laya.loader.load(url, Laya.Handler.create(this, (itemSrc: Laya.MeshSprite3D)=>{
+                var item = <Laya.MeshSprite3D> itemSrc.clone();
                 callback && callback(item);
             }));
         }

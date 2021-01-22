@@ -41,25 +41,10 @@ export default class GPUSkinningPlayerMonoManager
         {
             item = new GPUSkinningPlayerResources();
             item.key = key;
+            item.SetRes(anim, mesh, <any>originalMtrl, textureRawData, anim.skinQuality)
             items.push(item);
         }
 
-        if(item.anim == null)
-        {
-            item.anim = anim;
-        }
-
-        if(item.mesh == null)
-        {
-            item.mesh = mesh;
-        }
-
-        item.InitMaterial(<any>originalMtrl, anim.skinQuality);
-
-        if(item.texture == null)
-        {
-            item.texture = textureRawData;
-        }
 
         if (item.players.indexOf(player) == -1)
         {

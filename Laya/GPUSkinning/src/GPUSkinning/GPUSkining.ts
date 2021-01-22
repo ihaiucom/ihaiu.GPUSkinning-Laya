@@ -98,7 +98,7 @@ export default class GPUSkining
         
     }
 
-    public static ToSkinLHUrl(skinName: string, animName:string)
+    public static ToSkinLHUrl(skinName: string, animName:string):string
     {
       return skinName + '&' + animName + ".skinlh";
     }
@@ -389,6 +389,7 @@ export default class GPUSkining
 
                         material.GPUSkinning_TextureMatrix = animTexture;
                         material.__mname = skinName + " prefab";
+                        material.lock = true;
 
 
                         var sprite = new Laya.MeshSprite3D();

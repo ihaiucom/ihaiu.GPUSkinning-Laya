@@ -224,7 +224,6 @@ export default class GPUSkinningPlayerMono extends Laya.Script3D
 
             let player = new GPUSkinningPlayer(this.gameObject, res);
             player.RootMotionEnabled = this.rootMotionEnabled;
-            player.LODEnabled = this.lodEnabled;
             player.CullingMode = this.cullingMode;
             this.player = player;
 

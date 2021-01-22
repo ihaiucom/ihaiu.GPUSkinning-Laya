@@ -1,9 +1,7 @@
 
 import GPUSkinningAnimation from "./Datas/GPUSkinningAnimation";
 import GPUSkinningPlayerMono from "./GPUSkinningPlayerMono";
-import GPUSkinningMaterial from "./GPUSkinningMaterial";
 import GPUSkinningExecuteOncePerFrame from "./GPUSkinningExecuteOncePerFrame";
-import GPUSkinningPlayer from "./GPUSkinningPlayer";
 
 import Mesh = Laya.Mesh;
 import Texture2D = Laya.Texture2D;
@@ -17,6 +15,13 @@ import GPUSkinningFrame from "./Datas/GPUSkinningFrame";
 import { MaterialState } from "./MaterialState";
 import { GPUSkinningQuality } from "./Datas/GPUSkinningQuality";
 import { GPUSkinningBaseMaterial } from "./Material/GPUSkinningBaseMaterial";
+
+interface IResReferenceCount
+{
+    __resReferenceCount: number;
+    _url:string;
+    destroy();
+}
 
 
 /** GPU骨骼动画--资源 */
@@ -38,7 +43,7 @@ export default class GPUSkinningPlayerResources
 
 
     /** 材质球列表 */
-    private mtrls: GPUSkinningMaterial[]  = null;
+    private material: GPUSkinningBaseMaterial  = null;
 
     /** 一帧只执行一次标记 */
     private executeOncePerFrame:GPUSkinningExecuteOncePerFrame  = new GPUSkinningExecuteOncePerFrame();
@@ -116,37 +121,87 @@ export default class GPUSkinningPlayerResources
         GPUSkinningPlayerResources.Init();
     }
 
+    public SetRes(anim: GPUSkinningAnimation , mesh: Mesh , originalMtrl:GPUSkinningBaseMaterial, texture: Texture2D, skinQuality: int)
+    {
+        this.anim = anim;
+        this.mesh = mesh;
+        this.texture = texture;
+        
+        this.SetMaterialQuality(originalMtrl, skinQuality, anim, texture);
+        this.material = originalMtrl;
+
+        var r = <IResReferenceCount><any> anim;
+        r.__resReferenceCount = r.__resReferenceCount ? r.__resReferenceCount + 1 : 1;
+        console.log("SetRes", r._url,  r.__resReferenceCount);
+        
+        var r = <IResReferenceCount><any> mesh;
+        r.__resReferenceCount = r.__resReferenceCount ? r.__resReferenceCount + 1 : 1;
+        console.log("SetRes", r._url,  r.__resReferenceCount);
+        
+        var r = <IResReferenceCount><any> originalMtrl;
+        r.__resReferenceCount = r.__resReferenceCount ? r.__resReferenceCount + 1 : 1;
+        console.log("SetRes", r._url,  r.__resReferenceCount);
+        
+        var r = <IResReferenceCount><any> texture;
+        r.__resReferenceCount = r.__resReferenceCount ? r.__resReferenceCount + 1 : 1;
+        console.log("SetRes", r._url,  r.__resReferenceCount);
+    }
+
     /** 销毁 */
     public Destroy()
     {   
-        if(this.anim != null)
+        var r = <IResReferenceCount><any> this.anim;
+        if(r)
         {
-            this.anim.destroy();
-            this.anim = null;
-        }
-
-        if(this.mesh != null)
-        {
-            this.mesh.destroy();
-            this.mesh = null;
-        }
-
-
-        if(this.mtrls != null)
-        {
-            for(let i = 0; i < this.mtrls.length; i ++)
+            r.__resReferenceCount = r.__resReferenceCount ? r.__resReferenceCount - 1 : 0;
+            
+            console.log("D", r._url,  r.__resReferenceCount);
+            if(r.__resReferenceCount <= 0)
             {
-                this.mtrls[i].Destroy();
-                this.mtrls[i] = null;
+                r.destroy();
+                this.anim = null;
             }
-            this.mtrls = null;
-        }
+        } 
 
-        if(this.texture != null)
+        
+        var r = <IResReferenceCount><any> this.mesh;
+        if(r)
         {
-            this.texture.destroy();
-            this.texture = null;
-        }
+            r.__resReferenceCount = r.__resReferenceCount ? r.__resReferenceCount - 1 : 0;
+            console.log("D", r._url,  r.__resReferenceCount);
+            if(r.__resReferenceCount <= 0)
+            {
+                r.destroy();
+                this.mesh = null;
+            }
+        } 
+
+        
+        var r = <IResReferenceCount><any> this.material;
+        if(r)
+        {
+            r.__resReferenceCount = r.__resReferenceCount ? r.__resReferenceCount - 1 : 0;
+            console.log("D", r._url,  r.__resReferenceCount);
+            if(r.__resReferenceCount <= 0)
+            {
+                r.destroy();
+                this.material = null;
+            }
+        } 
+
+        
+        var r = <IResReferenceCount><any> this.texture;
+        if(r)
+        {
+            r.__resReferenceCount = r.__resReferenceCount ? r.__resReferenceCount - 1 : 0;
+            console.log("D", r._url,  r.__resReferenceCount);
+            if(r.__resReferenceCount <= 0)
+            {
+                r.destroy();
+                this.texture = null;
+            }
+        } 
+
 
         if(this.players != null)
         {
@@ -158,69 +213,22 @@ export default class GPUSkinningPlayerResources
 
 
 
-    /** 动画播放控制器LOD改变 */
-    public LODSettingChanged(player: GPUSkinningPlayer )
-    {
-        if(player.LODEnabled)
-        {
-            let players = this.players;
-            let numPlayers = players.length;
-            for(let i = 0; i < numPlayers; i ++)
-            {
-                if(players[i].Player == player)
-                {
-                    let distanceIndex = 0;
-                    this.SetLODMeshByDistanceIndex(distanceIndex, players[i].Player);
-                    break;
-                }
-
-            }
-        }
-        else
-        {
-            player.SetLODMesh(null);
-        }
-    }
-
-
-    /** 根据距离设置LOD */
-    private SetLODMeshByDistanceIndex(index: int , player: GPUSkinningPlayer )
-    {
-        let lodMesh: Mesh  = null;
-        if (index == 0)
-        {
-            lodMesh = this.mesh;
-        }
-        else
-        {
-            let lodMeshes: Mesh[]  = this.anim.lodMeshes;
-            lodMesh = lodMeshes == null || lodMeshes.length == 0 ? this.mesh : lodMeshes[Math.min(index - 1, lodMeshes.length - 1)];
-            if (lodMesh == null) lodMesh = this.mesh;
-        }
-        player.SetLODMesh(lodMesh);
-    }
-
-
-
     /** 帧更新 */
-    public Update(deltaTime: float , mtrl: GPUSkinningMaterial )
+    public Update(deltaTime: float , material: GPUSkinningBaseMaterial )
     {
-        if (this.executeOncePerFrame.CanBeExecute())
-        {
-            this.executeOncePerFrame.MarkAsExecuted();
-            this.time += deltaTime;
-        }
+        // if (this.executeOncePerFrame.CanBeExecute())
+        // {
+        //     this.executeOncePerFrame.MarkAsExecuted();
+        //     this.time += deltaTime;
 
-        if (mtrl.executeOncePerFrame.CanBeExecute())
-        {
-            let anim = this.anim;
-            mtrl.executeOncePerFrame.MarkAsExecuted();
-            mtrl.material._shaderValues.setTexture(GPUSkinningPlayerResources.shaderPropID_GPUSkinning_TextureMatrix, this.texture);
-            // console.log("textureWidth=", anim.textureWidth, "textureHeight=", anim.textureWidth, "anim.bonesCount * 3=",anim.bonesCount* 3);
-        
-            mtrl.material._shaderValues.setVector(GPUSkinningPlayerResources.shaderPropID_GPUSkinning_TextureSize_NumPixelsPerFrame, 
-                new Vector4(anim.textureWidth, anim.textureHeight, anim.bonesCount * 3 /*treat 3 pixels as a float3x4*/, 0));
-        }
+            
+        //     let anim = this.anim;
+        //     material._shaderValues.setTexture(GPUSkinningPlayerResources.shaderPropID_GPUSkinning_TextureMatrix, this.texture);
+        //     // console.log("textureWidth=", anim.textureWidth, "textureHeight=", anim.textureWidth, "anim.bonesCount * 3=",anim.bonesCount* 3);
+        //     material._shaderValues.setVector(GPUSkinningPlayerResources.shaderPropID_GPUSkinning_TextureSize_NumPixelsPerFrame, 
+        //         new Vector4(anim.textureWidth, anim.textureHeight, anim.bonesCount * 3 /*treat 3 pixels as a float3x4*/, 0));
+        // }
+
     }
 
 
@@ -271,55 +279,55 @@ export default class GPUSkinningPlayerResources
 
 
     /** 获取材质，根据状态 */
-    public GetMaterial(state: MaterialState ):GPUSkinningMaterial
+    public GetMaterial(state: MaterialState ):GPUSkinningBaseMaterial
     {
-        return this.mtrls[state];
+        return this.material;
+        // return this.material[state];
     }
 
-    public InitMaterial(originalMaterial: GPUSkinningBaseMaterial, skinningQuality: GPUSkinningQuality)
-    {
-        if(this.mtrls != null)
-        {
-            return;
-        }
-        // console.log("CloneMaterial skinningQuality=", skinningQuality);
+    // public InitMaterial(originalMaterial: GPUSkinningBaseMaterial, skinningQuality: GPUSkinningQuality)
+    // {
+    //     if(this.material != null)
+    //     {
+    //         return;
+    //     }
+    //     // console.log("CloneMaterial skinningQuality=", skinningQuality);
 
-        let SKILL_N:ShaderDefine;
-        switch(skinningQuality)
-        {
-            case GPUSkinningQuality.Bone1:
-                SKILL_N =  GPUSkinningPlayerResources.ShaderDefine_SKIN_1;
-                break;
-            case GPUSkinningQuality.Bone2:
-                SKILL_N =  GPUSkinningPlayerResources.ShaderDefine_SKIN_2;
-                break;
-            case GPUSkinningQuality.Bone4:
-                SKILL_N =  GPUSkinningPlayerResources.ShaderDefine_SKIN_4;
-                break;
-        }
+    //     let SKILL_N:ShaderDefine;
+    //     switch(skinningQuality)
+    //     {
+    //         case GPUSkinningQuality.Bone1:
+    //             SKILL_N =  GPUSkinningPlayerResources.ShaderDefine_SKIN_1;
+    //             break;
+    //         case GPUSkinningQuality.Bone2:
+    //             SKILL_N =  GPUSkinningPlayerResources.ShaderDefine_SKIN_2;
+    //             break;
+    //         case GPUSkinningQuality.Bone4:
+    //             SKILL_N =  GPUSkinningPlayerResources.ShaderDefine_SKIN_4;
+    //             break;
+    //     }
 
-        let mtrls = this.mtrls = [];
 
-        for (let i = 0; i < MaterialState.Count; ++i)
-        {
-            let materialItem = new GPUSkinningMaterial();
-            let material =  materialItem.material = <GPUSkinningBaseMaterial> originalMaterial.clone();
-            material.lock = true;
-            material.__mname = originalMaterial.__mname + " "+ GPUSkinningPlayerResources.keywords[i];
+    //     let mtrls = this.material = [];
 
-            mtrls[i] = materialItem;
+    //     for (let i = 0; i < MaterialState.Count; ++i)
+    //     {
+    //         let material =  <GPUSkinningBaseMaterial> originalMaterial.clone();
+    //         material.lock = true;
+    //         material.__mname = originalMaterial.__mname + " "+ GPUSkinningPlayerResources.keywords[i];
+
+    //         mtrls[i] = material;
             
-            material.name = GPUSkinningPlayerResources.keywords[i];
+    //         material.name = GPUSkinningPlayerResources.keywords[i];
            
-            material._shaderValues.addDefine(SKILL_N);
+    //         material._shaderValues.addDefine(SKILL_N);
 
 
-            // TODO 还未实现
-            // material.enableInstancing = true; // enable instancing in Unity 5.6
-            this.EnableKeywords(i, materialItem);
-
-        }
-    }
+    //         // TODO 还未实现
+    //         // material.enableInstancing = true; // enable instancing in Unity 5.6
+    //         this.EnableKeywords(i, material);
+    //     }
+    // }
 
     CloneMaterial(originalMaterial:GPUSkinningBaseMaterial, skinningQuality: GPUSkinningQuality)
     {
@@ -331,6 +339,12 @@ export default class GPUSkinningPlayerResources
         let material =  <GPUSkinningBaseMaterial> originalMaterial.clone();
         material.__mname = originalMaterial.__mname + " CloneMaterial";
         
+        this.SetMaterialQuality(material, skinningQuality, this.anim, this.texture);
+        return material;
+    }
+
+    private SetMaterialQuality(material:GPUSkinningBaseMaterial, skinningQuality: GPUSkinningQuality, anim: GPUSkinningAnimation , textureMatrix: Texture2D)
+    {
         let SKILL_N:ShaderDefine;
         switch(skinningQuality)
         {
@@ -348,23 +362,28 @@ export default class GPUSkinningPlayerResources
         
         material._shaderValues.addDefine(SKILL_N);
         material._shaderValues.addDefine(GPUSkinningPlayerResources.keywordDefines[3]);
-        return material;
+        
+        
+        material._shaderValues.setTexture(GPUSkinningPlayerResources.shaderPropID_GPUSkinning_TextureMatrix, this.texture);
+        // console.log("textureWidth=", anim.textureWidth, "textureHeight=", anim.textureWidth, "anim.bonesCount * 3=",anim.bonesCount* 3);
+        material._shaderValues.setVector(GPUSkinningPlayerResources.shaderPropID_GPUSkinning_TextureSize_NumPixelsPerFrame, 
+            new Vector4(anim.textureWidth, anim.textureHeight, anim.bonesCount * 3 /*treat 3 pixels as a float3x4*/, 0));
     }
 
-    private EnableKeywords(ki: int , mtrl: GPUSkinningMaterial )
-    {
-        for(let i = 0; i < this.mtrls.length; ++i)
-        {
-            if(i == ki)
-            {
-                mtrl.material._shaderValues.addDefine(GPUSkinningPlayerResources.keywordDefines[i]);
-            }
-            else
-            {
-                mtrl.material._shaderValues.removeDefine(GPUSkinningPlayerResources.keywordDefines[i]);
-            }
-        }
-    }
+    // private EnableKeywords(ki: int , material: GPUSkinningBaseMaterial )
+    // {
+    //     for(let i = 0; i < this.material.length; ++i)
+    //     {
+    //         if(i == ki)
+    //         {
+    //             material._shaderValues.addDefine(GPUSkinningPlayerResources.keywordDefines[i]);
+    //         }
+    //         else
+    //         {
+    //             material._shaderValues.removeDefine(GPUSkinningPlayerResources.keywordDefines[i]);
+    //         }
+    //     }
+    // }
 
 
 
