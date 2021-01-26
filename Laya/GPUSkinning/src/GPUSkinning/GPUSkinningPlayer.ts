@@ -1373,6 +1373,14 @@ export default class GPUSkinningPlayer
         })
     }
 
+    ClearMaterialState()
+    {
+        if(this.IsSeparation) this.IsSeparation = false;
+        if(this.IsInvincible) this.IsInvincible = false;
+        if(this.IsSuperarmor) this.IsSuperarmor = false;
+        if(this.IsDie) this.IsDie = false;
+    }
+
 
 
 

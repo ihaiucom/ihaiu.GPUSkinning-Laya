@@ -118,8 +118,10 @@ export default class GPUSkining
     private static _loadHierarchy(loader: Loader): void {
       loader._cache = true;
       var urlInfo: IGpuSkinLHUrlInfo = this.ParseSkinLHUrl(loader.url);
+			Laya.loader._loaderCount--;
       this.CreateByName(urlInfo.skinName, urlInfo.animName, Laya.Handler.create(null, (res:Laya.MeshSprite3D)=>{
         res._setCreateURL(loader.url)
+        Laya.loader._loaderCount++;
         Laya3D._endLoad(loader, res);
       }));
     }

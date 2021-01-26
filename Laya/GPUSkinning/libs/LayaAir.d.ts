@@ -28053,7 +28053,7 @@ declare module laya.net {
 		/**
 		 * @private 
 		 */
-		private _loaderCount:any;
+		 _loaderCount:any;
 
 		/**
 		 * @private 

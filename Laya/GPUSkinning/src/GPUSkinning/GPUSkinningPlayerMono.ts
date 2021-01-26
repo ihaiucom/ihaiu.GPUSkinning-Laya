@@ -154,6 +154,11 @@ export default class GPUSkinningPlayerMono extends Laya.Script3D
 
         // console.log("onDisable");
         this.isEnable = false;
+        
+        if(this.player)
+        {
+            this.player.ClearMaterialState();
+        }
 	}
 
     

@@ -1695,21 +1695,15 @@ var laya = (function () {
 	    }
 	    TweenSpeedTest() {
 	        this.Play("behit_02", 0);
-	        this.TweenSpeed(0.1, 2, 2, this.playingClip.frameCount);
+	        this.TweenSpeed(0.1, 2, 2);
 	    }
-	    TweenSpeed(speedHalt, frameHalt, frameTween, frameTotal, speedEnd, endCallback) {
+	    TweenSpeed(speedHalt, frameHalt, frameTween) {
 	        var t = this.tweenSpeedStruct;
 	        t.speedHalt = speedHalt;
 	        t.frameHalt = frameHalt;
 	        t.frameTween = frameTween;
-	        t.frameTotal = frameTotal;
-	        t.endCallback = endCallback;
-	        if (speedEnd === void 0) {
-	            t.calculationSpeedEnd();
-	        }
-	        else {
-	            t.speedEnd = speedEnd;
-	        }
+	        t.frameTotal = this.playingClip.frameCount;
+	        t.speedEnd = 1;
 	        t.step = TweenSpeedStep.HALT;
 	        t.frameStepIndex = 0;
 	        t.frameIndex = 0;
@@ -1742,10 +1736,15 @@ var laya = (function () {
 	                if (t.frameTween <= 0) {
 	                    this.speed = t.speedEnd;
 	                    t.step = TweenSpeedStep.SMOOTH;
+	                    if (t.endCallback) {
+	                        t.endCallback.run();
+	                        t.endCallback = null;
+	                    }
 	                    break;
 	                }
 	                this.speed = Laya.MathUtil.lerp(t.speedHalt, t.speedEnd, (t.frameStepIndex + frameIndexFloat) / t.frameTween);
 	                if (t.frameStepIndex >= t.frameTween) {
+	                    this.speed = 1;
 	                    this.TweenSpeedStop();
 	                    t.frameStepIndex = 0;
 	                    if (t.endCallback) {
@@ -1758,7 +1757,6 @@ var laya = (function () {
 	                if (this.__frameIndex >= (t.frameTotal - 1)) {
 	                    this.speed = 1;
 	                    this.TweenSpeedStop();
-	                    this.Play("idle");
 	                }
 	                break;
 	        }
@@ -1837,6 +1835,16 @@ var laya = (function () {
 	        this.weaponMap.forEach((v, k) => {
 	            v.Player.IsDie = value;
 	        });
+	    }
+	    ClearMaterialState() {
+	        if (this.IsSeparation)
+	            this.IsSeparation = false;
+	        if (this.IsInvincible)
+	            this.IsInvincible = false;
+	        if (this.IsSuperarmor)
+	            this.IsSuperarmor = false;
+	        if (this.IsDie)
+	            this.IsDie = false;
 	    }
 	}
 	GPUSkinningPlayer._ShaderUID = 0;
@@ -1929,6 +1937,9 @@ var laya = (function () {
 	    }
 	    onDisable() {
 	        this.isEnable = false;
+	        if (this.player) {
+	            this.player.ClearMaterialState();
+	        }
 	    }
 	    onDestroy() {
 	        GPUSkinningPlayerMono.playerManager.Unregister(this);
@@ -3085,8 +3096,10 @@ var laya = (function () {
 	    static _loadHierarchy(loader) {
 	        loader._cache = true;
 	        var urlInfo = this.ParseSkinLHUrl(loader.url);
+	        Laya.loader._loaderCount--;
 	        this.CreateByName(urlInfo.skinName, urlInfo.animName, Laya.Handler.create(null, (res) => {
 	            res._setCreateURL(loader.url);
+	            Laya.loader._loaderCount++;
 	            Laya3D._endLoad(loader, res);
 	        }));
 	    }
