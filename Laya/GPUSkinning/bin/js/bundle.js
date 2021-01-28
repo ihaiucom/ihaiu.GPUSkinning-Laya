@@ -129,7 +129,6 @@ var laya = (function () {
 	        GPUSkiningLoadModelV05._readData.pos = offset + GPUSkiningLoadModelV05._DATA.offset;
 	        for (var i = 0; i < count; i++) {
 	            GPUSkiningLoadModelV05._strings[i] = GPUSkiningLoadModelV05._readData.readUTFString();
-	            console.log(i, GPUSkiningLoadModelV05._strings[i]);
 	        }
 	        GPUSkiningLoadModelV05._readData.pos = prePos;
 	    }
@@ -142,7 +141,6 @@ var laya = (function () {
 	        var arrayBuffer = reader.__getBuffer();
 	        var vertexBufferCount = reader.getInt16();
 	        var offset = GPUSkiningLoadModelV05._DATA.offset;
-	        console.log("READ_MESH", name, vertexBufferCount, offset);
 	        for (i = 0; i < vertexBufferCount; i++) {
 	            var vbStart = offset + reader.getUint32();
 	            var vertexCount = reader.getUint32();
@@ -816,22 +814,17 @@ var laya = (function () {
 	        this.material = originalMtrl;
 	        var r = anim;
 	        r.__resReferenceCount = r.__resReferenceCount ? r.__resReferenceCount + 1 : 1;
-	        console.log("SetRes", r._url, r.__resReferenceCount);
 	        var r = mesh;
 	        r.__resReferenceCount = r.__resReferenceCount ? r.__resReferenceCount + 1 : 1;
-	        console.log("SetRes", r._url, r.__resReferenceCount);
 	        var r = originalMtrl;
 	        r.__resReferenceCount = r.__resReferenceCount ? r.__resReferenceCount + 1 : 1;
-	        console.log("SetRes", r._url, r.__resReferenceCount);
 	        var r = texture;
 	        r.__resReferenceCount = r.__resReferenceCount ? r.__resReferenceCount + 1 : 1;
-	        console.log("SetRes", r._url, r.__resReferenceCount);
 	    }
 	    Destroy() {
 	        var r = this.anim;
 	        if (r) {
 	            r.__resReferenceCount = r.__resReferenceCount ? r.__resReferenceCount - 1 : 0;
-	            console.log("D", r._url, r.__resReferenceCount);
 	            if (r.__resReferenceCount <= 0) {
 	                r.destroy();
 	                this.anim = null;
@@ -840,7 +833,6 @@ var laya = (function () {
 	        var r = this.mesh;
 	        if (r) {
 	            r.__resReferenceCount = r.__resReferenceCount ? r.__resReferenceCount - 1 : 0;
-	            console.log("D", r._url, r.__resReferenceCount);
 	            if (r.__resReferenceCount <= 0) {
 	                r.destroy();
 	                this.mesh = null;
@@ -849,7 +841,6 @@ var laya = (function () {
 	        var r = this.material;
 	        if (r) {
 	            r.__resReferenceCount = r.__resReferenceCount ? r.__resReferenceCount - 1 : 0;
-	            console.log("D", r._url, r.__resReferenceCount);
 	            if (r.__resReferenceCount <= 0) {
 	                r.destroy();
 	                this.material = null;
@@ -858,7 +849,6 @@ var laya = (function () {
 	        var r = this.texture;
 	        if (r) {
 	            r.__resReferenceCount = r.__resReferenceCount ? r.__resReferenceCount - 1 : 0;
-	            console.log("D", r._url, r.__resReferenceCount);
 	            if (r.__resReferenceCount <= 0) {
 	                r.destroy();
 	                this.texture = null;
@@ -1939,6 +1929,7 @@ var laya = (function () {
 	        this.isEnable = false;
 	        if (this.player) {
 	            this.player.ClearMaterialState();
+	            this.player.speed = 1;
 	        }
 	    }
 	    onDestroy() {

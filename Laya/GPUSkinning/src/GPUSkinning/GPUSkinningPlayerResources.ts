@@ -132,19 +132,19 @@ export default class GPUSkinningPlayerResources
 
         var r = <IResReferenceCount><any> anim;
         r.__resReferenceCount = r.__resReferenceCount ? r.__resReferenceCount + 1 : 1;
-        console.log("SetRes", r._url,  r.__resReferenceCount);
+        // console.log("SetRes", r._url,  r.__resReferenceCount);
         
         var r = <IResReferenceCount><any> mesh;
         r.__resReferenceCount = r.__resReferenceCount ? r.__resReferenceCount + 1 : 1;
-        console.log("SetRes", r._url,  r.__resReferenceCount);
+        // console.log("SetRes", r._url,  r.__resReferenceCount);
         
         var r = <IResReferenceCount><any> originalMtrl;
         r.__resReferenceCount = r.__resReferenceCount ? r.__resReferenceCount + 1 : 1;
-        console.log("SetRes", r._url,  r.__resReferenceCount);
+        // console.log("SetRes", r._url,  r.__resReferenceCount);
         
         var r = <IResReferenceCount><any> texture;
         r.__resReferenceCount = r.__resReferenceCount ? r.__resReferenceCount + 1 : 1;
-        console.log("SetRes", r._url,  r.__resReferenceCount);
+        // console.log("SetRes", r._url,  r.__resReferenceCount);
     }
 
     /** 销毁 */
@@ -155,7 +155,7 @@ export default class GPUSkinningPlayerResources
         {
             r.__resReferenceCount = r.__resReferenceCount ? r.__resReferenceCount - 1 : 0;
             
-            console.log("D", r._url,  r.__resReferenceCount);
+            // console.log("D", r._url,  r.__resReferenceCount);
             if(r.__resReferenceCount <= 0)
             {
                 r.destroy();
@@ -168,7 +168,7 @@ export default class GPUSkinningPlayerResources
         if(r)
         {
             r.__resReferenceCount = r.__resReferenceCount ? r.__resReferenceCount - 1 : 0;
-            console.log("D", r._url,  r.__resReferenceCount);
+            // console.log("D", r._url,  r.__resReferenceCount);
             if(r.__resReferenceCount <= 0)
             {
                 r.destroy();
@@ -181,7 +181,7 @@ export default class GPUSkinningPlayerResources
         if(r)
         {
             r.__resReferenceCount = r.__resReferenceCount ? r.__resReferenceCount - 1 : 0;
-            console.log("D", r._url,  r.__resReferenceCount);
+            // console.log("D", r._url,  r.__resReferenceCount);
             if(r.__resReferenceCount <= 0)
             {
                 r.destroy();
@@ -194,7 +194,7 @@ export default class GPUSkinningPlayerResources
         if(r)
         {
             r.__resReferenceCount = r.__resReferenceCount ? r.__resReferenceCount - 1 : 0;
-            console.log("D", r._url,  r.__resReferenceCount);
+            // console.log("D", r._url,  r.__resReferenceCount);
             if(r.__resReferenceCount <= 0)
             {
                 r.destroy();

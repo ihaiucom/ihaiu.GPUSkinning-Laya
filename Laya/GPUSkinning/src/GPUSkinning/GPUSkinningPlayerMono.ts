@@ -158,6 +158,7 @@ export default class GPUSkinningPlayerMono extends Laya.Script3D
         if(this.player)
         {
             this.player.ClearMaterialState();
+            this.player.speed = 1;
         }
 	}
 
