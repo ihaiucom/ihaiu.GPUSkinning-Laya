@@ -120,7 +120,7 @@ export default class GPUSkining
       var urlInfo: IGpuSkinLHUrlInfo = this.ParseSkinLHUrl(loader.url);
 			Laya.loader._loaderCount--;
       this.CreateByName(urlInfo.skinName, urlInfo.animName, Laya.Handler.create(null, (res:Laya.MeshSprite3D)=>{
-        res._setCreateURL(loader.url)
+        res && res._setCreateURL(loader.url)
         Laya.loader._loaderCount++;
         Laya3D._endLoad(loader, res);
       }));

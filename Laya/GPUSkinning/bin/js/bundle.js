@@ -3089,7 +3089,7 @@ var laya = (function () {
 	        var urlInfo = this.ParseSkinLHUrl(loader.url);
 	        Laya.loader._loaderCount--;
 	        this.CreateByName(urlInfo.skinName, urlInfo.animName, Laya.Handler.create(null, (res) => {
-	            res._setCreateURL(loader.url);
+	            res && res._setCreateURL(loader.url);
 	            Laya.loader._loaderCount++;
 	            Laya3D._endLoad(loader, res);
 	        }));

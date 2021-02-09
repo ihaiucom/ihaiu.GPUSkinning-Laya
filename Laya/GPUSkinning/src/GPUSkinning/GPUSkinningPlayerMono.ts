@@ -241,7 +241,12 @@ export default class GPUSkinningPlayerMono extends Laya.Script3D
                 
                 for(var clip of anim.clips)
                 {
-                    if(clip.name == "idle")
+                    if(clip.name == "standby")
+                    {
+                        defaultClipName = clip.name;
+                        break;
+                    }
+                    else if(clip.name == "idle")
                     {
                         defaultClipName = clip.name;
                         break;
