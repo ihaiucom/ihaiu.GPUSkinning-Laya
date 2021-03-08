@@ -1979,7 +1979,11 @@ var laya = (function () {
 	            if (anim != null && anim.clips != null && anim.clips.length > 0) {
 	                var defaultClipName = anim.clips[Mathf.clamp(this.defaultPlayingClipIndex, 0, anim.clips.length)].name;
 	                for (var clip of anim.clips) {
-	                    if (clip.name == "idle") {
+	                    if (clip.name == "standby") {
+	                        defaultClipName = clip.name;
+	                        break;
+	                    }
+	                    else if (clip.name == "idle") {
 	                        defaultClipName = clip.name;
 	                        break;
 	                    }
@@ -2569,65 +2573,25 @@ var laya = (function () {
 	GPUSkinningCartoon2TextureMaterial.DEPTH_WRITE = Shader3D$2.propertyNameToID("s_DepthWrite");
 
 	var Shader3D$3 = Laya.Shader3D;
-	var Vector4$3 = Laya.Vector4;
-	class SceneMaterial {
-	    static Init(scene) {
-	        this.scene = scene;
-	        this._shaderValues = scene._shaderValues;
-	        this.SHADERDEFINE_SCENELIGHTINGTEXTURE = Shader3D$3.getDefineByName("SCENELIGHTING");
-	        this.sceneLightingSize = new Vector4$3(-10, 20, -10, 20);
-	    }
-	    static get sceneLightingTexture() {
-	        return this._shaderValues.getTexture(this.SCENELIGHTINGTEXTURE);
-	    }
-	    static set sceneLightingTexture(value) {
-	        if (value)
-	            this._shaderValues.addDefine(this.SHADERDEFINE_SCENELIGHTINGTEXTURE);
-	        else
-	            this._shaderValues.removeDefine(this.SHADERDEFINE_SCENELIGHTINGTEXTURE);
-	        this._shaderValues.setTexture(this.SCENELIGHTINGTEXTURE, value);
-	    }
-	    static SetSceneLightingTexture(value) {
-	        this.sceneLightingTexture = value;
-	    }
-	    static get sceneLightingSize() {
-	        return this._shaderValues.getVector(this.SCENELIGHTINGSIZE);
-	    }
-	    static set sceneLightingSize(value) {
-	        this._shaderValues.setVector(this.SCENELIGHTINGSIZE, value);
-	    }
-	    static SetSceneLightingSize(value) {
-	        this.sceneLightingSize = value;
-	    }
-	    static LoadSceneLightingTexture(path) {
-	        Laya.loader.create(path, Laya.Handler.create(this, (texture) => {
-	            this.sceneLightingTexture = texture;
-	        }), null, Laya.Loader.TEXTURE2D);
-	    }
-	}
-	SceneMaterial.SCENELIGHTINGTEXTURE = Shader3D$3.propertyNameToID("u_SceneLightingTexture");
-	SceneMaterial.SCENELIGHTINGSIZE = Shader3D$3.propertyNameToID("u_SceneLightingSize");
-
-	var Shader3D$4 = Laya.Shader3D;
 	var SubShader$1 = Laya.SubShader;
 	var VertexMesh$2 = Laya.VertexMesh;
-	var Vector4$4 = Laya.Vector4;
+	var Vector4$3 = Laya.Vector4;
 	var Material$2 = Laya.Material;
 	class GPUSkinningToonV2Material extends GPUSkinningBaseMaterial {
 	    constructor(shaderName) {
 	        super();
-	        this._rimColorA0 = new Vector4$4(1.0, 0.02116402, 0.0);
-	        this._rimColorA1 = new Vector4$4(1.0, 0.9290133, 0.759434);
-	        this._rimColorB = new Vector4$4(1.0, 0.501811, 0.0);
-	        this.__outlineColor = new Vector4$4(0.0, 0, 0.0);
-	        this._rimViewDirA0 = new Vector4$4(25, -5, 10, 0.55);
-	        this._rimViewDirB = new Vector4$4(-30, -5, 20, 0.6);
-	        this._albedoColor = new Vector4$4(1.0, 1.0, 1.0, 1.0);
+	        this._rimColorA0 = new Vector4$3(1.0, 0.02116402, 0.0);
+	        this._rimColorA1 = new Vector4$3(1.0, 0.9290133, 0.759434);
+	        this._rimColorB = new Vector4$3(1.0, 0.501811, 0.0);
+	        this.__outlineColor = new Vector4$3(0.0, 0, 0.0);
+	        this._rimViewDirA0 = new Vector4$3(25, -5, 10, 0.55);
+	        this._rimViewDirB = new Vector4$3(-30, -5, 20, 0.6);
+	        this._albedoColor = new Vector4$3(1.0, 1.0, 1.0, 1.0);
 	        if (!shaderName)
 	            shaderName = GPUSkinningToonV2Material.shaderName;
 	        this.setShaderName(shaderName);
-	        this._shaderValues.setVector(GPUSkinningToonV2Material.ALBEDOCOLOR, new Vector4$4(1.0, 1.0, 1.0, 1.0));
-	        this._shaderValues.setVector(GPUSkinningToonV2Material.TILINGOFFSET, new Vector4$4(1.0, 1.0, 0.0, 0.0));
+	        this._shaderValues.setVector(GPUSkinningToonV2Material.ALBEDOCOLOR, new Vector4$3(1.0, 1.0, 1.0, 1.0));
+	        this._shaderValues.setVector(GPUSkinningToonV2Material.TILINGOFFSET, new Vector4$3(1.0, 1.0, 0.0, 0.0));
 	        this._shaderValues.setVector(GPUSkinningToonV2Material.RIMCOLORA0, this._rimColorA0);
 	        this._shaderValues.setVector(GPUSkinningToonV2Material.RIMCOLORA1, this._rimColorA1);
 	        this._shaderValues.setVector(GPUSkinningToonV2Material.RIMCOLORB, this._rimColorB);
@@ -2668,60 +2632,61 @@ var laya = (function () {
 	            };
 	        uniformMap =
 	            {
-	                'u_GPUSkinning_TextureMatrix': Shader3D$4.PERIOD_MATERIAL,
-	                'u_GPUSkinning_TextureSize_NumPixelsPerFrame': Shader3D$4.PERIOD_MATERIAL,
-	                'u_GPUSkinning_RootMotion': Shader3D$4.PERIOD_MATERIAL,
-	                'u_GPUSkinning_RootMotion_CrossFade': Shader3D$4.PERIOD_MATERIAL,
-	                'u_GPUSkinning_FrameIndex_PixelSegmentation': Shader3D$4.PERIOD_SPRITE,
-	                'u_GPUSkinning_FrameIndex_PixelSegmentation_Blend_CrossFade': Shader3D$4.PERIOD_SPRITE,
-	                'u_DotRimColor': Shader3D$4.PERIOD_MATERIAL,
-	                'u_CartoonOutlineWidth': Shader3D$4.PERIOD_MATERIAL,
-	                'u_SceneLightingTexture': Shader3D$4.PERIOD_SCENE,
-	                'u_SceneLightingSize': Shader3D$4.PERIOD_SCENE,
-	                'u_AlbedoTexture': Shader3D$4.PERIOD_MATERIAL,
-	                'u_AlbedoColor': Shader3D$4.PERIOD_MATERIAL,
-	                'u_TilingOffset': Shader3D$4.PERIOD_MATERIAL,
-	                'u_AlphaTestValue': Shader3D$4.PERIOD_MATERIAL,
-	                'u_ShadowTexture': Shader3D$4.PERIOD_MATERIAL,
-	                'u_ShadowColorTexture': Shader3D$4.PERIOD_MATERIAL,
-	                'u_HeightRimLightTexture': Shader3D$4.PERIOD_MATERIAL,
-	                'u_rimColorA0': Shader3D$4.PERIOD_MATERIAL,
-	                'u_rimColorA1': Shader3D$4.PERIOD_MATERIAL,
-	                'u_rimColorB': Shader3D$4.PERIOD_MATERIAL,
-	                'u_rimViewDirA0': Shader3D$4.PERIOD_MATERIAL,
-	                'u_rimViewDirB': Shader3D$4.PERIOD_MATERIAL,
-	                'u_outlineColor': Shader3D$4.PERIOD_MATERIAL,
-	                'u_WorldMat': Shader3D$4.PERIOD_SPRITE,
-	                'u_MvpMatrix': Shader3D$4.PERIOD_SPRITE,
-	                'u_FogStart': Shader3D$4.PERIOD_SCENE,
-	                'u_FogRange': Shader3D$4.PERIOD_SCENE,
-	                'u_FogColor': Shader3D$4.PERIOD_SCENE,
-	                'u_DirationLightCount': Shader3D$4.PERIOD_SCENE,
-	                'u_LightBuffer': Shader3D$4.PERIOD_SCENE,
-	                'u_LightClusterBuffer': Shader3D$4.PERIOD_SCENE,
-	                'u_AmbientColor': Shader3D$4.PERIOD_SCENE,
-	                'u_DirectionLight.color': Shader3D$4.PERIOD_SCENE,
-	                'u_DirectionLight.direction': Shader3D$4.PERIOD_SCENE,
-	                'u_PointLight.position': Shader3D$4.PERIOD_SCENE,
-	                'u_PointLight.range': Shader3D$4.PERIOD_SCENE,
-	                'u_PointLight.color': Shader3D$4.PERIOD_SCENE,
-	                'u_SpotLight.position': Shader3D$4.PERIOD_SCENE,
-	                'u_SpotLight.direction': Shader3D$4.PERIOD_SCENE,
-	                'u_SpotLight.range': Shader3D$4.PERIOD_SCENE,
-	                'u_SpotLight.spot': Shader3D$4.PERIOD_SCENE,
-	                'u_SpotLight.color': Shader3D$4.PERIOD_SCENE,
-	                'u_CameraPos': Shader3D$4.PERIOD_CAMERA
+	                'u_GPUSkinning_TextureMatrix': Shader3D$3.PERIOD_MATERIAL,
+	                'u_GPUSkinning_TextureSize_NumPixelsPerFrame': Shader3D$3.PERIOD_MATERIAL,
+	                'u_GPUSkinning_RootMotion': Shader3D$3.PERIOD_MATERIAL,
+	                'u_GPUSkinning_RootMotion_CrossFade': Shader3D$3.PERIOD_MATERIAL,
+	                'u_GPUSkinning_FrameIndex_PixelSegmentation': Shader3D$3.PERIOD_SPRITE,
+	                'u_GPUSkinning_FrameIndex_PixelSegmentation_Blend_CrossFade': Shader3D$3.PERIOD_SPRITE,
+	                'u_DotRimColor': Shader3D$3.PERIOD_MATERIAL,
+	                'u_CartoonOutlineWidth': Shader3D$3.PERIOD_MATERIAL,
+	                'u_SceneLightingTexture': Shader3D$3.PERIOD_SCENE,
+	                'u_SceneLightingSize': Shader3D$3.PERIOD_SCENE,
+	                'u_SceneColorBalance': Shader3D$3.PERIOD_SCENE,
+	                'u_AlbedoTexture': Shader3D$3.PERIOD_MATERIAL,
+	                'u_AlbedoColor': Shader3D$3.PERIOD_MATERIAL,
+	                'u_TilingOffset': Shader3D$3.PERIOD_MATERIAL,
+	                'u_AlphaTestValue': Shader3D$3.PERIOD_MATERIAL,
+	                'u_ShadowTexture': Shader3D$3.PERIOD_MATERIAL,
+	                'u_ShadowColorTexture': Shader3D$3.PERIOD_MATERIAL,
+	                'u_HeightRimLightTexture': Shader3D$3.PERIOD_MATERIAL,
+	                'u_rimColorA0': Shader3D$3.PERIOD_MATERIAL,
+	                'u_rimColorA1': Shader3D$3.PERIOD_MATERIAL,
+	                'u_rimColorB': Shader3D$3.PERIOD_MATERIAL,
+	                'u_rimViewDirA0': Shader3D$3.PERIOD_MATERIAL,
+	                'u_rimViewDirB': Shader3D$3.PERIOD_MATERIAL,
+	                'u_outlineColor': Shader3D$3.PERIOD_MATERIAL,
+	                'u_WorldMat': Shader3D$3.PERIOD_SPRITE,
+	                'u_MvpMatrix': Shader3D$3.PERIOD_SPRITE,
+	                'u_FogStart': Shader3D$3.PERIOD_SCENE,
+	                'u_FogRange': Shader3D$3.PERIOD_SCENE,
+	                'u_FogColor': Shader3D$3.PERIOD_SCENE,
+	                'u_DirationLightCount': Shader3D$3.PERIOD_SCENE,
+	                'u_LightBuffer': Shader3D$3.PERIOD_SCENE,
+	                'u_LightClusterBuffer': Shader3D$3.PERIOD_SCENE,
+	                'u_AmbientColor': Shader3D$3.PERIOD_SCENE,
+	                'u_DirectionLight.color': Shader3D$3.PERIOD_SCENE,
+	                'u_DirectionLight.direction': Shader3D$3.PERIOD_SCENE,
+	                'u_PointLight.position': Shader3D$3.PERIOD_SCENE,
+	                'u_PointLight.range': Shader3D$3.PERIOD_SCENE,
+	                'u_PointLight.color': Shader3D$3.PERIOD_SCENE,
+	                'u_SpotLight.position': Shader3D$3.PERIOD_SCENE,
+	                'u_SpotLight.direction': Shader3D$3.PERIOD_SCENE,
+	                'u_SpotLight.range': Shader3D$3.PERIOD_SCENE,
+	                'u_SpotLight.spot': Shader3D$3.PERIOD_SCENE,
+	                'u_SpotLight.color': Shader3D$3.PERIOD_SCENE,
+	                'u_CameraPos': Shader3D$3.PERIOD_CAMERA
 	            };
 	        stateMap =
 	            {
-	                's_Cull': Shader3D$4.RENDER_STATE_CULL,
-	                's_Blend': Shader3D$4.RENDER_STATE_BLEND,
-	                's_BlendSrc': Shader3D$4.RENDER_STATE_BLEND_SRC,
-	                's_BlendDst': Shader3D$4.RENDER_STATE_BLEND_DST,
-	                's_DepthTest': Shader3D$4.RENDER_STATE_DEPTH_TEST,
-	                's_DepthWrite': Shader3D$4.RENDER_STATE_DEPTH_WRITE
+	                's_Cull': Shader3D$3.RENDER_STATE_CULL,
+	                's_Blend': Shader3D$3.RENDER_STATE_BLEND,
+	                's_BlendSrc': Shader3D$3.RENDER_STATE_BLEND_SRC,
+	                's_BlendDst': Shader3D$3.RENDER_STATE_BLEND_DST,
+	                's_DepthTest': Shader3D$3.RENDER_STATE_DEPTH_TEST,
+	                's_DepthWrite': Shader3D$3.RENDER_STATE_DEPTH_WRITE
 	            };
-	        shader = Shader3D$4.add(GPUSkinningToonV2Material.shaderName, null, null, true);
+	        shader = Shader3D$3.add(GPUSkinningToonV2Material.shaderName, null, null, true);
 	        subShader = new SubShader$1(attributeMap, uniformMap);
 	        shader.addSubShader(subShader);
 	        var outlinePass = subShader.addShaderPass(outlineVS, outlinePS);
@@ -2730,20 +2695,20 @@ var laya = (function () {
 	        mainPass.renderState.cull = Laya.RenderState.CULL_BACK;
 	    }
 	    static __initDefine__() {
-	        GPUSkinningToonV2Material.SHADERDEFINE_ALBEDOTEXTURE = Shader3D$4.getDefineByName("ALBEDOTEXTURE");
-	        GPUSkinningToonV2Material.SHADERDEFINE_SHADOWTEXTURE = Shader3D$4.getDefineByName("SHADOWTEXTURE");
-	        GPUSkinningToonV2Material.SHADERDEFINE_SHADOWCOLORTEXTURE = Shader3D$4.getDefineByName("SHADOWCOLORTEXTURE");
-	        GPUSkinningToonV2Material.SHADERDEFINE_HEIGHTRIMLIGHTTEXTURE = Shader3D$4.getDefineByName("HEIGHTRIMLIGHTTEXTURE");
-	        GPUSkinningToonV2Material.SHADERDEFINE_SCENELIGHTINGTEXTURE = Shader3D$4.getDefineByName("SCENELIGHTING");
-	        GPUSkinningToonV2Material.SHADERDEFINE_TILINGOFFSET = Shader3D$4.getDefineByName("TILINGOFFSET");
-	        GPUSkinningToonV2Material.SHADERDEFINE_ENABLEVERTEXCOLOR = Shader3D$4.getDefineByName("ENABLEVERTEXCOLOR");
+	        GPUSkinningToonV2Material.SHADERDEFINE_ALBEDOTEXTURE = Shader3D$3.getDefineByName("ALBEDOTEXTURE");
+	        GPUSkinningToonV2Material.SHADERDEFINE_SHADOWTEXTURE = Shader3D$3.getDefineByName("SHADOWTEXTURE");
+	        GPUSkinningToonV2Material.SHADERDEFINE_SHADOWCOLORTEXTURE = Shader3D$3.getDefineByName("SHADOWCOLORTEXTURE");
+	        GPUSkinningToonV2Material.SHADERDEFINE_HEIGHTRIMLIGHTTEXTURE = Shader3D$3.getDefineByName("HEIGHTRIMLIGHTTEXTURE");
+	        GPUSkinningToonV2Material.SHADERDEFINE_SCENELIGHTINGTEXTURE = Shader3D$3.getDefineByName("SCENELIGHTING");
+	        GPUSkinningToonV2Material.SHADERDEFINE_TILINGOFFSET = Shader3D$3.getDefineByName("TILINGOFFSET");
+	        GPUSkinningToonV2Material.SHADERDEFINE_ENABLEVERTEXCOLOR = Shader3D$3.getDefineByName("ENABLEVERTEXCOLOR");
 	    }
 	    get rimColorA0() {
 	        return this._rimColorA0;
 	    }
 	    set rimColorA0(value) {
 	        var finalAlbedo = this._shaderValues.getVector(GPUSkinningToonV2Material.RIMCOLORA0);
-	        Vector4$4.scale(value, 1, finalAlbedo);
+	        Vector4$3.scale(value, 1, finalAlbedo);
 	        this._rimColorA0 = value;
 	        this._shaderValues.setVector(GPUSkinningToonV2Material.RIMCOLORA0, finalAlbedo);
 	    }
@@ -2817,7 +2782,7 @@ var laya = (function () {
 	    }
 	    set albedoColor(value) {
 	        var finalAlbedo = this._shaderValues.getVector(GPUSkinningToonV2Material.ALBEDOCOLOR);
-	        Vector4$4.scale(value, 1, finalAlbedo);
+	        Vector4$3.scale(value, 1, finalAlbedo);
 	        this._albedoColor = value;
 	        this._shaderValues.setVector(GPUSkinningToonV2Material.ALBEDOCOLOR, finalAlbedo);
 	    }
@@ -2901,22 +2866,23 @@ var laya = (function () {
 	GPUSkinningToonV2Material.shaderName = "GPUSkinningToonV2";
 	GPUSkinningToonV2Material.outlinePass = "GPUSkinningToonV2Outline";
 	GPUSkinningToonV2Material._isInstalled = false;
-	GPUSkinningToonV2Material.CARTOON_OUTLINEWIDTH = Shader3D$4.propertyNameToID("u_CartoonOutlineWidth");
-	GPUSkinningToonV2Material.SCENELIGHTINGTEXTURE = Shader3D$4.propertyNameToID("u_SceneLightingTexture");
-	GPUSkinningToonV2Material.HEIGHTRIMLIGHTTEXTURE = Shader3D$4.propertyNameToID("u_HeightRimLightTexture");
-	GPUSkinningToonV2Material.SHADOWCOLORTEXTURE = Shader3D$4.propertyNameToID("u_ShadowColorTexture");
-	GPUSkinningToonV2Material.SHADOWTEXTURE = Shader3D$4.propertyNameToID("u_ShadowTexture");
-	GPUSkinningToonV2Material.ALBEDOTEXTURE = Shader3D$4.propertyNameToID("u_AlbedoTexture");
-	GPUSkinningToonV2Material.ALBEDOCOLOR = Shader3D$4.propertyNameToID("u_AlbedoColor");
-	GPUSkinningToonV2Material.RIMCOLORA0 = Shader3D$4.propertyNameToID("u_rimColorA0");
-	GPUSkinningToonV2Material.RIMCOLORA1 = Shader3D$4.propertyNameToID("u_rimColorA1");
-	GPUSkinningToonV2Material.RIMCOLORB = Shader3D$4.propertyNameToID("u_rimColorB");
-	GPUSkinningToonV2Material.RIMVIEWDIRA0 = Shader3D$4.propertyNameToID("u_rimViewDirA0");
-	GPUSkinningToonV2Material.RIMVIEWDIRB = Shader3D$4.propertyNameToID("u_rimViewDirB");
-	GPUSkinningToonV2Material.OUTLINECOLOR = Shader3D$4.propertyNameToID("u_outlineColor");
-	GPUSkinningToonV2Material.TILINGOFFSET = Shader3D$4.propertyNameToID("u_TilingOffset");
+	GPUSkinningToonV2Material.CARTOON_OUTLINEWIDTH = Shader3D$3.propertyNameToID("u_CartoonOutlineWidth");
+	GPUSkinningToonV2Material.SCENELIGHTINGTEXTURE = Shader3D$3.propertyNameToID("u_SceneLightingTexture");
+	GPUSkinningToonV2Material.SCENECOLORBALANCE = Shader3D$3.propertyNameToID("u_SceneColorBalance");
+	GPUSkinningToonV2Material.HEIGHTRIMLIGHTTEXTURE = Shader3D$3.propertyNameToID("u_HeightRimLightTexture");
+	GPUSkinningToonV2Material.SHADOWCOLORTEXTURE = Shader3D$3.propertyNameToID("u_ShadowColorTexture");
+	GPUSkinningToonV2Material.SHADOWTEXTURE = Shader3D$3.propertyNameToID("u_ShadowTexture");
+	GPUSkinningToonV2Material.ALBEDOTEXTURE = Shader3D$3.propertyNameToID("u_AlbedoTexture");
+	GPUSkinningToonV2Material.ALBEDOCOLOR = Shader3D$3.propertyNameToID("u_AlbedoColor");
+	GPUSkinningToonV2Material.RIMCOLORA0 = Shader3D$3.propertyNameToID("u_rimColorA0");
+	GPUSkinningToonV2Material.RIMCOLORA1 = Shader3D$3.propertyNameToID("u_rimColorA1");
+	GPUSkinningToonV2Material.RIMCOLORB = Shader3D$3.propertyNameToID("u_rimColorB");
+	GPUSkinningToonV2Material.RIMVIEWDIRA0 = Shader3D$3.propertyNameToID("u_rimViewDirA0");
+	GPUSkinningToonV2Material.RIMVIEWDIRB = Shader3D$3.propertyNameToID("u_rimViewDirB");
+	GPUSkinningToonV2Material.OUTLINECOLOR = Shader3D$3.propertyNameToID("u_outlineColor");
+	GPUSkinningToonV2Material.TILINGOFFSET = Shader3D$3.propertyNameToID("u_TilingOffset");
 
-	var Shader3D$5 = Laya.Shader3D;
+	var Shader3D$4 = Laya.Shader3D;
 	var SubShader$2 = Laya.SubShader;
 	var VertexMesh$3 = Laya.VertexMesh;
 	class GPUSkinningToonWeaponV2Material extends GPUSkinningToonV2Material {
@@ -2950,60 +2916,61 @@ var laya = (function () {
 	            };
 	        uniformMap =
 	            {
-	                'u_GPUSkinning_TextureMatrix': Shader3D$5.PERIOD_MATERIAL,
-	                'u_GPUSkinning_TextureSize_NumPixelsPerFrame': Shader3D$5.PERIOD_MATERIAL,
-	                'u_GPUSkinning_RootMotion': Shader3D$5.PERIOD_MATERIAL,
-	                'u_GPUSkinning_RootMotion_CrossFade': Shader3D$5.PERIOD_MATERIAL,
-	                'u_GPUSkinning_FrameIndex_PixelSegmentation': Shader3D$5.PERIOD_SPRITE,
-	                'u_GPUSkinning_FrameIndex_PixelSegmentation_Blend_CrossFade': Shader3D$5.PERIOD_SPRITE,
-	                'u_DotRimColor': Shader3D$5.PERIOD_MATERIAL,
-	                'u_CartoonOutlineWidth': Shader3D$5.PERIOD_MATERIAL,
-	                'u_SceneLightingTexture': Shader3D$5.PERIOD_SCENE,
-	                'u_SceneLightingSize': Shader3D$5.PERIOD_SCENE,
-	                'u_AlbedoTexture': Shader3D$5.PERIOD_MATERIAL,
-	                'u_AlbedoColor': Shader3D$5.PERIOD_MATERIAL,
-	                'u_TilingOffset': Shader3D$5.PERIOD_MATERIAL,
-	                'u_AlphaTestValue': Shader3D$5.PERIOD_MATERIAL,
-	                'u_ShadowTexture': Shader3D$5.PERIOD_MATERIAL,
-	                'u_ShadowColorTexture': Shader3D$5.PERIOD_MATERIAL,
-	                'u_HeightRimLightTexture': Shader3D$5.PERIOD_MATERIAL,
-	                'u_rimColorA0': Shader3D$5.PERIOD_MATERIAL,
-	                'u_rimColorA1': Shader3D$5.PERIOD_MATERIAL,
-	                'u_rimColorB': Shader3D$5.PERIOD_MATERIAL,
-	                'u_rimViewDirA0': Shader3D$5.PERIOD_MATERIAL,
-	                'u_rimViewDirB': Shader3D$5.PERIOD_MATERIAL,
-	                'u_outlineColor': Shader3D$5.PERIOD_MATERIAL,
-	                'u_WorldMat': Shader3D$5.PERIOD_SPRITE,
-	                'u_MvpMatrix': Shader3D$5.PERIOD_SPRITE,
-	                'u_FogStart': Shader3D$5.PERIOD_SCENE,
-	                'u_FogRange': Shader3D$5.PERIOD_SCENE,
-	                'u_FogColor': Shader3D$5.PERIOD_SCENE,
-	                'u_DirationLightCount': Shader3D$5.PERIOD_SCENE,
-	                'u_LightBuffer': Shader3D$5.PERIOD_SCENE,
-	                'u_LightClusterBuffer': Shader3D$5.PERIOD_SCENE,
-	                'u_AmbientColor': Shader3D$5.PERIOD_SCENE,
-	                'u_DirectionLight.color': Shader3D$5.PERIOD_SCENE,
-	                'u_DirectionLight.direction': Shader3D$5.PERIOD_SCENE,
-	                'u_PointLight.position': Shader3D$5.PERIOD_SCENE,
-	                'u_PointLight.range': Shader3D$5.PERIOD_SCENE,
-	                'u_PointLight.color': Shader3D$5.PERIOD_SCENE,
-	                'u_SpotLight.position': Shader3D$5.PERIOD_SCENE,
-	                'u_SpotLight.direction': Shader3D$5.PERIOD_SCENE,
-	                'u_SpotLight.range': Shader3D$5.PERIOD_SCENE,
-	                'u_SpotLight.spot': Shader3D$5.PERIOD_SCENE,
-	                'u_SpotLight.color': Shader3D$5.PERIOD_SCENE,
-	                'u_CameraPos': Shader3D$5.PERIOD_CAMERA
+	                'u_GPUSkinning_TextureMatrix': Shader3D$4.PERIOD_MATERIAL,
+	                'u_GPUSkinning_TextureSize_NumPixelsPerFrame': Shader3D$4.PERIOD_MATERIAL,
+	                'u_GPUSkinning_RootMotion': Shader3D$4.PERIOD_MATERIAL,
+	                'u_GPUSkinning_RootMotion_CrossFade': Shader3D$4.PERIOD_MATERIAL,
+	                'u_GPUSkinning_FrameIndex_PixelSegmentation': Shader3D$4.PERIOD_SPRITE,
+	                'u_GPUSkinning_FrameIndex_PixelSegmentation_Blend_CrossFade': Shader3D$4.PERIOD_SPRITE,
+	                'u_DotRimColor': Shader3D$4.PERIOD_MATERIAL,
+	                'u_CartoonOutlineWidth': Shader3D$4.PERIOD_MATERIAL,
+	                'u_SceneLightingTexture': Shader3D$4.PERIOD_SCENE,
+	                'u_SceneLightingSize': Shader3D$4.PERIOD_SCENE,
+	                'u_SceneColorBalance': Shader3D$4.PERIOD_SCENE,
+	                'u_AlbedoTexture': Shader3D$4.PERIOD_MATERIAL,
+	                'u_AlbedoColor': Shader3D$4.PERIOD_MATERIAL,
+	                'u_TilingOffset': Shader3D$4.PERIOD_MATERIAL,
+	                'u_AlphaTestValue': Shader3D$4.PERIOD_MATERIAL,
+	                'u_ShadowTexture': Shader3D$4.PERIOD_MATERIAL,
+	                'u_ShadowColorTexture': Shader3D$4.PERIOD_MATERIAL,
+	                'u_HeightRimLightTexture': Shader3D$4.PERIOD_MATERIAL,
+	                'u_rimColorA0': Shader3D$4.PERIOD_MATERIAL,
+	                'u_rimColorA1': Shader3D$4.PERIOD_MATERIAL,
+	                'u_rimColorB': Shader3D$4.PERIOD_MATERIAL,
+	                'u_rimViewDirA0': Shader3D$4.PERIOD_MATERIAL,
+	                'u_rimViewDirB': Shader3D$4.PERIOD_MATERIAL,
+	                'u_outlineColor': Shader3D$4.PERIOD_MATERIAL,
+	                'u_WorldMat': Shader3D$4.PERIOD_SPRITE,
+	                'u_MvpMatrix': Shader3D$4.PERIOD_SPRITE,
+	                'u_FogStart': Shader3D$4.PERIOD_SCENE,
+	                'u_FogRange': Shader3D$4.PERIOD_SCENE,
+	                'u_FogColor': Shader3D$4.PERIOD_SCENE,
+	                'u_DirationLightCount': Shader3D$4.PERIOD_SCENE,
+	                'u_LightBuffer': Shader3D$4.PERIOD_SCENE,
+	                'u_LightClusterBuffer': Shader3D$4.PERIOD_SCENE,
+	                'u_AmbientColor': Shader3D$4.PERIOD_SCENE,
+	                'u_DirectionLight.color': Shader3D$4.PERIOD_SCENE,
+	                'u_DirectionLight.direction': Shader3D$4.PERIOD_SCENE,
+	                'u_PointLight.position': Shader3D$4.PERIOD_SCENE,
+	                'u_PointLight.range': Shader3D$4.PERIOD_SCENE,
+	                'u_PointLight.color': Shader3D$4.PERIOD_SCENE,
+	                'u_SpotLight.position': Shader3D$4.PERIOD_SCENE,
+	                'u_SpotLight.direction': Shader3D$4.PERIOD_SCENE,
+	                'u_SpotLight.range': Shader3D$4.PERIOD_SCENE,
+	                'u_SpotLight.spot': Shader3D$4.PERIOD_SCENE,
+	                'u_SpotLight.color': Shader3D$4.PERIOD_SCENE,
+	                'u_CameraPos': Shader3D$4.PERIOD_CAMERA
 	            };
 	        stateMap =
 	            {
-	                's_Cull': Shader3D$5.RENDER_STATE_CULL,
-	                's_Blend': Shader3D$5.RENDER_STATE_BLEND,
-	                's_BlendSrc': Shader3D$5.RENDER_STATE_BLEND_SRC,
-	                's_BlendDst': Shader3D$5.RENDER_STATE_BLEND_DST,
-	                's_DepthTest': Shader3D$5.RENDER_STATE_DEPTH_TEST,
-	                's_DepthWrite': Shader3D$5.RENDER_STATE_DEPTH_WRITE
+	                's_Cull': Shader3D$4.RENDER_STATE_CULL,
+	                's_Blend': Shader3D$4.RENDER_STATE_BLEND,
+	                's_BlendSrc': Shader3D$4.RENDER_STATE_BLEND_SRC,
+	                's_BlendDst': Shader3D$4.RENDER_STATE_BLEND_DST,
+	                's_DepthTest': Shader3D$4.RENDER_STATE_DEPTH_TEST,
+	                's_DepthWrite': Shader3D$4.RENDER_STATE_DEPTH_WRITE
 	            };
-	        shader = Shader3D$5.add(GPUSkinningToonWeaponV2Material.shaderName, null, null, true);
+	        shader = Shader3D$4.add(GPUSkinningToonWeaponV2Material.shaderName, null, null, true);
 	        subShader = new SubShader$2(attributeMap, uniformMap);
 	        shader.addSubShader(subShader);
 	        var mainPass = subShader.addShaderPass(vs, ps, stateMap);
@@ -3033,6 +3000,64 @@ var laya = (function () {
 	    JointNames["D_ride"] = "D_ride";
 	})(JointNames || (JointNames = {}));
 
+	var Shader3D$5 = Laya.Shader3D;
+	var Vector4$4 = Laya.Vector4;
+	class SceneMaterialColorBalances {
+	    static Init(scene) {
+	        this.scene = scene;
+	        this._shaderValues = scene._shaderValues;
+	        this.SCENECOLORBALANCE = Shader3D$5.getDefineByName("SCENECOLORBALANCE");
+	    }
+	    static get sceneColorBalances() {
+	        return this._shaderValues.getVector3(this.SCENECOLORBALANCE_ID);
+	    }
+	    static set sceneColorBalances(value) {
+	        if (value)
+	            this._shaderValues.addDefine(this.SCENECOLORBALANCE);
+	        else
+	            this._shaderValues.removeDefine(this.SCENECOLORBALANCE);
+	        this._shaderValues.setVector3(this.SCENECOLORBALANCE_ID, value);
+	    }
+	}
+	SceneMaterialColorBalances.SCENECOLORBALANCE_ID = Shader3D$5.propertyNameToID("u_SceneColorBalance");
+	class SceneMaterialLightingTexture {
+	    static Init(scene) {
+	        this.scene = scene;
+	        this._shaderValues = scene._shaderValues;
+	        this.SHADERDEFINE_SCENELIGHTINGTEXTURE = Shader3D$5.getDefineByName("SCENELIGHTING");
+	        this.sceneLightingSize = new Vector4$4(-10, 20, -10, 20);
+	    }
+	    static get sceneLightingTexture() {
+	        return this._shaderValues.getTexture(this.SCENELIGHTINGTEXTURE);
+	    }
+	    static set sceneLightingTexture(value) {
+	        if (value)
+	            this._shaderValues.addDefine(this.SHADERDEFINE_SCENELIGHTINGTEXTURE);
+	        else
+	            this._shaderValues.removeDefine(this.SHADERDEFINE_SCENELIGHTINGTEXTURE);
+	        this._shaderValues.setTexture(this.SCENELIGHTINGTEXTURE, value);
+	    }
+	    static SetSceneLightingTexture(value) {
+	        this.sceneLightingTexture = value;
+	    }
+	    static get sceneLightingSize() {
+	        return this._shaderValues.getVector(this.SCENELIGHTINGSIZE);
+	    }
+	    static set sceneLightingSize(value) {
+	        this._shaderValues.setVector(this.SCENELIGHTINGSIZE, value);
+	    }
+	    static SetSceneLightingSize(value) {
+	        this.sceneLightingSize = value;
+	    }
+	    static LoadSceneLightingTexture(path) {
+	        Laya.loader.create(path, Laya.Handler.create(SceneMaterialLightingTexture, (texture) => {
+	            this.sceneLightingTexture = texture;
+	        }), null, Laya.Loader.TEXTURE2D);
+	    }
+	}
+	SceneMaterialLightingTexture.SCENELIGHTINGTEXTURE = Shader3D$5.propertyNameToID("u_SceneLightingTexture");
+	SceneMaterialLightingTexture.SCENELIGHTINGSIZE = Shader3D$5.propertyNameToID("u_SceneLightingSize");
+
 	var LoaderManager = Laya.LoaderManager;
 	var Loader = Laya.Loader;
 	var Event = Laya.Event;
@@ -3054,7 +3079,8 @@ var laya = (function () {
 	        window['GPUSkinningToonWeaponV2Material'] = GPUSkinningToonWeaponV2Material;
 	        window['GPUSkinningAnimation'] = GPUSkinningAnimation;
 	        window['GPUSkinningClip'] = GPUSkinningClip;
-	        window['SceneMaterial'] = SceneMaterial;
+	        window['SceneMaterialColorBalances'] = SceneMaterialColorBalances;
+	        window['SceneMaterialLightingTexture'] = SceneMaterialLightingTexture;
 	        Laya.ClassUtils.regClass("GPUSkinningToonV2Material", GPUSkinningToonV2Material);
 	        Laya.ClassUtils.regClass("GPUSkinningToonWeaponV2Material", GPUSkinningToonWeaponV2Material);
 	        var GPUSkinningIncludegGLSL = await GPUSkinningBaseMaterial.loadShaderGlslAsync("GPUSkinningInclude");
@@ -3251,7 +3277,7 @@ var laya = (function () {
 	GPUSkining.EXT_SKING_MESH = "skinlm";
 	GPUSkining.resRoot = "res3d/Conventional/";
 	window['GPUSkining'] = GPUSkining;
-	window['SceneMaterial'] = SceneMaterial;
+	window['SceneMaterial'] = SceneMaterialLightingTexture;
 	window['JointNames'] = JointNames;
 
 	class GPUSKiningLib {

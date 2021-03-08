@@ -5,8 +5,44 @@ import ShaderData = Laya.ShaderData;
 import ShaderDefine = Laya.ShaderDefine;
 import Vector4 = Laya.Vector4;
 
+// 场景 -- 色彩平衡
+export class SceneMaterialColorBalances
+{
+    static scene: Laya.Scene3D;
+    static _shaderValues:ShaderData;
+	// 场景 -- 色彩平衡
+	static SCENECOLORBALANCE:ShaderDefine;
+	// 场景 -- 色彩平衡
+	static SCENECOLORBALANCE_ID: number = Shader3D.propertyNameToID("u_SceneColorBalance");
+    static Init(scene: Laya.Scene3D)
+    {
+        this.scene = scene;
+        this._shaderValues = (<any>scene)._shaderValues;
+        this.SCENECOLORBALANCE = Shader3D.getDefineByName("SCENECOLORBALANCE");
+    }
 
-export default class SceneMaterial
+    
+	/**
+	 * 场景 -- 色彩平衡
+	 */
+    static get sceneColorBalances(): Laya.Vector3 
+    {
+		return this._shaderValues.getVector3(this.SCENECOLORBALANCE_ID);
+	}
+
+    static set sceneColorBalances(value: Laya.Vector3) 
+    {
+		if (value)
+			this._shaderValues.addDefine(this.SCENECOLORBALANCE);
+		else
+			this._shaderValues.removeDefine(this.SCENECOLORBALANCE);
+		this._shaderValues.setVector3(this.SCENECOLORBALANCE_ID, value);
+    }
+}
+
+
+// 场景 -- 灯光贴图
+export class SceneMaterialLightingTexture
 {
     static scene: Laya.Scene3D;
     static _shaderValues:ShaderData;
@@ -68,9 +104,10 @@ export default class SceneMaterial
     
     static LoadSceneLightingTexture(path: string)
     {
-        Laya.loader.create(path, Laya.Handler.create(this, (texture:Laya.Texture2D)=>
+        Laya.loader.create(path, Laya.Handler.create(SceneMaterialLightingTexture, (texture:Laya.Texture2D)=>
         {
             this.sceneLightingTexture = texture;
         }), null, Laya.Loader.TEXTURE2D);
     }
 }
+

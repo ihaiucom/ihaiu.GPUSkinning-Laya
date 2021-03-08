@@ -83,6 +83,8 @@ export class GPUSkinningToonV2Material extends GPUSkinningBaseMaterial
 			'u_SceneLightingTexture': Shader3D.PERIOD_SCENE,
 			// 卡通材质 -- 场景光照贴图映射世界坐标大小
 			'u_SceneLightingSize': Shader3D.PERIOD_SCENE,
+			// 场景 -- 色彩平衡
+			'u_SceneColorBalance': Shader3D.PERIOD_SCENE,
 			
 			// 主贴图
 			'u_AlbedoTexture': Shader3D.PERIOD_MATERIAL,
@@ -187,7 +189,10 @@ export class GPUSkinningToonV2Material extends GPUSkinningBaseMaterial
 	// 卡通材质 -- 描边粗细
     static CARTOON_OUTLINEWIDTH: number = Shader3D.propertyNameToID("u_CartoonOutlineWidth");
 
+	// 场景 -- 灯光贴图
 	static SCENELIGHTINGTEXTURE: number = Shader3D.propertyNameToID("u_SceneLightingTexture");
+	// 场景 -- 色彩平衡
+	static SCENECOLORBALANCE: number = Shader3D.propertyNameToID("u_SceneColorBalance");
 
 	// 高光和边缘光贴图
 	static HEIGHTRIMLIGHTTEXTURE: number = Shader3D.propertyNameToID("u_HeightRimLightTexture");

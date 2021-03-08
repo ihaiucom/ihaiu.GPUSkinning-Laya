@@ -26,10 +26,18 @@ uniform vec4 u_AlbedoColor;
 	uniform sampler2D u_HeightRimLightTexture;
 #endif
 
+// 场景--灯光贴图
 #ifdef SCENELIGHTING
 	// varying vec3 v_SceneLighting; 
 	uniform sampler2D u_SceneLightingTexture;
 	varying vec2 v_SceneLightingUV; 
+#endif
+
+
+
+// 场景--色彩平衡
+#ifdef SCENECOLORBALANCE
+	uniform vec3 u_SceneColorBalance; 
 #endif
 
 
@@ -98,6 +106,65 @@ vec4 lerp4(vec4 a, vec4 b, float w)
   return a + w*(b-a);
 }
 
+// 获取颜色亮度
+float getLuminance(vec3 c)
+{
+	float _max = max(c.r, max(c.g, c.b));
+	float _min = min(c.r, min(c.g, c.b));
+	return (_max + _min) * 0.5;
+}
+
+vec3 RGBToHSV(vec3 c)
+{
+	vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
+	vec4 p = lerp4( vec4( c.bg, K.wz ), vec4( c.gb, K.xy ), step( c.b, c.g ) );
+	vec4 q = lerp4( vec4( p.xyw, c.r ), vec4( c.r, p.yzx ), step( p.x, c.r ) );
+	float d = q.x - min(q.w, q.y);
+	float e = 0.01;
+	return vec3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
+}
+
+vec3 HSVToRGB(vec3 c)
+{
+	vec4 K = vec4( 1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0 );
+	vec3 p = abs( fract( c.xxx + K.xyz ) * 6.0 - K.www );
+	return c.z * lerp3( K.xxx, clamp ( p - K.xxx, 0.0, 1.0 ), c.y );
+}
+
+// 色彩平衡
+vec3 colorBalance(vec3 c, vec3 balanceValue)
+{
+	float l = getLuminance(c);
+	// vec3 hsv = RGBToHSV(c);
+	// float l = hsv.z;
+
+	float dark = 0.0;
+	float height = 0.0;
+	// float mrange = (height - dark) * 0.5;
+	// float mid = mrange + dark;
+	// float diff = mid - l;
+	// diff = abs(diff);
+	// float f = 1.0 - (diff + 0.01) / (mrange + 0.01);
+	// // vec3 value = c.rgb + balanceValue * f;
+	// vec3 value = c.rgb + balanceValue * f;
+	// return max(min(value, vec3(1.0, 1.0, 1.0)), vec3(0.0, 0.0, 0.0));
+
+	// float ii = 1.0/ 255.0;
+	//  return c.rgb + balanceValue * ((1.0 -l + ii) / ii);
+
+	// float ii = 1.0/ 255.0;
+	// vec3 value = c.rgb + balanceValue * ((l - height + ii) / (1.0 - height + ii));
+
+	
+	vec3 value = c.rgb + balanceValue * (l - height);
+	
+	vec3 hsv2 = RGBToHSV(value);
+	hsv2.z= l;
+	value = HSVToRGB(hsv2);
+	return value;
+
+}
+
 void main()
 {
 	
@@ -105,6 +172,11 @@ void main()
 	#ifdef ALBEDOTEXTURE
 		mainTexture = texture2D(u_AlbedoTexture, v_Texcoord0);
 	#endif 
+
+
+
+
+
 
 	
 	// 高光和边缘光贴图
@@ -241,6 +313,11 @@ void main()
 	// finalColor.rgb = basePowerColor;
 
 
+
+	// 场景--色彩平衡
+	#ifdef SCENECOLORBALANCE
+		finalColor.rgb = colorBalance(finalColor.rgb, u_SceneColorBalance);
+	#endif
 
 
 	// 受击

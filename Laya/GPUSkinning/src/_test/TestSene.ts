@@ -1,5 +1,5 @@
 import Vector3 = Laya.Vector3;
-import SceneMaterial from "../GPUSkinning/Material/SceneMaterial";
+import { SceneMaterialColorBalances } from "../GPUSkinning/Material/SceneMaterial";
 export class TestScene extends Laya.Scene3D
 {
     static create(): TestScene
@@ -82,11 +82,11 @@ export class TestScene extends Laya.Scene3D
 
         // this.lightRotaitonStart();
 
-        SceneMaterial.Init(this);
+        // SceneMaterialLightingTexture.Init(this);
         // SceneMaterial.LoadSceneLightingTexture("res3d/GPUSKinning-30/scene_lighting.png"); 
 
-
-        
+        SceneMaterialColorBalances.Init(this);
+        SceneMaterialColorBalances.sceneColorBalances = new Vector3(0.0, 0.0, 1.0);
     }
 
     lightRotaitonSrc:Vector3;

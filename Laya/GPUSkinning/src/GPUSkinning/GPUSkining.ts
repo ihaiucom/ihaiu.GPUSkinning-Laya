@@ -16,10 +16,10 @@ import GPUSkiningVertexMesh from "./Mesh/GPUSkiningVertexMesh";
 import GPUSkinningClip from "./Datas/GPUSkinningClip";
 import LayaExtends_Node from "../LayaExtends/LayaExtends_Node";
 import { GPUSkinningCartoon2TextureMaterial } from "./Material/GPUSkinningCartoon2TextureMaterial";
-import SceneMaterial from "./Material/SceneMaterial";
 import { GPUSkinningToonV2Material } from "./Material/GPUSkinningToonV2";
 import { GPUSkinningToonWeaponV2Material } from "./Material/GPUSkinningToonWeaponV2";
 import { JointNames } from "./JointNames";
+import { SceneMaterialLightingTexture, SceneMaterialColorBalances } from "./Material/SceneMaterial";
 
 interface IGpuSkinLHUrlInfo
 {
@@ -50,7 +50,8 @@ export default class GPUSkining
       window['GPUSkinningToonWeaponV2Material'] = GPUSkinningToonWeaponV2Material;
       window['GPUSkinningAnimation'] = GPUSkinningAnimation;
       window['GPUSkinningClip'] = GPUSkinningClip;
-      window['SceneMaterial'] = SceneMaterial;
+      window['SceneMaterialColorBalances'] = SceneMaterialColorBalances;
+      window['SceneMaterialLightingTexture'] = SceneMaterialLightingTexture;
 
       Laya.ClassUtils.regClass("GPUSkinningToonV2Material", GPUSkinningToonV2Material);
       Laya.ClassUtils.regClass("GPUSkinningToonWeaponV2Material", GPUSkinningToonWeaponV2Material);
@@ -425,5 +426,5 @@ export default class GPUSkining
 
 }
 window['GPUSkining'] = GPUSkining;
-window['SceneMaterial'] = SceneMaterial;
+window['SceneMaterial'] = SceneMaterialLightingTexture;
 window['JointNames'] = JointNames;
