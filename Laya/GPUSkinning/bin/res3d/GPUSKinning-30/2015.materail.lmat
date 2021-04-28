@@ -1,0 +1,46 @@
+{
+    "version":"LAYAMATERIAL:02",
+    "props":{
+        "type":"GPUSkinningToonV3Material",
+        "name":"2015",
+        "textures":[
+            {
+                "name":"_MainTex",
+                "path":"2015_main.png"
+            }
+        ],
+        "vectors":[
+            {
+                "name":"_OutlineColor",
+                "value":[
+                    1,
+                    1,
+                    1,
+                    1
+                ]
+            },
+            {
+                "name":"_SpecColor",
+                "value":[
+                    1,
+                    1,
+                    1,
+                    0
+                ]
+            },
+            {
+                "name":"_SpecularSpaceLightDir",
+                "value":[
+                    180,
+                    0,
+                    -300,
+                    0
+                ]
+            }
+        ],
+        "_OutlineWidth":0,
+        "_Specular":1.0,
+        "_SpecGloss":30.0
+        
+    }
+}

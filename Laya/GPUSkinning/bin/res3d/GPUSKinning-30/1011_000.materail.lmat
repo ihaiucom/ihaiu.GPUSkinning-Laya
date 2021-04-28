@@ -1,1 +1,45 @@
-{"version": "LAYAMATERIAL:02", "props": {"type": "GPUSkinningToonV2Material", "name": "1011_000", "textures": [{"name": "_MainTex", "path": "1011_000_main.png"}, {"name": "_MaskTex", "path": "1011_000_mask.png"}], "vectors": [{"name": "_OutlineColor", "value": [0.09803922, 0.2352941, 0.4313726, 0]}, {"name": "_RimAB_Direction", "value": [25, 5, -10, 0]}, {"name": "_RimA_Color", "value": [1, 0, 0, 0]}, {"name": "_RimB_Color", "value": [0.1764706, 0.5294118, 0.5882353, 0]}, {"name": "_RimC_Color", "value": [1, 0.7843137, 0.5294118, 0]}, {"name": "_RimC_Direction", "value": [-40, 10, -20, 0]}], "_OutlineWidth": 1, "_RimA_Rate": 0.4, "_RimB_Rate": 0.5, "_RimC_Range": -0.3}}
+{
+    "version":"LAYAMATERIAL:02",
+    "props":{
+        "type":"GPUSkinningToonV3Material",
+        "name":"1011_000",
+        "textures":[
+            {
+                "name":"_MainTex",
+                "path":"1011_000_main.png"
+            }
+        ],
+        "vectors":[
+            {
+                "name":"_OutlineColor",
+                "value":[
+                    1,
+                    1,
+                    1,
+                    1
+                ]
+            },
+            {
+                "name":"_SpecColor",
+                "value":[
+                    0.5283019,
+                    0.5108579,
+                    0.5108579,
+                    0
+                ]
+            },
+            {
+                "name":"_SpecularSpaceLightDir",
+                "value":[
+                    180,
+                    0,
+                    -300,
+                    0
+                ]
+            }
+        ],
+        "_OutlineWidth":0,
+        "_SpecGloss":9.8,
+        "_Specular": 0.0
+    }
+}

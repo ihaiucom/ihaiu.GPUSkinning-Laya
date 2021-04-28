@@ -38,7 +38,9 @@ export default class TestShader
 
 
         var nameList = [
-            ["1012_000", "1012_000"],
+            // ["1012_000", "1012_000"],
+            ["1011_000", "1011_000"],
+            // ["2015", "2015"],
             // ["3001", "3001"],
             // "3001",
             // "Hero_1004_Dongzhuo_Skin1",
@@ -68,7 +70,7 @@ export default class TestShader
             //     mono.anim.clips[i].wrapMode = GPUSkinningWrapMode.Loop;
             //     mono.anim.clips[i].individualDifferenceEnabled =true;
             // }
-            // mono.Player.isRandomPlayClip = true;
+            mono.Player.isRandomPlayClip = true;
 
             var b = new Laya.Sprite3D();
             b.addChild(mono.owner);

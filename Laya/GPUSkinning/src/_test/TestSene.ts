@@ -86,7 +86,7 @@ export class TestScene extends Laya.Scene3D
         // SceneMaterial.LoadSceneLightingTexture("res3d/GPUSKinning-30/scene_lighting.png"); 
 
         SceneMaterialColorBalances.Init(this);
-        SceneMaterialColorBalances.sceneColorBalances = new Vector3(0.0, 0.0, 1.0);
+        SceneMaterialColorBalances.sceneColorBalances = new Vector3(0.0, 0.0, 0.0);
     }
 
     lightRotaitonSrc:Vector3;

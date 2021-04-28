@@ -109,9 +109,12 @@ vec4 lerp4(vec4 a, vec4 b, float w)
 // 获取颜色亮度
 float getLuminance(vec3 c)
 {
-	float _max = max(c.r, max(c.g, c.b));
-	float _min = min(c.r, min(c.g, c.b));
-	return (_max + _min) * 0.5;
+	float p = lerp(c.b,  c.g,  step( c.b, c.g ));
+	float q = lerp(p, c.r, step( p, c.r ) );
+	return q;
+	// float _max = max(c.r, max(c.g, c.b));
+	// float _min = min(c.r, min(c.g, c.b));
+	// return (_max + _min) * 0.5;
 }
 
 vec3 RGBToHSV(vec3 c)

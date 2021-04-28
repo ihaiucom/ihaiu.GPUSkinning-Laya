@@ -1,1 +1,35 @@
-{"version": "LAYAMATERIAL:02", "props": {"type": "GPUSkinningToonWeaponV2Material", "name": "w_1010_r_000", "textures": [{"name": "_MainTex", "path": "w_1010_r_000_main.png"}], "vectors": [{"name": "_RimAB_Direction", "value": [30, -5, -10, 0]}, {"name": "_RimA_Color", "value": [1, 0, 0, 0]}, {"name": "_RimB_Color", "value": [1, 1, 1, 0]}, {"name": "_RimC_Color", "value": [1, 1, 1, 0]}, {"name": "_RimC_Direction", "value": [-30, -5, -10, 0]}], "_RimA_Rate": 0.5, "_RimB_Rate": 0.6, "_RimC_Range": -0.3}}
+{
+    "version":"LAYAMATERIAL:02",
+    "props":{
+        "type":"GPUSkinningToonWeaponV3Material",
+        "name":"w_1010_r_000",
+        "textures":[
+            {
+                "name":"_MainTex",
+                "path":"w_1010_r_000_main.png"
+            }
+        ],
+        "vectors":[
+            {
+                "name":"_SpecColor",
+                "value":[
+                    1,
+                    1,
+                    1,
+                    0
+                ]
+            },
+            {
+                "name":"_SpecularSpaceLightDir",
+                "value":[
+                    180,
+                    0,
+                    -300,
+                    0
+                ]
+            }
+        ],
+        "_SpecGloss":10,
+        "_Specular":0
+    }
+}

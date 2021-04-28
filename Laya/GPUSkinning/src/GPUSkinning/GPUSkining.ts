@@ -20,6 +20,8 @@ import { GPUSkinningToonV2Material } from "./Material/GPUSkinningToonV2";
 import { GPUSkinningToonWeaponV2Material } from "./Material/GPUSkinningToonWeaponV2";
 import { JointNames } from "./JointNames";
 import { SceneMaterialLightingTexture, SceneMaterialColorBalances } from "./Material/SceneMaterial";
+import { GPUSkinningToonV3Material } from "./Material/GPUSkinningToonV3";
+import { GPUSkinningToonWeaponV3Material } from "./Material/GPUSkinningToonWeaponV3";
 
 interface IGpuSkinLHUrlInfo
 {
@@ -53,8 +55,15 @@ export default class GPUSkining
       window['SceneMaterialColorBalances'] = SceneMaterialColorBalances;
       window['SceneMaterialLightingTexture'] = SceneMaterialLightingTexture;
 
+      
+      window['GPUSkinningToonV3Material'] = GPUSkinningToonV3Material;
+      window['GPUSkinningToonWeaponV3Material'] = GPUSkinningToonWeaponV3Material;
+
+
       Laya.ClassUtils.regClass("GPUSkinningToonV2Material", GPUSkinningToonV2Material);
       Laya.ClassUtils.regClass("GPUSkinningToonWeaponV2Material", GPUSkinningToonWeaponV2Material);
+      Laya.ClassUtils.regClass("GPUSkinningToonV3Material", GPUSkinningToonV3Material);
+      Laya.ClassUtils.regClass("GPUSkinningToonWeaponV3Material", GPUSkinningToonWeaponV3Material);
       
       
       var GPUSkinningIncludegGLSL: string = await GPUSkinningBaseMaterial.loadShaderGlslAsync("GPUSkinningInclude");
@@ -70,6 +79,9 @@ export default class GPUSkining
       // await GPUSkinningToonMaterial.install();
       await GPUSkinningToonV2Material.install();
       await GPUSkinningToonWeaponV2Material.install();
+
+      await GPUSkinningToonV3Material.install();
+      await GPUSkinningToonWeaponV3Material.install();
 
 
 
