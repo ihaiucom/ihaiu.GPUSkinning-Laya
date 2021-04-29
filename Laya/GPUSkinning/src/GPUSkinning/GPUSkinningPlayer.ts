@@ -1075,7 +1075,7 @@ export default class GPUSkinningPlayer
     weaponMap = new Map<string, GPUSkinningPlayerMono>();
 
     /** 设置武器 */
-    public SetWeapon(boneName: string, skinName: string, animName:string)
+    public SetWeapon(boneName: string, skinName: string, animName:string, callback?:Function)
     {
         var bone = this.FindJointGameObject(boneName);
         if(bone == null)
@@ -1105,6 +1105,7 @@ export default class GPUSkinningPlayer
                 clipName = "standby";
             }
             mono.Player.Play(clipName, this.NormalizedTime);
+            callback && callback(mono);
 
         })
 
